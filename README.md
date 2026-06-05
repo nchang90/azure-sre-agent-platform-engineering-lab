@@ -28,14 +28,14 @@ Set the `AZURE_CREDENTIALS` secret in your repository before relying on CI deplo
 
 ## Scenarios
 
-One storyline: an incident breaks the app, the agent remediates it, the next morning it triages customer fallout, and then the platform team closes the loop with governance guardrails.
+One storyline: an incident breaks the app, the agent remediates it, the next morning it triages customer fallout, and then the platform team closes the loop with governance guardrails. Each scenario can stand alone but builds on the one before it.
 
-| Scenario | Persona | Trigger | What the agent does |
-|---|---|---|---|
-| [S1 — Detect & triage](docs/scenario-s1-detect-triage.md) | On-call / IT Ops | `bash scripts/break-app.sh` | Picks up the 5xx alert, correlates a rogue deploy, finds no change request, recommends a rollback (Review mode) |
-| [S2 — Autonomous remediation](docs/scenario-s2-autonomous-remediation.md) | Platform / SRE | Re-run S1 in `High` / `Automatic` mode | Acts on its own — rolls the bad revision back without waiting for a human |
-| [S3 — Change issue triage](docs/scenario-s3-change-issue-triage.md) | Support / Automation | `bash scripts/create-sample-issues.sh OWNER/REPO` | Reviews customer issues, links them to change requests, classifies, posts triage comments |
-| [S4 — Platform reliability governance](docs/scenario-s4-platform-reliability-governance.md) | Platform Engineering | Run the governance checklist and policy review | Evaluates guardrails (CR linkage, probes, replicas, alerts), scores risk, and files platform backlog actions |
+| Scenario | Persona | Trigger | What the agent does | Key concepts learned | Depends on |
+|---|---|---|---|---|---|
+| [S1 — Detect & triage](docs/scenario-s1-detect-triage.md) | On-call / IT Ops | `bash scripts/break-app.sh` | Picks up the 5xx alert, correlates a rogue deploy, finds no change request, recommends a rollback (Review mode) | Incident Response Plan, subagents, Log Analytics connector, knowledge base, Review mode | — |
+| [S2 — Autonomous remediation](docs/scenario-s2-autonomous-remediation.md) | Platform / SRE | Re-run S1 in `High` / `Automatic` mode | Acts on its own — rolls the bad revision back without waiting for a human, posts a post-action summary | Access levels, Automatic action mode, `RunAzCliWriteCommands`, agent memory | S1 |
+| [S3 — Change issue triage](docs/scenario-s3-change-issue-triage.md) | Support / Automation | `bash scripts/create-sample-issues.sh OWNER/REPO` | Reviews customer issues, links them to change requests, classifies, posts triage comments | Scheduled tasks, GitHub connector, issue-triager subagent, idempotent triage | S1 or S2 |
+| [S4 — Platform reliability governance](docs/scenario-s4-platform-reliability-governance.md) | Platform Engineering | Chat: *"Run a governance review for orders-api"* | Recalls S1–S3 incident memory, evaluates reliability guardrails, scores risk, creates backlog issues to prevent recurrence | Memory and learning, deep context, `ExecutePythonCode`, proactive mode, GitHub issue creation | S1–S3 recommended |
 
 ## What Gets Deployed
 
@@ -55,14 +55,14 @@ One storyline: an incident breaks the app, the agent remediates it, the next mor
 
 ## Scenario Guides
 
-Each scenario has a standalone guide with diagram, exact run commands, expected output, and validation checks.
+Each scenario has a standalone guide with flow diagram, exact run commands, expected output, portal steps, suggested prompts, and validation checks. Each guide also lists the Azure SRE Agent concepts it demonstrates and its dependencies on other scenarios.
 
 - [S1 guide: Detect and triage](docs/scenario-s1-detect-triage.md)
-	- On-call incident response in Review mode. Trigger a rogue deploy, then watch the agent correlate 5xx telemetry with a missing change request and recommend rollback.
+	- On-call incident response in Review mode. Trigger a rogue deploy, watch the agent correlate 5xx telemetry with a missing change request and recommend rollback. Teaches: Incident Response Plans, subagents, Log Analytics connector, knowledge base retrieval.
 - [S2 guide: Autonomous remediation](docs/scenario-s2-autonomous-remediation.md)
-	- Same incident path, but with High access and Automatic action mode so the agent performs rollback itself and posts a post-action summary.
+	- Same incident path, but with High access and Automatic action mode so the agent performs rollback itself and posts a post-action summary. Teaches: access levels, automatic action mode, write permissions, agent memory.
 - [S3 guide: Change issue triage](docs/scenario-s3-change-issue-triage.md)
-	- Scheduled support workflow that classifies customer issues, links CR context, applies labels, and posts triage comments.
+	- Scheduled support workflow that classifies customer issues, links CR context, applies labels, and posts triage comments. Teaches: scheduled tasks, GitHub connector, issue-triager subagent, idempotent triage.
 - [S4 guide: Platform reliability governance](docs/scenario-s4-platform-reliability-governance.md)
-	- Platform team governance workflow that evaluates reliability guardrails and creates actionable backlog items to prevent repeat incidents.
+	- Platform team governance workflow that evaluates reliability guardrails using incident memory from S1–S3 and creates actionable backlog items to prevent repeat incidents. Teaches: memory and learning, deep context, proactive mode, Python code execution.
 
