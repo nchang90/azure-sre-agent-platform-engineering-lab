@@ -35,8 +35,11 @@ jobs:
       - name: Terraform init
         run: terraform -chdir=infra init
 
+      - name: Terraform plan
+        run: terraform -chdir=infra plan -out=tfplan -var-file=terraform.tfvars
+
       - name: Terraform apply
-        run: terraform -chdir=infra apply -auto-approve -var-file=terraform.tfvars
+        run: terraform -chdir=infra apply -auto-approve tfplan
 
       - name: Run post-provision setup
         run: bash scripts/post-provision.sh
