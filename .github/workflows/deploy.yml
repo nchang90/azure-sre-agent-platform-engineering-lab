@@ -38,7 +38,6 @@ jobs:
       - name: Terraform apply
         run: terraform -chdir=infra apply -auto-approve tfplan
 
-      # ───────────────────────────────────────────────
       - name: Ensure Azure AI Developer role
         run: |
           PROJECT_ID=$(az ai project show --name sre-agent --query id -o tsv)
