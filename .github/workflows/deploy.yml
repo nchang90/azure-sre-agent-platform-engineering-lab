@@ -2,24 +2,9 @@ name: Deploy SRE Agent Lab
 
 on:
   workflow_dispatch:
-    inputs:
-      plan:
-        description: "Run Terraform plan"
-        required: false
-        type: boolean
-        default: true
-      apply:
-        description: "Run Terraform apply and post-provision"
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: read
-
-concurrency:
-  group: sre-agent-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -29,31 +14,47 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Azure CLI login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
       - name: Install Python dependencies
-        run: python3 -m pip install --user pyyaml
+        run: pip install pyyaml
 
       - name: Terraform init
         run: terraform -chdir=infra init
 
+      - name: Terraform validate
+        run: terraform -chdir=infra validate
+
       - name: Terraform plan
-        if: ${{ inputs.plan || inputs.apply }}
         run: terraform -chdir=infra plan -out=tfplan -var-file=terraform.tfvars
 
       - name: Terraform apply
-        if: ${{ inputs.apply }}
         run: terraform -chdir=infra apply -auto-approve tfplan
 
+      # ───────────────────────────────────────────────
+      - name: Ensure Azure AI Developer role
+        run: |
+          PROJECT_ID=$(az ai project show --name sre-agent --query id -o tsv)
+          SP_ID=$(az ad sp show --id ${{ secrets.AZURE_CLIENT_ID }} --query id -o tsv)
+
+          az role assignment create \
+            --assignee $SP_ID \
+            --role "Azure AI Developer" \
+            --scope $PROJECT_ID || true
+
       - name: Run post-provision setup
-        if: ${{ inputs.apply }}
         run: bash scripts/post-provision.sh
+
+      - name: Dump Azure CLI logs on failure
+        if: failure()
+        run: |
+          echo "Dumping Azure CLI logs..."
+          cat ~/.azure/azure.err || true
+          cat ~/.azure/azure.log || true
