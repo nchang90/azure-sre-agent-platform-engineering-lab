@@ -1,0 +1,8 @@
+name: sre-agent-lab
+infra:
+  provider: terraform
+  path: infra
+hooks:
+  postprovision:
+    run: bash ./scripts/post-provision.sh
+    interactive: true

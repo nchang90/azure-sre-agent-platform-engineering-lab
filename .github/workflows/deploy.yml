@@ -1,0 +1,44 @@
+name: Deploy SRE Agent Lab
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sre-agent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Install Python dependencies
+        run: python3 -m pip install --user pyyaml
+
+      - name: Terraform init
+        run: terraform -chdir=infra init
+
+      - name: Terraform apply
+        run: terraform -chdir=infra apply -auto-approve -var-file=terraform.tfvars
+
+      - name: Run post-provision setup
+        run: bash scripts/post-provision.sh
