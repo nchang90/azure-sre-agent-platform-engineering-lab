@@ -1,0 +1,11 @@
+# Terraform local artifacts
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Terraform lock info file created during operations
+.terraform.tfstate.lock.info
+**/.terraform.tfstate.lock.info
