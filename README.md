@@ -15,7 +15,7 @@ A hands-on lab for Azure SRE Agent. Four scenarios that build on each other. Des
 
 > **Cloud Shell:** data-plane items (subagents) need `az login --scope "https://azuresre.dev/.default"`, or apply later with `bash scripts/post-provision.sh --retry`.
 
-## Deployment Automation
+## Deployment
 
 This repo deploys automatically with GitHub Actions using [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
