@@ -13,8 +13,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "rg-terraform-state"
-    storage_account_name = "stterraformstate"
+    resource_group_name  = "terraform-tfstate-rg"
+    storage_account_name = "terraformstatesbox"
     container_name       = "tfstate"
     key                  = "azuresre.tfstate"
   }
