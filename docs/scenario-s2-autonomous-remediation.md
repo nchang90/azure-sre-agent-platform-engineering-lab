@@ -103,7 +103,7 @@ Ask these in the incident thread after the rollback completes:
 - *"What was the exact command you ran to roll back?"*
 - *"How did you verify the rollback was successful?"*
 - *"What would you have done differently if confidence had been medium?"*
-- *"Add this incident to the knowledge base so future investigations can reference it"*
+- *"Save this incident to memory so future investigations can reference it"*
 
 ## Expected Output
 
