@@ -142,8 +142,6 @@ resource "azurerm_role_assignment" "uami_admin" {
   principal_type     = "ServicePrincipal"
 }
 
-# ── Target RG: Reader ──
-
 resource "azurerm_role_assignment" "target_reader" {
   for_each             = toset(var.target_resource_groups)
   scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${each.value}"
@@ -171,10 +169,6 @@ resource "azurerm_role_assignment" "target_contributor" {
   principal_id         = local.effective_principal_id
   principal_type       = "ServicePrincipal"
 }
-
-# ═══════════ System MI RBAC on target RGs ═════════════
-# The agent uses system-assigned MI for connector queries (App Insights, Log Analytics).
-# Same roles as UAMI: Reader + Log Analytics Reader + Contributor (if High).
 
 resource "azurerm_role_assignment" "smi_target_reader" {
   for_each             = toset(var.target_resource_groups)
