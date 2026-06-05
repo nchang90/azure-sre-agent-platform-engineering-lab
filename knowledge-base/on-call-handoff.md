@@ -32,7 +32,7 @@ Use this document for shift-change handoffs and to satisfy the on-call ownership
 
 ```bash
 # Check current health and active CR
-curl https://<ORDERS_API_URL>/health | jq .
+curl "<ORDERS_API_URL>/health" | jq .
 
 # Check active revisions
 az containerapp revision list -n orders-api -g <rg> -o table
