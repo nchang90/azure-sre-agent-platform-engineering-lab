@@ -1,6 +1,6 @@
 # Azure SRE Agent — Platform Engineering Lab
 
-A hands-on lab for Azure SRE Agent. Four scenarios that build on each other, one `azd up`, ~10 min.
+A hands-on lab for Azure SRE Agent. Four scenarios that build on each other. Designed for platform engineering teams to experience the agent's capabilities in incident response, autonomous remediation, change triage, and reliability governance. Deploys a sample monitored app with an SRE Agent that has RBAC permissions to take action and learn from outcomes.
 
 ## Prerequisites
 
