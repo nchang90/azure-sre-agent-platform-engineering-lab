@@ -94,7 +94,7 @@ Sample issues created:
 
 Start a new chat thread with the agent to inspect what it learned:
 
-- *"Summarise all customer issues triaged this morning"*
+- *"Summarize all customer issues triaged this morning"*
 - *"Which issues were linked to CHG0030001 and what was their classification?"*
 - *"Are there any policy-violation issues open right now?"*
 - *"What labels did you apply to the 'Deploy without a linked CR' issue and why?"*
