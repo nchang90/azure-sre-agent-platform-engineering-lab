@@ -10,18 +10,6 @@ The morning after S2, customer issues flood GitHub. The issue-triager runs on sc
 
 ## Scenario Diagram
 
-```mermaid
-flowchart LR
-    S[12h schedule] --> I[issue-triager]
-    I --> F[Fetch open Customer Issue items]
-    F --> G{Already triaged}
-    G -->|yes| SK[Skip]
-    G -->|no| E[Extract CR]
-    E --> C[change-lookup query]
-    C --> L[Classify and add labels]
-    L --> M[Post triage comment]
-```
-
 ## Run
 
 ```bash
