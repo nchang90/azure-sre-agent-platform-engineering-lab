@@ -3,16 +3,17 @@ name: Destroy SRE Agent Lab
 on:
   workflow_dispatch:
     inputs:
-      confirm_destroy:
-        description: "Type DESTROY to confirm manual resource teardown"
+      destroy:
+        description: "Confirm manual resource teardown"
         required: true
-        type: string
+        type: boolean
+        default: false
   schedule:
-    # GitHub Actions cron is in UTC. This runs daily at 21:00 UTC.
     - cron: "0 21 * * *"
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: sre-agent-destroy-${{ github.ref }}
@@ -27,8 +28,8 @@ jobs:
       - name: Validate confirmation input
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
-            echo "Confirmation failed. Type DESTROY to run this workflow."
+          if [ "${{ github.event.inputs.destroy }}" != "true" ]; then
+            echo "Destroy not confirmed. Exiting."
             exit 1
           fi
 
