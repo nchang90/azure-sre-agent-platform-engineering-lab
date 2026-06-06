@@ -14,6 +14,5 @@ tags = {
   project     = "sre-agent"
 }
 
-severity_threshold = [1, 2] 
 
 email_receiver_address = "nicholasc001@hotmail.com"

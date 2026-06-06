@@ -9,9 +9,10 @@ variable "agent_name" {
 }
 
 variable "severity_threshold" {
-  description = "Minimum alert severity for the agent to investigate (1=High, 2=Medium, 3=Low)."
-  type        = list
+  type    = list(string)
+  default = ["Sev1", "Sev2"]
 }
+
 
 variable "email_receiver_address" {
   description = "Email address for action group notifications (used by smart detector alert rule)."

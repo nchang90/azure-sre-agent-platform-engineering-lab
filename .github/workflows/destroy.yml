@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       destroy:
-        description: "Confirm manual resource teardown"
+        description: "tf_destroy"
         required: true
         type: boolean
         default: false

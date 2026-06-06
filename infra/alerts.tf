@@ -75,25 +75,13 @@ resource "azapi_resource" "orders_api_health" {
   }
 }
 
-resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
-  name                = "Failure Anomalies - ai-51a0c59340d39"
-  resource_group_name = azurerm_resource_group.agent.name
-  severity            = "Sev3"
-  scope_resource_ids  = []
-  detector_type       = "FailureAnomalies"
-  frequency           = "PT1H"
-  enabled             = true
-  action_group {
-    ids = []
-  }
-}
 
-resource "azurerm_monitor_smart_detector_alert_rule" "sev2_failure_anomalies" {
+resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
   name                = "failure-anomalies-ai-51a0c59340d39-sev2"
   resource_group_name = azurerm_resource_group.agent.name
-  severity            = var.severity_threshold
-  scope_resource_ids  = [azurerm_application_insights.app.id]
-  detector_type       = "FailureAnomalies"
+  severity            = var.severity_threshold[0]
+  scope_resource_ids  = [azurerm_application_insights.ai[0].id]
+  detector_type       = "FailureAnomaliesDetector"
   frequency           = "PT1H"
   enabled             = true
 
