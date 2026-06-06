@@ -20,7 +20,7 @@ fi
 read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
 
 AGENT_ID="$(read_tf agent_id)"
-AGENT_ENDPOINT="$(read_tf agent_data_plane_url)"   # <-- FIXED
+AGENT_ENDPOINT="https://sre-agent--7f626cf0.6e03add5.uksouth.azuresre.ai"   # <-- FIXED
 ACR_NAME="$(read_tf acr_name)"
 ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
 ORDERS_API_NAME="$(read_tf orders_api_name)"
