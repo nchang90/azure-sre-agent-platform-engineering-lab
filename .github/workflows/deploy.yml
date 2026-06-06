@@ -81,7 +81,7 @@ jobs:
           az containerapp update --name "$CHANGE_LOOKUP_NAME" --resource-group "$RG" --image "$ACR_LOGIN_SERVER/change-lookup:latest" --output none
 
       - name: Run full post-provision setup
-        if: ${{ inputs.apply && inputs.run_data_plane }}
+        if: ${{ inputs.run_data_plane }}
         shell: bash
         run: |
           bash scripts/post-provision.sh
