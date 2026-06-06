@@ -24,7 +24,7 @@ resource "azapi_resource" "orders_api_5xx" {
       displayName         = "Orders API 5xx"
       severity            = 2
       enabled             = true
-      evaluationFrequency = "PT15M"
+      evaluationFrequency = "PT5M"
       windowSize          = "PT5M"
       autoMitigate        = true
       skipQueryValidation = true
@@ -97,7 +97,7 @@ resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
   scope_resource_ids  = [azurerm_application_insights.ai[0].id]
 
   detector_type       = "FailureAnomaliesDetector"
-  frequency           = "PT30M"
+  frequency           = "PT1M"
   enabled             = true
 
   action_group {
