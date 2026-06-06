@@ -145,7 +145,7 @@ else
   for f in "$ROOT/knowledge-base/"*.md; do
     name="$(basename "$f")"
     info "Uploading $name …"
-    curl -sf -X POST "${AGENT_ENDPOINT}/api/v1/AgentMemory/upload" \
+    curl -sfS --retry 6 --retry-delay 3 --retry-all-errors -X POST "${AGENT_ENDPOINT}/api/v1/AgentMemory/upload" \
       -H "Authorization: Bearer $TOKEN" \
       -F "triggerIndexing=true" \
       -F "files=@${f};type=text/plain" \
