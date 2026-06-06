@@ -36,6 +36,7 @@ else
 fi
 
 strict_fail="${POST_PROVISION_STRICT:-false}"
+apps_only="${POST_PROVISION_APPS_ONLY:-false}"
 
 if [[ -z "$TF_OUT" ]] || ! echo "$TF_OUT" | jq -e . >/dev/null 2>&1; then
   warn "Terraform outputs are not available yet."
@@ -124,6 +125,13 @@ else
 
     ok "Container Apps updated"
   fi
+fi
+
+if [[ "$apps_only" == "true" ]]; then
+  warn "POST_PROVISION_APPS_ONLY=true — skipping Steps 4-7 (SRE data-plane setup)"
+  echo
+  echo "✅ Provisioning complete (Steps 1-3)."
+  exit 0
 fi
 
 
@@ -221,7 +229,7 @@ for attempt in 1 2 3 4 5; do
     break
   fi
 
-  if [[ $attempt -lt 5; then
+  if [[ $attempt -lt 5 ]]; then
     info "Attempt $attempt failed — retrying in 15s …"
     sleep 15
     TOKEN="$(get_token)"

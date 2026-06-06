@@ -2,6 +2,12 @@ name: Deploy SRE Agent Lab
 
 on:
   workflow_dispatch:
+    inputs:
+      run_data_plane:
+        description: "Run SRE data-plane setup (knowledge, subagents, response plan)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -49,7 +55,13 @@ jobs:
             --scope $PROJECT_ID || true
 
       - name: Run post-provision setup
-        run: bash scripts/post-provision.sh
+        shell: bash
+        run: |
+          if [[ "${{ inputs.run_data_plane }}" == "true" ]]; then
+            bash scripts/post-provision.sh
+          else
+            POST_PROVISION_APPS_ONLY=true bash scripts/post-provision.sh
+          fi
 
       - name: Dump Azure CLI logs on failure
         if: failure()
