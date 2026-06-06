@@ -9,8 +9,7 @@ output "agent_portal_url" {
 }
 
 output "agent_data_plane_url" {
-  description = "Actual SRE Agent data-plane endpoint."
-  value       = azapi_resource.sre_agent.output.properties.dataPlaneUrl
+  value = azapi_resource.sre_agent.output.properties.dataPlaneUrl
 }
 
 
