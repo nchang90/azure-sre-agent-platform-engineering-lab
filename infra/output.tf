@@ -9,9 +9,9 @@ output "agent_portal_url" {
 }
 
 output "agent_data_plane_url" {
-  value = azapi_resource.sre_agent.output.properties.dataPlaneUrl
+  description = "Agent data plane endpoint."
+  value       = "https://${var.agent_name}.${var.location}.azuresre.ai"
 }
-
 
 output "managed_identity_id" {
   description = "Resource ID of the User-Assigned Managed Identity used by the agent."
