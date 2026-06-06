@@ -25,14 +25,23 @@ jobs:
     environment: production
 
     steps:
+      # -----------------------------
+      # 1. Checkout
+      # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # 2. Azure login (includes CLI)
+      # -----------------------------
       - name: Azure CLI login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # -----------------------------
+      # 3. Terraform setup
+      # -----------------------------
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -55,17 +64,23 @@ jobs:
         if: ${{ inputs.apply }}
         run: terraform -chdir=infra apply -auto-approve tfplan
 
+      # -----------------------------
+      # 4. Build + update Container Apps
+      # -----------------------------
       - name: Build and update Container Apps
         if: ${{ inputs.apply }}
         shell: bash
         run: |
           set -euo pipefail
 
-          ACR_NAME="$(terraform -chdir=infra output -raw acr_name)"
-          ACR_LOGIN_SERVER="$(terraform -chdir=infra output -raw acr_login_server)"
-          ORDERS_API_NAME="$(terraform -chdir=infra output -raw orders_api_name)"
-          CHANGE_LOOKUP_NAME="$(terraform -chdir=infra output -raw change_lookup_name)"
-          AGENT_ID="$(terraform -chdir=infra output -raw agent_id)"
+          TF_OUT="$(terraform -chdir=infra output -json)"
+          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
+
+          ACR_NAME="$(read_tf acr_name)"
+          ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
+          ORDERS_API_NAME="$(read_tf orders_api_name)"
+          CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
+          AGENT_ID="$(read_tf agent_id)"
           RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 
           echo "Building images in ACR: $ACR_NAME"
@@ -87,11 +102,17 @@ jobs:
             --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
             --output none
 
+      # -----------------------------
+      # 6. Run post-provision data-plane setup
+      # -----------------------------
       - name: Run full post-provision setup
         if: ${{ inputs.run_data_plane }}
         shell: bash
         run: bash scripts/post-provision.sh
 
+      # -----------------------------
+      # 7. Dump Azure CLI logs on failure
+      # -----------------------------
       - name: Dump Azure CLI logs on failure
         if: failure()
         run: |
