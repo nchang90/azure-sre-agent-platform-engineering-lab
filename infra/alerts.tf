@@ -88,34 +88,29 @@ resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
   }
 }
 
-resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
-  name                = "Failure Anomalies - ai-51a0c59340d39"
+resource "azurerm_monitor_smart_detector_alert_rule" "sev2_failure_anomalies" {
+  name                = "failure-anomalies-ai-51a0c59340d39-sev2"
   resource_group_name = azurerm_resource_group.agent.name
-  severity            = "Sev2"
-  scope_resource_ids  = []
+  severity            = var.severity_threshold
+  scope_resource_ids  = [azurerm_application_insights.app.id]
   detector_type       = "FailureAnomalies"
   frequency           = "PT1H"
   enabled             = true
+
   action_group {
-    ids = []
+    ids = [azurerm_monitor_action_group.ai_smart_detection.id]
   }
 }
 
-resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
-  name                = "Failure Anomalies - ai-51a0c59340d39"
-  resource_group_name = azurerm_resource_group.agent.name
-  severity            = "Sev1"
-  scope_resource_ids  = []
-  detector_type       = "FailureAnomalies"
-  frequency           = "PT1H"
-  enabled             = true
-  action_group {
-    ids = []
-  }
-}
 
 resource "azurerm_monitor_action_group" "ai_smart_detection" {
-  name                = "Application Insights Smart Detection"
+  name                = "application-insights-smart-detection"
   resource_group_name = azurerm_resource_group.agent.name
   short_name          = "AISD"
+
+  email_receiver {
+    name          = "default"
+    email_address = var.email_receiver_address
+  }
 }
+

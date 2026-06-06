@@ -8,6 +8,16 @@ variable "agent_name" {
   }
 }
 
+variable "severity_threshold" {
+  description = "Minimum alert severity for the agent to investigate (1=High, 2=Medium, 3=Low)."
+  type        = list
+}
+
+variable "email_receiver_address" {
+  description = "Email address for action group notifications (used by smart detector alert rule)."
+  type        = string
+}
+
 variable "resource_group_name" {
   description = "Resource group that holds the agent, identity, LAW, and App Insights."
   type        = string
