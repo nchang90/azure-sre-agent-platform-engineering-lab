@@ -24,7 +24,7 @@ resource "azapi_resource" "orders_api_5xx" {
       windowSize         = "PT5M"
       autoMitigate       = true
       skipQueryValidation = true
-      scopes             = [azurerm_log_analytics_workspace.law.id]
+      scopes              = [azurerm_log_analytics_workspace.law[0].id]
       criteria = {
         allOf = [{
           query             = "ContainerAppConsoleLogs_CL\n| where ContainerAppName_s == \"orders-api\"\n| where Log_s contains \"500\" or Log_s contains \"error\" or Log_s contains \"failed\"\n| summarize ErrorCount = count()"
