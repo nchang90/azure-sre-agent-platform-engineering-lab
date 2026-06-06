@@ -3,6 +3,16 @@ name: Deploy SRE Agent Lab
 on:
   workflow_dispatch:
     inputs:
+      plan:
+        description: "Run Terraform plan"
+        required: false
+        type: boolean
+        default: true
+      apply:
+        description: "Run Terraform apply"
+        required: false
+        type: boolean
+        default: true
       run_data_plane:
         description: "Run SRE data-plane setup (knowledge, subagents, response plan)"
         required: false
@@ -39,29 +49,42 @@ jobs:
         run: terraform -chdir=infra validate
 
       - name: Terraform plan
+        if: ${{ inputs.plan || inputs.apply }}
         run: terraform -chdir=infra plan -out=tfplan -var-file=terraform.tfvars
 
       - name: Terraform apply
+        if: ${{ inputs.apply }}
         run: terraform -chdir=infra apply -auto-approve tfplan
 
-      - name: Ensure Azure AI Developer role
-        run: |
-          PROJECT_ID=$(az ai project show --name sre-agent --query id -o tsv)
-          SP_ID=$(az ad sp show --id ${{ secrets.AZURE_CLIENT_ID }} --query id -o tsv)
-
-          az role assignment create \
-            --assignee $SP_ID \
-            --role "Azure AI Developer" \
-            --scope $PROJECT_ID || true
-
-      - name: Run post-provision setup
+      - name: Build and update Container Apps
+        if: ${{ inputs.apply }}
         shell: bash
         run: |
-          if [[ "${{ inputs.run_data_plane }}" == "true" ]]; then
-            bash scripts/post-provision.sh
-          else
-            POST_PROVISION_APPS_ONLY=true bash scripts/post-provision.sh
+          set -euo pipefail
+
+          ACR_NAME="$(terraform -chdir=infra output -raw acr_name 2>/dev/null || true)"
+          ACR_LOGIN_SERVER="$(terraform -chdir=infra output -raw acr_login_server 2>/dev/null || true)"
+          ORDERS_API_NAME="$(terraform -chdir=infra output -raw orders_api_name 2>/dev/null || true)"
+          CHANGE_LOOKUP_NAME="$(terraform -chdir=infra output -raw change_lookup_name 2>/dev/null || true)"
+          AGENT_ID="$(terraform -chdir=infra output -raw agent_id 2>/dev/null || true)"
+          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
+
+          if [[ -z "$ACR_NAME" || -z "$ACR_LOGIN_SERVER" || -z "$ORDERS_API_NAME" || -z "$CHANGE_LOOKUP_NAME" || -z "$RG" ]]; then
+            echo "Required Terraform outputs are missing for app deployment"
+            exit 1
           fi
+
+          az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/ --no-logs
+          az acr build --registry "$ACR_NAME" --image change-lookup:latest change-lookup/ --no-logs
+
+          az containerapp update --name "$ORDERS_API_NAME" --resource-group "$RG" --image "$ACR_LOGIN_SERVER/orders-api:latest" --output none
+          az containerapp update --name "$CHANGE_LOOKUP_NAME" --resource-group "$RG" --image "$ACR_LOGIN_SERVER/change-lookup:latest" --output none
+
+      - name: Run full post-provision setup
+        if: ${{ inputs.apply && inputs.run_data_plane }}
+        shell: bash
+        run: |
+          bash scripts/post-provision.sh
 
       - name: Dump Azure CLI logs on failure
         if: failure()

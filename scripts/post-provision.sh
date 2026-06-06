@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# -----------------------------
-# Helpers
-# -----------------------------
 step() { echo; echo "▶ $1 — $2"; }
 info() { echo "  $*"; }
 ok()   { echo "  ✅ $*"; }
@@ -28,10 +25,7 @@ rest() {
   az rest --output none "$@"
 }
 
-# -----------------------------
-# Load Terraform outputs
-# -----------------------------
-step "1/7" "Load Terraform outputs"
+step "1/5" "Load Terraform outputs"
 
 TF_OUT="$(terraform -chdir=infra output -json 2>/dev/null || true)"
 if [[ -z "$TF_OUT" ]]; then
@@ -43,45 +37,13 @@ read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
 
 AGENT_ID="$(read_tf agent_id)"
 AGENT_ENDPOINT="$(read_tf agent_data_plane_url)"
-ACR_NAME="$(read_tf acr_name)"
-ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
-ORDERS_API_NAME="$(read_tf orders_api_name)"
-CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
-RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 
 ok "Agent endpoint: $AGENT_ENDPOINT"
-ok "Resource group: $RG"
-
-# -----------------------------
-# Build images
-# -----------------------------
-step "2/7" "Build container images"
-
-if [[ -n "$ACR_NAME" ]]; then
-  az acr build --registry "$ACR_NAME" --image orders-api:latest   src/orders-api/ --no-logs
-  az acr build --registry "$ACR_NAME" --image change-lookup:latest change-lookup/ --no-logs
-  ok "Images built"
-else
-  warn "ACR not provisioned — skipping"
-fi
-
-# -----------------------------
-# Update Container Apps
-# -----------------------------
-step "3/7" "Update Container Apps"
-
-if [[ -n "$ACR_NAME" ]]; then
-  az containerapp update --name "$ORDERS_API_NAME"    --resource-group "$RG" --image "$ACR_LOGIN_SERVER/orders-api:latest" --output none
-  az containerapp update --name "$CHANGE_LOOKUP_NAME" --resource-group "$RG" --image "$ACR_LOGIN_SERVER/change-lookup:latest" --output none
-  ok "Apps updated"
-else
-  warn "Skipping — no ACR"
-fi
 
 # -----------------------------
 # Upload knowledge base
 # -----------------------------
-step "4/7" "Upload knowledge base"
+step "2/5" "Upload knowledge base"
 
 TOKEN="$(token)"
 if [[ -z "$TOKEN" ]]; then
@@ -102,7 +64,7 @@ fi
 # -----------------------------
 # Create subagents
 # -----------------------------
-step "5/7" "Create subagents"
+step "3/5" "Create subagents"
 
 if [[ -n "$TOKEN" ]]; then
   for yaml in sre-config/agents/*.yaml; do
@@ -122,7 +84,7 @@ fi
 # -----------------------------
 # Enable Azure Monitor
 # -----------------------------
-step "6/7" "Enable Azure Monitor"
+step "4/5" "Enable Azure Monitor"
 
 rest --method PATCH \
   --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
@@ -146,7 +108,7 @@ sleep 30
 # -----------------------------
 # Create response plan
 # -----------------------------
-step "7/7" "Create response plan"
+step "5/5" "Create response plan"
 
 FILTER_ID="orders-api-http-errors"
 FILTER_BODY='{
@@ -158,6 +120,13 @@ FILTER_BODY='{
   "maxAttempts": 3
 }'
 
+if [[ -z "$TOKEN" ]]; then
+  warn "No token — skipping response plan creation"
+  echo
+  echo "✅ Data-plane provisioning complete (without response plan)."
+  exit 0
+fi
+
 retry 5 curl -sf -X PUT \
   "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/${FILTER_ID}" \
   -H "Authorization: Bearer $TOKEN" \
@@ -167,4 +136,4 @@ retry 5 curl -sf -X PUT \
 ok "Response plan created"
 
 echo
-echo "✅ Provisioning complete."
+echo "✅ Data-plane provisioning complete."
