@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "+IK5RARS1Cs=",
+  "dgSpecHash": "xF0MmQG0u9o=",
   "success": true,
-  "projectFilePath": "/tmp/workspace/NickAzureDevops/azure-sre-agent-platform-engineering-lab/src/orders-api/OrdersApi.csproj",
+  "projectFilePath": "/Users/nicholas/Desktop/sre-agent/src/orders-api/OrdersApi.csproj",
   "expectedPackageFiles": [
-    "/home/runner/.nuget/packages/microsoft.aspnetcore.openapi/9.0.8/microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
-    "/home/runner/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
+    "/Users/nicholas/.nuget/packages/microsoft.aspnetcore.openapi/9.0.8/microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
+    "/Users/nicholas/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
   ],
   "logs": []
 }
