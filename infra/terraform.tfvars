@@ -16,5 +16,3 @@ tags = {
 
 
 email_receiver_address = "nicholasc001@hotmail.com"
-
-smart_detector_alert_rule_name = "failure-anomalies-ai-sev2"

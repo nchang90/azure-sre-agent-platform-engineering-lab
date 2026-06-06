@@ -14,8 +14,9 @@ variable "severity_threshold" {
 }
 
 variable "smart_detector_alert_rule_name" {
-  description = "Name for the Smart Detector alert rule."
+  description = "Name for the Smart Detector alert rule. Leave empty to use Azure's default Failure Anomalies naming pattern for the Application Insights resource."
   type        = string
+  default     = ""
 }
 
 variable "email_receiver_address" {

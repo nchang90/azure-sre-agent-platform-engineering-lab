@@ -90,7 +90,7 @@ resource "azapi_resource" "orders_api_health" {
 
 
 resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
-  name                = var.smart_detector_alert_rule_name
+  name                = var.smart_detector_alert_rule_name != "" ? var.smart_detector_alert_rule_name : "failure anomalies - ${azurerm_application_insights.ai[0].name}"
   resource_group_name = azurerm_resource_group.agent.name
   severity            = var.severity_threshold[0]
 
