@@ -20,7 +20,7 @@ fi
 read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
 
 AGENT_ID="$(read_tf agent_id)"
-AGENT_ENDPOINT="$(read_tf agent_endpoint)"
+AGENT_ENDPOINT="$(read_tf agent_data_plane_url)"   # <-- FIXED
 ACR_NAME="$(read_tf acr_name)"
 ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
 ORDERS_API_NAME="$(read_tf orders_api_name)"
@@ -32,7 +32,7 @@ ok "Resource group: $RG"
 ok "Agent endpoint: $AGENT_ENDPOINT"
 
 if [[ -z "$AGENT_ENDPOINT" ]]; then
-  err "agent_endpoint output missing — cannot continue"
+  err "agent_data_plane_url output missing — cannot continue"
   exit 1
 fi
 
@@ -82,21 +82,27 @@ fi
 # 4/7 — Load knowledge base
 # ---------------------------------------------------------
 log "Loading knowledge base..."
-curl -s -X POST "$AGENT_ENDPOINT/knowledge/load" -H "Content-Type: application/json" -d @knowledge.json
+curl -s -X POST "$AGENT_ENDPOINT/knowledge/load" \
+  -H "Content-Type: application/json" \
+  -d @knowledge.json
 ok "Knowledge loaded"
 
 # ---------------------------------------------------------
 # 5/7 — Register subagents
 # ---------------------------------------------------------
 log "Registering subagents..."
-curl -s -X POST "$AGENT_ENDPOINT/subagents/register" -H "Content-Type: application/json" -d @subagents.json
+curl -s -X POST "$AGENT_ENDPOINT/subagents/register" \
+  -H "Content-Type: application/json" \
+  -d @subagents.json
 ok "Subagents registered"
 
 # ---------------------------------------------------------
 # 6/7 — Upload response plan
 # ---------------------------------------------------------
 log "Uploading response plan..."
-curl -s -X POST "$AGENT_ENDPOINT/response-plan" -H "Content-Type: application/json" -d @response-plan.json
+curl -s -X POST "$AGENT_ENDPOINT/response-plan" \
+  -H "Content-Type: application/json" \
+  -d @response-plan.json
 ok "Response plan uploaded"
 
 # ---------------------------------------------------------
