@@ -13,6 +13,10 @@ variable "severity_threshold" {
   default = ["Sev1", "Sev2"]
 }
 
+variable "smart_detector_alert_rule_name" {
+  description = "Name for the Smart Detector alert rule."
+  type        = string
+}
 
 variable "email_receiver_address" {
   description = "Email address for action group notifications (used by smart detector alert rule)."
