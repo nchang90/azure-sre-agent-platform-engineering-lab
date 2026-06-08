@@ -4,6 +4,12 @@ resource "azurerm_monitor_action_group" "sre_lab" {
   resource_group_name = azurerm_resource_group.agent.name
   short_name          = "sreLab"
   tags                = var.tags
+
+  webhook_receiver {
+    name                    = "sre-agent-trigger"
+    service_uri             = "https://${var.agent_name}.${var.location}.azuresre.ai/incidents/ingest"
+    use_common_alert_schema = true
+  }
 }
 
 resource "azapi_resource" "orders_api_5xx" {
@@ -101,5 +107,49 @@ resource "azurerm_monitor_action_group" "ai_smart_detection" {
   email_receiver {
     name          = "default"
     email_address = var.email_receiver_address
+  }
+}
+
+resource "azapi_resource" "incident_response_plan" {
+  count                     = local.apps_enabled ? 1 : 0
+  schema_validation_enabled = false
+  type                      = "Microsoft.App/agents/incidentResponsePlans@2026-01-01"
+  name                      = "orders-api-5xx-response"
+  parent_id                 = azapi_resource.sre_agent.id
+
+  body = {
+    properties = {
+      displayName = "Orders API 5xx Response"
+      trigger = {
+        type        = "AzureMonitorAlert"
+        alertRuleId = azapi_resource.orders_api_5xx[0].id
+      }
+      routeTo = {
+        agentName = "orchestrator-agent"
+      }
+      actionMode = var.action_mode
+    }
+  }
+}
+
+resource "azapi_resource" "incident_response_plan_health" {
+  count                     = local.apps_enabled ? 1 : 0
+  schema_validation_enabled = false
+  type                      = "Microsoft.App/agents/incidentResponsePlans@2026-01-01"
+  name                      = "orders-api-health-response"
+  parent_id                 = azapi_resource.sre_agent.id
+
+  body = {
+    properties = {
+      displayName = "Orders API Health Check Response"
+      trigger = {
+        type        = "AzureMonitorAlert"
+        alertRuleId = azapi_resource.orders_api_health[0].id
+      }
+      routeTo = {
+        agentName = "orchestrator-agent"
+      }
+      actionMode = var.action_mode
+    }
   }
 }

@@ -20,6 +20,7 @@ if (app.Environment.IsDevelopment())
 
 var orders = new ConcurrentDictionary<string, OrderResult>();
 var runtimeFailureRatePercent = 0;
+var healthUnhealthy = false;
 
 // Active ServiceNow Change Request the orders-api thinks it is currently running under.
 // In a real system this is set by the deploy pipeline; here it's runtime-settable for demos.
@@ -33,12 +34,9 @@ app.MapGet("/", () => Results.Ok(new
     message = "Orders API is running"
 }));
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "healthy",
-    service = "orders-api",
-    activeChangeRequest
-}));
+app.MapGet("/health", () => healthUnhealthy
+    ? Results.Problem(title: "unhealthy", statusCode: 503)
+    : Results.Ok(new { status = "healthy", service = "orders-api", activeChangeRequest }));
 
 app.MapPost("/api/orders", (OrderRequest request, IConfiguration config) =>
 {
@@ -117,6 +115,14 @@ app.MapPost("/api/simulate/clear-cr", () =>
 {
     activeChangeRequest = "";
     return Results.Ok(new { activeChangeRequest });
+});
+
+app.MapPost("/api/simulate/health/{mode}", (string mode) =>
+{
+    if (mode != "healthy" && mode != "unhealthy")
+        return Results.BadRequest(new { error = "mode must be healthy or unhealthy" });
+    healthUnhealthy = mode == "unhealthy";
+    return Results.Ok(new { healthUnhealthy });
 });
 
 app.MapGet("/api/orders/{id}", (string id) =>
