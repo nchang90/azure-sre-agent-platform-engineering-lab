@@ -7,39 +7,39 @@ resource "azurerm_monitor_action_group" "sre_lab" {
 }
 
 # Availability alert: orders-api health endpoint failing.
-resource "azapi_resource" "orders_api_health" {
-  count      = local.apps_enabled ? 1 : 0
-  type       = "Microsoft.Insights/scheduledQueryRules@2022-06-15"
-  name       = "alert-orders-api-health"
-  location   = var.location
-  parent_id  = azurerm_resource_group.agent.id
-  tags       = var.tags
-  depends_on = [azurerm_log_analytics_workspace.law]
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
+  count               = local.apps_enabled ? 1 : 0
+  name                = "alert-orders-api-health"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on          = [azurerm_log_analytics_workspace.law]
 
-  body = {
-    properties = {
-      description         = "Orders API: /health endpoint unhealthy or missing in the last 5 minutes."
-      displayName         = "Orders API health check failing"
-      severity            = 1
-      enabled             = true
-      evaluationFrequency = "PT5M"
-      windowSize          = "PT5M"
-      autoMitigate        = true
-      skipQueryValidation = true
-      scopes              = [azurerm_log_analytics_workspace.law.id]
+  description             = "Orders API: /health endpoint unhealthy or missing in the last 5 minutes."
+  display_name            = "Orders API health check failing"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
 
-      criteria = {
-        allOf = [{
-          query           = "ContainerAppSystemLogs_CL\n| where ContainerAppName_s == \"orders-api\"\n| where Log_s has_any (\"ProbeFailure\", \"Liveness probe failed\", \"Readiness probe failed\", \"container restarted\")\n| summarize ProbeFailures = count()"
-          operator        = "GreaterThan"
-          threshold       = 0
-          timeAggregation = "Count"
-        }]
-      }
-      actions = {
-        actionGroups = [azurerm_monitor_action_group.sre_lab[0].id]
-      }
-    }
+  criteria {
+    query = <<-KQL
+      ContainerAppSystemLogs_CL
+      | where ContainerAppName_s == "orders-api"
+      | where Log_s has_any ("ProbeFailure", "Liveness probe failed", "Readiness probe failed", "container restarted")
+      | summarize ProbeFailures = count()
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Count"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.sre_lab[0].id]
   }
 }
 
@@ -82,7 +82,7 @@ resource "azapi_resource" "incident_response_plan_health" {
       displayName = "Orders API Health Check Response"
       trigger = {
         type        = "AzureMonitorAlert"
-        alertRuleId = azapi_resource.orders_api_health[0].id
+        alertRuleId = azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_health[0].id
       }
       routeTo = {
         agentName = "orchestrator-agent"
