@@ -43,19 +43,6 @@ jobs:
       - name: Terraform validate
         run: terraform -chdir=infra validate
 
-      - name: Wait for sre_agent to finish any in-progress operation
-        run: |
-          RESOURCE_URL="https://management.azure.com/subscriptions/64681aa1-73cc-4155-aa97-caa0e4837412/resourceGroups/rg-sre-lab/providers/Microsoft.App/agents/sre-agent?api-version=2026-01-01"
-          for i in $(seq 1 20); do
-            STATE=$(az rest --method GET --url "$RESOURCE_URL" --query "properties.provisioningState" -o tsv 2>/dev/null || echo "NotFound")
-            echo "provisioningState: $STATE"
-            if [ "$STATE" = "Succeeded" ] || [ "$STATE" = "Failed" ] || [ "$STATE" = "NotFound" ]; then
-              break
-            fi
-            echo "Still $STATE — waiting 30s…"
-            sleep 30
-          done
-
       - name: Terraform plan
         if: ${{ inputs.plan || inputs.apply }}
         run: terraform -chdir=infra plan -out=tfplan -var-file=terraform.tfvars
