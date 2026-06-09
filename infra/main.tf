@@ -174,6 +174,15 @@ resource "azurerm_role_assignment" "uami_admin" {
   principal_type     = "ServicePrincipal"
 }
 
+# ── SRE Agent Administrator — additional admin principals ──
+
+resource "azurerm_role_assignment" "admin_principals" {
+  for_each           = toset(var.admin_principal_ids)
+  scope              = azapi_resource.sre_agent.id
+  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.sre_agent_admin_role_id}"
+  principal_id       = each.value
+}
+
 resource "azurerm_role_assignment" "target_reader" {
   for_each             = toset(var.target_resource_groups)
   scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${each.value}"

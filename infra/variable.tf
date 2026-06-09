@@ -9,8 +9,9 @@ variable "agent_name" {
 }
 
 variable "severity_threshold" {
-  type    = list(string)
-  default = ["Sev1", "Sev2"]
+  description = "Severity level for the failure anomalies smart detector alert."
+  type        = string
+  default     = "Sev1"
 }
 
 
