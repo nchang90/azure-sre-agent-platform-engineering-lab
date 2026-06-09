@@ -31,12 +31,7 @@ resource "azapi_resource" "sre_agent" {
       }
     }
   }
-
-  timeouts {
-    create = "30m"
-    update = "30m"
-  }
-
+  
   depends_on = [
     azurerm_role_assignment.target_reader,
     azurerm_role_assignment.target_log_reader,
