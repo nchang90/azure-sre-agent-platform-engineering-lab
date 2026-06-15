@@ -1,4 +1,5 @@
+subscription_id      = "64681aa1-73cc-4155-aa97-caa0e4837412"
 resource_group_name  = "terraform-tfstate-rg"
 storage_account_name = "terraformstatesbox"
 container_name       = "tfstate"
-key                  = "sbox/azuresre.tfstate"
+key                  = "sbox_azuresre.tfstate"
