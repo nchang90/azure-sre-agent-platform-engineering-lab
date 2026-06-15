@@ -1,0 +1,7 @@
+api_version: azuresre.ai/v1
+kind: IncidentPlatform
+spec:
+  name: azure-monitor
+  platform_type: AzMonitor
+  display_name: "Azure Monitor Alerts"
+  description: "Receives Azure Monitor fired alerts as incidents"

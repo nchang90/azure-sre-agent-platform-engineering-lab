@@ -1,0 +1,60 @@
+name: Destroy SRE Agent Lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        options:
+          - demo
+          - sbox
+        default: demo
+      destroy:
+        description: "tf_destroy"
+        required: true
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 00 * * *"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: sre-agent-destroy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Validate confirmation input
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.destroy }}" != "true" ]; then
+            echo "Destroy not confirmed. Exiting."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        run: terraform -chdir=infra init -backend-config=backend/${{ inputs.environment }}.backend.tfvars
+
+      - name: Terraform destroy
+        run: terraform -chdir=infra destroy -auto-approve -var-file=environment/${{ inputs.environment }}.tfvars
