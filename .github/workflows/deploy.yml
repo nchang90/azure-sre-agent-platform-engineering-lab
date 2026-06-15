@@ -9,7 +9,7 @@ on:
         options:
           - demo
           - sbox
-        default: demo
+        default: sbox
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -29,7 +29,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ inputs.environment }}
+      ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
 
     steps:
       - name: Checkout repository
@@ -49,7 +49,7 @@ jobs:
         run: pip install pyyaml
 
       - name: Terraform init
-        run: terraform -chdir=infra init
+        run: terraform -chdir=infra init -backend-config=backend/${{ env.ENVIRONMENT }}.backend.tfvars
 
       - name: Terraform validate
         run: terraform -chdir=infra validate
