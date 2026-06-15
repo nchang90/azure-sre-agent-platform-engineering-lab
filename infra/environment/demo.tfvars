@@ -1,5 +1,5 @@
 agent_name               = "sre-agent-platform"
-resource_group_name      = "rg-sre-lab"
+resource_group_name      = "rg-sre-lab-demo"
 location                 = "uksouth"
 target_resource_groups   = []
 access_level             = "Low"
