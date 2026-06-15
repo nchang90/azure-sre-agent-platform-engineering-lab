@@ -94,7 +94,7 @@ jobs:
             --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
             --output none
 
-      - name: Run full post-provision setup
+      - name: Run post-provision setup
         shell: bash
         run: bash scripts/post-provision.sh
         continue-on-error: true
