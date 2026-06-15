@@ -1,4 +1,4 @@
-agent_name               = "detect-triage"
+agent_name               = "sre-agent-ops"
 resource_group_name      = "rg-sre-lab"
 location                 = "uksouth"
 target_resource_groups   = []
