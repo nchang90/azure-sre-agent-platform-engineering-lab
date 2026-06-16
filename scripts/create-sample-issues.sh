@@ -10,9 +10,18 @@ if ! command -v gh >/dev/null 2>&1; then
   echo "❌ gh CLI not found. Install: brew install gh  |  winget install GitHub.cli" >&2; exit 1
 fi
 
+if ! gh auth status >/dev/null 2>&1; then
+  echo "❌ gh CLI not authenticated. Run: gh auth login" >&2; exit 1
+fi
+
 echo "Filing sample issues in $REPO …"
 
+# Ensure the label exists so --label below doesn't fail (idempotent).
+gh label create "customer-issue" --repo "$REPO" \
+  --color "d73a4a" --description "Simulated customer-reported issue for triage" >/dev/null 2>&1 || true
+
 gh issue create --repo "$REPO" \
+  --label "customer-issue" \
   --title "[Customer Issue] orders-api 500s spiked after CHG0030001 last night" \
   --body "$(cat <<'EOF'
 ## Customer Report
@@ -30,6 +39,7 @@ EOF
 )"
 
 gh issue create --repo "$REPO" \
+  --label "customer-issue" \
   --title "[Customer Issue] Checkout intermittently failing — possibly related to CHG0030002" \
   --body "$(cat <<'EOF'
 ## Customer Report
@@ -45,6 +55,7 @@ EOF
 )"
 
 gh issue create --repo "$REPO" \
+  --label "customer-issue" \
   --title "[Customer Issue] Deploy without a linked CR got through — paved road issue" \
   --body "$(cat <<'EOF'
 ## Customer Report
@@ -60,6 +71,7 @@ EOF
 )"
 
 gh issue create --repo "$REPO" \
+  --label "customer-issue" \
   --title "[Customer Issue] Who owns change-management-runbook.md?" \
   --body "$(cat <<'EOF'
 ## Customer Report
