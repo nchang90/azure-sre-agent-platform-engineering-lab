@@ -54,7 +54,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra init -backend-config=backend/${{ inputs.environment }}.backend.tfvars
+        run: terraform -chdir=infra init -backend-config=backend/${{ inputs.environment || 'sbox' }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra destroy -auto-approve -var-file=environment/${{ inputs.environment }}.tfvars
+        run: terraform -chdir=infra destroy -auto-approve -var-file=environment/${{ inputs.environment || 'sbox' }}.tfvars
