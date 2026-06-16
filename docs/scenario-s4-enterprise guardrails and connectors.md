@@ -4,7 +4,9 @@ Persona: Platform Engineering / ITSM Owners
 
 ## Story
 
-After the initial orders-api incident has been triaged (S1) and optionally remediated (S2), the platform team needs confidence that agent operations are enterprise-safe. In this scenario, the team validates governance controls end to end: managed connectors for ServiceNow, GitHub Enterprise, and observability; granular tool permissions (allow/ask/deny); and governed identity for creating work items. The result is a repeatable pattern for secure production adoption, not just technical incident handling.
+After S1 (and optionally S2), the platform team needs proof that agent operations are enterprise-safe. This scenario validates end-to-end governance: managed connectors for ServiceNow, GitHub Enterprise, and observability, tool permissions (allow/ask/deny), and governed identity for work-item creation. The outcome is a repeatable pattern for secure production adoption, not just incident handling.
+
+<img src="../images/story4.png" alt="enterprise guardrails" width="600" />
 
 ## Azure SRE Agent Concepts
 
