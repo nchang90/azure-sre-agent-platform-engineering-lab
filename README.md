@@ -6,8 +6,8 @@ Hands-on Azure SRE Agent lab with five progressive scenarios: detection and tria
 
 | Tool | Install |
 |---|---|
-| Azure CLI | `brew install azure-cli` or [guide](https://learn.microsoft.com/cli/azure/install-azure-cli) |
-| Terraform 1.5+ | `brew install terraform` or [guide](https://developer.hashicorp.com/terraform/install) |
+| Azure CLI | `brew install azure-cli` or [Install Azure SRE](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+| Terraform 1.5+ | `brew install terraform` or [Install Terraform](https://developer.hashicorp.com/terraform/install) |
 
 ## Quick Start
 
