@@ -165,6 +165,21 @@ variable "azure_monitor_lookback_days" {
   default     = 7
 }
 
+# ── Recipe automations (azmon-lawappinsights) ──
+# Opt-in per environment. Applied at the data plane by scripts/post-provision.sh.
+
+variable "enable_sev01_incident_filter" {
+  description = "Create the azmon-sev01 response plan (Sev0/Sev1 Azure Monitor alerts → alert-investigator, autonomous)."
+  type        = bool
+  default     = false
+}
+
+variable "enable_daily_health_check" {
+  description = "Create the daily-health-check scheduled task (daily 08:00 resource-health summary → alert-investigator)."
+  type        = bool
+  default     = false
+}
+
 # ── Extension arrays (advanced) ──
 
 variable "skills" {
