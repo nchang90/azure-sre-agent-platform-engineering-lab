@@ -122,9 +122,11 @@ echo
 
 # ── Step 3: subagents (specialists registered before orchestrator so handoffs resolve) ──
 log "Step 3/5: Registering subagents..."
-register_subagent sre-config/agents/triage-agent.yaml       triage-agent
-register_subagent sre-config/agents/issue-triager.yaml      issue-triager
-register_subagent sre-config/agents/orchestrator-agent.yaml incident-orchestrator
+register_subagent sre-config/agents/triage-agent.yaml         triage-agent
+register_subagent sre-config/agents/issue-triager.yaml        issue-triager
+register_subagent sre-config/agents/remediation-advisor.yaml  remediation-advisor
+register_subagent sre-config/agents/alert-investigator.yaml   alert-investigator
+register_subagent sre-config/agents/orchestrator-agent.yaml   incident-orchestrator
 echo
 
 # ── Step 4: response plan ──
@@ -187,8 +189,8 @@ echo "  Agent Portal: https://sre.azure.com"
 echo "  Agent API:    $AGENT_ENDPOINT"
 echo
 echo "  Verify in the portal:"
-echo "    Builder → Subagents     (expect 3)"
-echo "    Builder → Skills        (expect 4)"
+echo "    Builder → Subagents     (expect 5)"
+echo "    Builder → Skills        (expect 6)"
 echo "    Incident Response Plans (expect 1)"
 echo "    Settings → Incident Platform (Azure Monitor)"
 echo "    Code → Repositories     ($GITHUB_REPO)"
