@@ -75,6 +75,18 @@ output "action_mode" {
   value       = var.action_mode
 }
 
+# ── Recipe automation toggles (read by scripts/post-provision.sh) ──
+
+output "enable_sev01_incident_filter" {
+  description = "Whether post-provision should create the azmon-sev01 response plan."
+  value       = var.enable_sev01_incident_filter
+}
+
+output "enable_daily_health_check" {
+  description = "Whether post-provision should create the daily-health-check scheduled task."
+  value       = var.enable_daily_health_check
+}
+
 output "vnet_id" {
   description = "Resource ID of the VNet created for VNet integration (empty if disabled or BYO subnet)."
   value       = local.create_vnet ? azurerm_virtual_network.agent[0].id : ""
