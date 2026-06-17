@@ -16,7 +16,8 @@ This repository contains the Grubify sample app, Azure infrastructure, runbooks,
 - `skills/` — agent skills used by the SRE agent runtime.
 - `.github/skills/` — Copilot-discoverable skills for this repository.
 - `knowledge-base/` — runbooks, architecture notes, and issue templates.
-- `sre-config/agents/` — agent configuration and handoff definitions.
+- `recipes/azmon-lawappinsights/agents/` — agent configuration and handoff definitions.
+- `recipes/azmon-lawappinsights/incident-platforms/` — incident filters and scheduled tasks.
 
 ## When working on incidents
 

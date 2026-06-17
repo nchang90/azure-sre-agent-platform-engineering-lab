@@ -122,11 +122,11 @@ echo
 
 # ── Step 3: subagents (specialists registered before orchestrator so handoffs resolve) ──
 log "Step 3/5: Registering subagents..."
-register_subagent sre-config/agents/triage-agent.yaml         triage-agent
-register_subagent sre-config/agents/issue-triager.yaml        issue-triager
-register_subagent sre-config/agents/remediation-advisor.yaml  remediation-advisor
-register_subagent sre-config/agents/alert-investigator.yaml   alert-investigator
-register_subagent sre-config/agents/orchestrator-agent.yaml   incident-orchestrator
+register_subagent recipes/azmon-lawappinsights/agents/triage-agent.yaml         triage-agent
+register_subagent recipes/azmon-lawappinsights/agents/issue-triager.yaml        issue-triager
+register_subagent recipes/azmon-lawappinsights/agents/remediation-advisor.yaml  remediation-advisor
+register_subagent recipes/azmon-lawappinsights/agents/alert-investigator.yaml   alert-investigator
+register_subagent recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml   incident-orchestrator
 echo
 
 # ── Step 4: response plan ──
@@ -147,7 +147,7 @@ code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-errors \
 is_ok_status "$code" 409 && ok "  Response plan → incident-orchestrator" || warn "  Response plan returned HTTP $code"
 
 # Recipe automations (azmon-lawappinsights) — opt-in via infra toggles.
-# Source of truth: recipes/azmon-lawappinsights/automations/.
+# Active repo config lives under recipes/azmon-lawappinsights/incident-platforms/azure-monitor/.
 if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
   code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \
     -H "Content-Type: application/json" \

@@ -13,7 +13,7 @@ Hands-on Azure SRE Agent lab with five progressive scenarios: detection and tria
 
 1. Sign in to Azure and select your subscription.
 2. Run `terraform -chdir=infra init`.
-3. Run `terraform -chdir=infra apply -auto-approve -var-file=terraform.tfvars`.
+3. Run `terraform -chdir=infra apply -auto-approve -var-file=environment/demo.tfvars`.
 4. Run `bash scripts/post-provision.sh`.
 
 Cloud Shell note: if data-plane setup fails, run `az login --scope "https://azuresre.dev/.default"` and rerun `bash scripts/post-provision.sh --retry`.
@@ -63,11 +63,12 @@ terraform -chdir=infra apply -var-file=environment/demo.tfvars \
 The reusable logic from the upstream [Microsoft SRE Agent](https://github.com/microsoft/sre-agent/tree/main/sreagent-templates/recipes/azmon-lawappinsights) `azmon-lawappinsights` recipe is **already integrated** into the lab (translated from upstream's CLI schema into the lab's schema):
 
 - Skills `investigate-azure-alerts` and `triage-app-errors` → [.github/skills/](.github/skills/)
-- Subagents `alert-investigator` → `remediation-advisor` → [sre-config/agents/](sre-config/agents/)
+- Subagents `alert-investigator` → `remediation-advisor` → [recipes/azmon-lawappinsights/agents/](recipes/azmon-lawappinsights/agents/)
+- Automations `azmon-sev01` and `daily-health-check` → [recipes/azmon-lawappinsights/incident-platforms/azure-monitor/](recipes/azmon-lawappinsights/incident-platforms/azure-monitor/)
 
 These are registered with the agent by [scripts/post-provision.sh](scripts/post-provision.sh).
 
-[recipes/azmon-lawappinsights/](recipes/azmon-lawappinsights/) keeps only the recipe pieces **not yet wired** into the lab — as a backlog/reference in upstream's schema: `config/hooks/` (deny-prod-deletes, require-approval-for-restarts), `config/common-prompts/`, and `automations/` (Sev0/Sev1 routing, daily health check).
+[recipes/azmon-lawappinsights/](recipes/azmon-lawappinsights/) documents the upstream-to-lab mapping and keeps the remaining recipe backlog in one place. The pieces **not yet wired** into the lab are the upstream `config/hooks/` items (`deny-prod-deletes`, `require-approval-for-restarts`) and `config/common-prompts/` (`investigation-guidelines`, `safety-rules`).
 
 ## Deployed Components
 
@@ -75,4 +76,4 @@ These are registered with the agent by [scripts/post-provision.sh](scripts/post-
 - Log Analytics and Application Insights.
 - Container Apps environment, ACR, and two services: orders-api and change-lookup.
 - Alert rules and knowledge-base content.
-- Subagents from [sre-config/agents](sre-config/agents).
+- Subagents from [recipes/azmon-lawappinsights/agents](recipes/azmon-lawappinsights/agents).
