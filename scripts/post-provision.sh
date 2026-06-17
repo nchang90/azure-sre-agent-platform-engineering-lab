@@ -122,9 +122,11 @@ echo
 
 # ── Step 3: subagents (specialists registered before orchestrator so handoffs resolve) ──
 log "Step 3/5: Registering subagents..."
-register_subagent sre-config/agents/triage-agent.yaml       triage-agent
-register_subagent sre-config/agents/issue-triager.yaml      issue-triager
-register_subagent sre-config/agents/orchestrator-agent.yaml incident-orchestrator
+register_subagent recipes/azmon-lawappinsights/agents/triage-agent.yaml         triage-agent
+register_subagent recipes/azmon-lawappinsights/agents/issue-triager.yaml        issue-triager
+register_subagent recipes/azmon-lawappinsights/agents/remediation-advisor.yaml  remediation-advisor
+register_subagent recipes/azmon-lawappinsights/agents/alert-investigator.yaml   alert-investigator
+register_subagent recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml   incident-orchestrator
 echo
 
 # ── Step 4: response plan ──
@@ -143,6 +145,32 @@ code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-errors \
   -H "Content-Type: application/json" \
   --data-binary "$plan")"
 is_ok_status "$code" 409 && ok "  Response plan → incident-orchestrator" || warn "  Response plan returned HTTP $code"
+
+# Recipe automations (azmon-lawappinsights) — opt-in via infra toggles.
+# Active repo config lives under recipes/azmon-lawappinsights/incident-platforms/azure-monitor/.
+if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
+  code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \
+    -H "Content-Type: application/json" \
+    --data-binary '{"id":"azmon-sev01","name":"Azure Monitor Sev0/Sev1","priorities":["Sev0","Sev1"],"titleContains":"","handlingAgent":"alert-investigator","agentMode":"autonomous","maxAttempts":3}')"
+  is_ok_status "$code" 409 && ok "  Response plan → alert-investigator (Sev0/Sev1)" || warn "  azmon-sev01 returned HTTP $code"
+fi
+
+if [[ "$(read_tf enable_daily_health_check)" == "true" ]]; then
+  # POST is not idempotent — remove any prior task with the same name first.
+  api GET /api/v1/scheduledtasks >/dev/null 2>&1 || true
+  prior_id="$("$PYTHON" -c "import json,sys
+try:
+    for t in json.load(open('$RESP')):
+        if t.get('name')=='daily-health-check':
+            print(t.get('id','')); break
+except Exception:
+    pass" 2>/dev/null)"
+  [[ -n "$prior_id" ]] && api DELETE "/api/v1/scheduledtasks/$prior_id" >/dev/null 2>&1 || true
+  code="$(api POST /api/v1/scheduledtasks \
+    -H "Content-Type: application/json" \
+    --data-binary '{"name":"daily-health-check","description":"Daily 8am health summary across all monitored resources","cronExpression":"0 8 * * *","agentPrompt":"Summarize the last 24h of incidents, fired alerts, and resource health for all monitored resource groups. Flag anything that needs attention.","agent":"alert-investigator"}')"
+  is_ok_status "$code" && ok "  Scheduled task → alert-investigator (daily 08:00)" || warn "  daily-health-check returned HTTP $code"
+fi
 echo
 
 # ── Step 5: GitHub integration ──
@@ -187,9 +215,10 @@ echo "  Agent Portal: https://sre.azure.com"
 echo "  Agent API:    $AGENT_ENDPOINT"
 echo
 echo "  Verify in the portal:"
-echo "    Builder → Subagents     (expect 3)"
-echo "    Builder → Skills        (expect 4)"
-echo "    Incident Response Plans (expect 1)"
+echo "    Builder → Subagents     (expect 5)"
+echo "    Builder → Skills        (expect 6)"
+echo "    Incident Response Plans (expect 1, or 2 with azmon-sev01)"
+echo "    Scheduled Tasks         (daily-health-check, if enabled)"
 echo "    Settings → Incident Platform (Azure Monitor)"
 echo "    Code → Repositories     ($GITHUB_REPO)"
 echo

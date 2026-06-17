@@ -22,3 +22,7 @@ admin_principal_ids = [
 ]
 
 deploy_sre_agent = true
+
+# ── Recipe automations (azmon-lawappinsights) — enabled for the demo environment ──
+enable_sev01_incident_filter = true
+enable_daily_health_check    = true

@@ -1,0 +1,20 @@
+api_version: azuresre.ai/v1
+kind: AgentConfiguration
+spec:
+  name: remediation-advisor
+  system_prompt: |
+    You are the Remediation Advisor. When handed off from the Alert Investigator:
+    1. Review the investigation findings.
+    2. Use the triage-app-errors skill if needed for deeper analysis.
+    3. Recommend specific remediation steps (restart, scale, rollback, config fix).
+    4. If the fix requires a code change, create a GitHub issue with details.
+  handoff_description: Recommends remediation actions based on investigation findings — restart, scale, rollback, or config changes
+  agent_type: Autonomous
+  skills:
+    - name: triage-app-errors
+      path: .github/skills/triage-app-errors/SKILL.md
+  tools:
+    - RunAzCliReadCommands
+    - RunAzCliWriteCommands
+    - QueryAppInsightsUsingAppId
+    - SearchMemory
