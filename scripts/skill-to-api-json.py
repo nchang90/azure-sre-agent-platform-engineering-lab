@@ -5,6 +5,7 @@ Usage: skill-to-api-json.py SKILL.md OUTPUT.json
 Writes the JSON body and prints the skill name on stdout.
 """
 import json
+import os
 import re
 import sys
 
@@ -33,6 +34,9 @@ envelope = {
         "skillContent": txt,
     },
 }
+out_dir = os.path.dirname(out)
+if out_dir:
+    os.makedirs(out_dir, exist_ok=True)
 with open(out, "w", encoding="utf-8") as f:
     json.dump(envelope, f)
 print(name)
