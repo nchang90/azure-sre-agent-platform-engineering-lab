@@ -17,6 +17,10 @@ resource "azapi_resource" "sre_agent" {
   body = {
     properties = merge(
       {
+        knowledgeGraphConfiguration = {
+          identity         = local.effective_identity_id
+          managedResources = [for rg in var.target_resource_groups : "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${rg}"]
+        }
         actionConfiguration = {
           accessLevel = var.access_level
           identity    = local.effective_identity_id
@@ -42,12 +46,6 @@ resource "azapi_resource" "sre_agent" {
           EnablePythonTools    = true
         }
       },
-      length(var.target_resource_groups) > 0 ? {
-        knowledgeGraphConfiguration = {
-          identity         = local.effective_identity_id
-          managedResources = [for rg in var.target_resource_groups : "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${rg}"]
-        }
-      } : {},
       var.enable_azure_monitor_connector ? {
         incidentManagementConfiguration = {
           type           = "AzMonitor"
