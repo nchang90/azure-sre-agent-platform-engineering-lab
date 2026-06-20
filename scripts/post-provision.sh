@@ -6,6 +6,7 @@ log()  { echo "[INFO]  $*"; }
 ok()   { echo "[OK]    $*"; }
 warn() { echo "[WARN]  $*"; }
 err()  { echo "[ERROR] $*" >&2; }
+die()  { err "$*"; exit 1; }
 
 # ── paths & deps ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -175,7 +176,11 @@ echo
 
 # ── Step 5: GitHub integration ──
 log "Step 5/5: GitHub integration..."
-REPO_NAME="$(cut -d/ -f2 <<<"$GITHUB_REPO")"
+if [[ ! "$GITHUB_REPO" =~ ^[^/]+/[^/]+$ ]]; then
+  die "GITHUB_REPO must be in 'owner/repo' format (current: $GITHUB_REPO)"
+fi
+REPO_OWNER="${GITHUB_REPO%%/*}"
+REPO_NAME="${GITHUB_REPO##*/}"
 
 # Register the GitHub OAuth connector (data-plane).
 code="$(api PUT /api/v2/extendedAgent/connectors/github \
@@ -200,9 +205,17 @@ fi
 
 # Re-auth in case the OAuth flow took long enough for the token to expire.
 auth
+
+# Clean up stale/default repo entry that often appears disconnected in the portal.
+# Keep this best-effort so re-runs stay idempotent.
+api DELETE /api/v2/repos/github >/dev/null 2>&1 || true
+api DELETE /api/v1/repos/github >/dev/null 2>&1 || true
+api DELETE /api/v1/codeRepos/github >/dev/null 2>&1 || true
+api DELETE /api/v1/codeRepositories/github >/dev/null 2>&1 || true
+
 code="$(api PUT "/api/v2/repos/${REPO_NAME}" \
   -H "Content-Type: application/json" \
-  -d "{\"name\":\"${REPO_NAME}\",\"type\":\"CodeRepo\",\"properties\":{\"url\":\"https://github.com/${GITHUB_REPO}\",\"authConnectorName\":\"github\"}}")"
+  -d "{\"name\":\"${REPO_NAME}\",\"type\":\"CodeRepo\",\"properties\":{\"url\":\"https://github.com/${REPO_OWNER}/${REPO_NAME}\",\"authConnectorName\":\"github\"}}")"
 is_ok_status "$code" \
   && ok  "  Code repo: $GITHUB_REPO" \
   || warn "  Code repo returned HTTP $code (authorize GitHub first / check SRE Agent Administrator role)"

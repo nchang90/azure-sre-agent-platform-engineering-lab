@@ -4,39 +4,36 @@ set -euo pipefail
 D="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$D/.." && pwd)"
 
-echo "🚨 Breaking orders-api (Scenario 2 — unauthorized deploy)"
+BACKEND_ENV="${TF_BACKEND_ENV:-${AZD_ENV_NAME:-${ENVIRONMENT:-}}}"
 
-echo "  Initializing Terraform backend …"
-(cd "$ROOT/infra" && terraform init -reconfigure -input=false -no-color >/dev/null)
-
-TF_OUT="$(cd "$ROOT/infra" && terraform output -json 2>/dev/null)"
-read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
-
-ACR_NAME="$(read_tf acr_name)"
-ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
-ORDERS_API_NAME="$(read_tf orders_api_name)"
-ORDERS_API_URL="$(read_tf orders_api_url)"
-RG="$(echo "$(read_tf agent_id)" | cut -d/ -f5)"
-
-if [[ -z "$ACR_NAME" || -z "$ORDERS_API_NAME" ]]; then
-  echo "❌ Terraform outputs missing. Run 'azd up' first." >&2; exit 1
+if [[ -z "$BACKEND_ENV" && -f "$ROOT/infra/.terraform/terraform.tfstate" ]]; then
+  BACKEND_KEY="$(jq -r '.backend.config.key // empty' "$ROOT/infra/.terraform/terraform.tfstate" 2>/dev/null || true)"
+  BACKEND_ENV="${BACKEND_KEY%%_*}"
 fi
 
-ROGUE_TAG="rogue-$(date +%s)"
+if [[ -z "$BACKEND_ENV" ]]; then
+  if [[ -f "$ROOT/infra/backend/sbox.backend.tfvars" ]]; then
+    BACKEND_ENV="sbox"
+  elif [[ -f "$ROOT/infra/backend/demo.backend.tfvars" ]]; then
+    BACKEND_ENV="demo"
+  fi
+fi
 
-echo "  Building rogue image ($ROGUE_TAG) …"
-az acr build \
-  --registry "$ACR_NAME" \
-  --image    "orders-api:${ROGUE_TAG}" \
-  "$ROOT/src/orders-api/" \
-  --no-logs
+BACKEND_FILE="$ROOT/infra/backend/${BACKEND_ENV}.backend.tfvars"
 
-echo "  Deploying rogue image (no change request) …"
-az containerapp update \
-  --name           "$ORDERS_API_NAME" \
-  --resource-group "$RG" \
-  --image          "$ACR_LOGIN_SERVER/orders-api:${ROGUE_TAG}" \
-  --output none
+if [[ -f "$BACKEND_FILE" ]]; then
+  echo "  Initializing Terraform backend (${BACKEND_ENV}) …"
+  (cd "$ROOT/infra" && terraform init -reconfigure -backend-config="$BACKEND_FILE" -input=false -no-color >/dev/null)
+fi
+
+TF_OUT="$(cd "$ROOT/infra" && terraform output -json 2>/dev/null || true)"
+
+ORDERS_API_URL="$(printf '%s' "$TF_OUT" | jq -r '.orders_api_url.value // empty')"
+
+if [[ -z "$ORDERS_API_URL" ]]; then
+  echo "❌ Missing Terraform outputs. Run terraform apply for this environment first." >&2
+  exit 1
+fi
 
 echo "  Clearing active change request …"
 curl -sf -X POST "${ORDERS_API_URL}/api/simulate/clear-cr" -o /dev/null || true
@@ -49,10 +46,11 @@ curl -sf -X POST "${ORDERS_API_URL}/api/simulate/health/unhealthy" -o /dev/null
 
 echo "  Generating 5xx traffic (60 requests) …"
 for i in $(seq 1 60); do
-  curl -sf "${ORDERS_API_URL}/api/orders" -o /dev/null || true
+  # /api/orders/fail is an intentional always-500 endpoint for alert demos.
+  curl -s "${ORDERS_API_URL}/api/orders/fail" -o /dev/null || true
 done
 
 echo
 echo "✅ App broken. Azure Monitor alert should fire in ~2 minutes."
-echo "   Watch the agent triage at: $(read_tf agent_portal_url)"
+echo "   Watch the agent triage at: $(printf '%s' "$TF_OUT" | jq -r '.agent_portal_url.value // empty')"
 echo "   To restore:  bash scripts/reset-app.sh"

@@ -2,7 +2,7 @@ agent_name               = "sre-agent-ops"
 resource_group_name      = "rg-sre-lab-sbox"
 location                 = "uksouth"
 target_resource_groups   = []
-access_level             = "Low"
+access_level             = "High"
 action_mode              = "Review"
 upgrade_channel          = "Preview"
 monthly_agent_unit_limit = 10000
@@ -22,3 +22,10 @@ admin_principal_ids = [
 ]
 
 deploy_sre_agent = true
+
+# Enable azmon-lawappinsights connectors and automations in sbox.
+enable_app_insights_connector  = true
+enable_log_analytics_connector = true
+enable_azure_monitor_connector = true
+enable_sev01_incident_filter   = true
+enable_daily_health_check      = true
