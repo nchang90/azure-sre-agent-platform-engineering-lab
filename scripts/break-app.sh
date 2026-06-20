@@ -28,29 +28,37 @@ fi
 
 TF_OUT="$(cd "$ROOT/infra" && terraform output -json 2>/dev/null || true)"
 
-ORDERS_API_URL="$(printf '%s' "$TF_OUT" | jq -r '.orders_api_url.value // empty')"
+ACR_NAME="$(printf '%s' "$TF_OUT" | jq -r '.acr_name.value // empty')"
+ACR_LOGIN_SERVER="$(printf '%s' "$TF_OUT" | jq -r '.acr_login_server.value // empty')"
+ORDERS_API_NAME="$(printf '%s' "$TF_OUT" | jq -r '.orders_api_name.value // empty')"
+AGENT_ID="$(printf '%s' "$TF_OUT" | jq -r '.agent_id.value // empty')"
+RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
+SUB_ID="$(echo "$AGENT_ID" | cut -d/ -f3)"
 
-if [[ -z "$ORDERS_API_URL" ]]; then
+if [[ -z "$ACR_NAME" || -z "$ACR_LOGIN_SERVER" || -z "$ORDERS_API_NAME" || -z "$SUB_ID" ]]; then
   echo "❌ Missing Terraform outputs. Run terraform apply for this environment first." >&2
   exit 1
 fi
 
-echo "  Clearing active change request …"
-curl -sf -X POST "${ORDERS_API_URL}/api/simulate/clear-cr" -o /dev/null || true
+ROGUE_TAG="rogue-$(date +%s)"
 
-echo "  Setting failure rate to 100% …"
-curl -sf -X POST "${ORDERS_API_URL}/api/simulate/failure-rate/100" -o /dev/null
+echo "  Building rogue image ($ROGUE_TAG) …"
+az acr build \
+  --subscription "$SUB_ID" \
+  --registry "$ACR_NAME" \
+  --image "orders-api:${ROGUE_TAG}" \
+  "$ROOT/src/orders-api/" \
+  --no-logs
 
-echo "  Setting health to unhealthy …"
-curl -sf -X POST "${ORDERS_API_URL}/api/simulate/health/unhealthy" -o /dev/null
-
-echo "  Generating 5xx traffic (60 requests) …"
-for i in $(seq 1 60); do
-  # /api/orders/fail is an intentional always-500 endpoint for alert demos.
-  curl -s "${ORDERS_API_URL}/api/orders/fail" -o /dev/null || true
-done
+echo "  Updating Container App to rogue image …"
+az containerapp update \
+  --subscription "$SUB_ID" \
+  --name "$ORDERS_API_NAME" \
+  --resource-group "$RG" \
+  --image "$ACR_LOGIN_SERVER/orders-api:${ROGUE_TAG}" \
+  --output none
 
 echo
-echo "✅ App broken. Azure Monitor alert should fire in ~2 minutes."
+echo "✅ Container App updated to rogue revision."
 echo "   Watch the agent triage at: $(printf '%s' "$TF_OUT" | jq -r '.agent_portal_url.value // empty')"
 echo "   To restore:  bash scripts/reset-app.sh"

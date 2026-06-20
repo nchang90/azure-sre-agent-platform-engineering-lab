@@ -55,17 +55,22 @@ locals {
   ]
 
   all_connectors = concat(local.toggle_connectors, var.connectors)
+
+  # JSON-encode properties so the map values share one type (map(string)).
+  # The connectors are heterogeneous, so without this the collection is typed
+  # as a fixed object/tuple that cannot unify with the empty {} branch below.
+  connector_map = { for c in local.all_connectors : c.name => jsonencode(c.properties) }
 }
 
 resource "azapi_resource" "connector" {
-  for_each                  = var.deploy_sre_agent ? { for c in local.all_connectors : c.name => c } : {}
+  for_each                  = var.deploy_sre_agent ? local.connector_map : {}
   schema_validation_enabled = false
   type                      = "Microsoft.App/agents/connectors@2025-05-01-preview"
   name                      = each.key
   parent_id                 = azapi_resource.sre_agent[0].id
 
   body = {
-    properties = each.value.properties
+    properties = jsondecode(each.value)
   }
 
   timeouts {
