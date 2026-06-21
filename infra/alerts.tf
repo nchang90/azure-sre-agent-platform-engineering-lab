@@ -18,7 +18,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
   display_name            = "Orders API health check failing"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT5M"
+  evaluation_frequency    = "PT1M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
