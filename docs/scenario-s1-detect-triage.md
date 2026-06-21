@@ -77,23 +77,24 @@ az containerapp update -g <rg> -n orders-api --image <working-image>
 
 ## Step by Step
 
-1. `break-app.sh` first tries to announce an active change ID and force runtime `5xx` responses through the orders-api simulation endpoints.
-2. It sends a burst of failing order requests so the `Orders API 5xx` alert has real request failures to evaluate.
-3. If those runtime endpoints are unavailable, it falls back to updating the Container App to a placeholder image that fails the `/health` probe.
-4. The `Orders API 5xx` Azure Monitor alert evaluates on a 5 minute window and typically appears within a few minutes.
-5. The Incident Response Plan routes the alert to `orchestrator-agent`.
-6. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.
-7. `orchestrator-agent` delegates to `triage-agent` for technical investigation.
-8. `triage-agent` queries Log Analytics / Application Insights request data for the `5xx` spike and error patterns.
-9. `triage-agent` queries Azure Monitor metrics — CPU, memory, latency, and deployment history — and correlates timing with the rogue revision or simulated change window.
-10. If the app is reachable, `triage-agent` calls `GET /health` on orders-api and inspects `activeChangeRequest`.
-11. `triage-agent` queries `change-lookup /changes/active/now` and confirms whether there was an active CR.
-12. `triage-agent` searches the knowledge base and matches the Unauthorized Change runbook.
-13. `triage-agent` runs `az containerapp revision list` and identifies the rogue revision.
-14. `triage-agent` searches the source repository and identifies the root cause at `file:line` level.
-15. `orchestrator-agent` submits a fix PR with the proposed code change.
-16. `orchestrator-agent` resolves the Azure Monitor alert and posts a structured incident summary.
-17. Session insights are saved — the root cause, KQL queries, and fix pattern are stored for future incidents.
+1. `break-app.sh` now defaults to `BREAK_MODE=both`, which means it tries to break both the runtime `5xx` path and the health-probe path in one run.
+2. It announces an active change ID, enables runtime `5xx` responses through the orders-api simulation endpoints, and sends a burst of failing requests so the `Orders API 5xx` alert has real request failures to evaluate.
+3. It then flips the app into unhealthy probe mode through `/api/simulate/health/unhealthy`; if that runtime endpoint is unavailable, it falls back to updating the Container App to a placeholder image that fails the `/health` probe.
+4. If the current revision does not expose the runtime simulation endpoints, the script exits with a partial-break warning instead of claiming that both alert paths were exercised.
+5. The `Orders API 5xx` Azure Monitor alert evaluates on a 5 minute window and typically appears within a few minutes.
+6. The Incident Response Plan routes the alert to `orchestrator-agent`.
+7. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.
+8. `orchestrator-agent` delegates to `triage-agent` for technical investigation.
+9. `triage-agent` queries Log Analytics / Application Insights request data for the `5xx` spike and error patterns.
+10. `triage-agent` queries Azure Monitor metrics — CPU, memory, latency, and deployment history — and correlates timing with the rogue revision or simulated change window.
+11. If the app is reachable, `triage-agent` calls `GET /health` on orders-api and inspects `activeChangeRequest`.
+12. `triage-agent` queries `change-lookup /changes/active/now` and confirms whether there was an active CR.
+13. `triage-agent` searches the knowledge base and matches the Unauthorized Change runbook.
+14. `triage-agent` runs `az containerapp revision list` and identifies the rogue revision.
+15. `triage-agent` searches the source repository and identifies the root cause at `file:line` level.
+16. `orchestrator-agent` submits a fix PR with the proposed code change.
+17. `orchestrator-agent` resolves the Azure Monitor alert and posts a structured incident summary.
+18. Session insights are saved — the root cause, KQL queries, and fix pattern are stored for future incidents.
 
 ---
 
