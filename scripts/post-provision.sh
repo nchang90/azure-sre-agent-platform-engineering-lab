@@ -175,10 +175,24 @@ create_response_plans_step() {
   local plan code prior_id
 
   plan='{
-  "id":           "orders-api-errors",
-  "name":         "Orders API Errors",
+  "id":           "orders-api-health-response",
+  "name":         "Orders API Health Response",
   "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
-  "titleContains": "",
+  "titleContains": "alert-orders-api-health",
+  "handlingAgent": "incident-orchestrator",
+  "agentMode":    "autonomous",
+  "maxAttempts":  3
+}'
+  code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-health-response \
+    -H "Content-Type: application/json" \
+    --data-binary "$plan")"
+  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (health)" || warn "  Health response plan returned HTTP $code"
+
+  plan='{
+  "id":           "orders-api-errors",
+  "name":         "Orders API 5xx Errors",
+  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
+  "titleContains": "alert-orders-api-errors",
   "handlingAgent": "incident-orchestrator",
   "agentMode":    "autonomous",
   "maxAttempts":  3
@@ -186,7 +200,7 @@ create_response_plans_step() {
   code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-errors \
     -H "Content-Type: application/json" \
     --data-binary "$plan")"
-  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator" || warn "  Response plan returned HTTP $code"
+  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (5xx)" || warn "  5xx response plan returned HTTP $code"
 
   if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
     code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \

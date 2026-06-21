@@ -70,6 +70,11 @@ output "orders_api_health_alert_id" {
   value       = local.apps_enabled ? azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_health[0].id : ""
 }
 
+output "orders_api_errors_alert_id" {
+  description = "Resource ID of the orders-api 5xx scheduled query alert."
+  value       = local.apps_enabled ? azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors[0].id : ""
+}
+
 output "action_mode" {
   description = "Agent action mode (Review or Automatic)."
   value       = var.action_mode

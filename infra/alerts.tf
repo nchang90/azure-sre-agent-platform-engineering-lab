@@ -62,10 +62,10 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
 
   criteria {
     query = <<-KQL
-      requests
-      | where timestamp > ago(5m)
-      | where tostring(cloud_RoleName) == "orders-api" or tostring(url) has "orders-api"
-      | where tostring(resultCode) startswith "5"
+      AppRequests
+      | where TimeGenerated > ago(5m)
+      | where tostring(AppRoleName) == "orders-api" or tostring(Url) has "orders-api"
+      | where tostring(ResultCode) startswith "5"
       | summarize FailedRequests = count()
     KQL
 
