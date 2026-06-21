@@ -121,7 +121,7 @@ register_subagent() {
   local yaml="$1" name="$2"
   local body="$TEMP_DIR/agent.json"
 
-  "$PYTHON" "$SCRIPT_DIR/yaml-to-api-json.py" "$yaml" >"$body" 2>"$TEMP_DIR/err" \
+  "$PYTHON" "$SCRIPT_DIR/build-api.py" agent "$yaml" >"$body" 2>"$TEMP_DIR/err" \
     || { warn "  $name: YAML conversion failed — $(cat "$TEMP_DIR/err")"; return; }
 
   local code
@@ -151,7 +151,7 @@ upload_skills() {
   local f name code
   for f in .github/skills/*/SKILL.md; do
     [[ -f "$f" ]] || continue
-    name="$("$PYTHON" "$SCRIPT_DIR/skill-to-api-json.py" "$f" "$TEMP_DIR/skill.json")"
+    name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" skill "$f" "$TEMP_DIR/skill.json")"
     code="$(api PUT "/api/v2/extendedAgent/skills/${name}" \
       -H "Content-Type: application/json" \
       --data-binary @"$TEMP_DIR/skill.json")"
@@ -201,6 +201,20 @@ create_response_plans_step() {
     -H "Content-Type: application/json" \
     --data-binary "$plan")"
   is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (5xx)" || warn "  5xx response plan returned HTTP $code"
+
+  plan='{
+  "id":           "orders-api-latency",
+  "name":         "Orders API Latency (P99)",
+  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
+  "titleContains": "alert-orders-api-latency",
+  "handlingAgent": "incident-orchestrator",
+  "agentMode":    "autonomous",
+  "maxAttempts":  3
+}'
+  code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-latency \
+    -H "Content-Type: application/json" \
+    --data-binary "$plan")"
+  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (latency)" || warn "  Latency response plan returned HTTP $code"
 
   if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
     code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \

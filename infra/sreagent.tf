@@ -1,5 +1,5 @@
 resource "azapi_resource" "sre_agent" {
-  count                    = var.deploy_sre_agent ? 1 : 0
+  count                     = var.deploy_sre_agent ? 1 : 0
   schema_validation_enabled = false
   type                      = "Microsoft.App/agents@2025-05-01-preview"
   name                      = var.agent_name
@@ -46,12 +46,6 @@ resource "azapi_resource" "sre_agent" {
           EnablePythonTools    = true
         }
       },
-      var.enable_azure_monitor_connector ? {
-        incidentManagementConfiguration = {
-          type           = "AzMonitor"
-          connectionName = "azmonitor"
-        }
-      } : {},
       local.network_config
     )
   }

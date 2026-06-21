@@ -17,7 +17,7 @@ This repository contains the Grubify sample app, Azure infrastructure, runbooks,
 - `.github/skills/` — Copilot-discoverable skills for this repository.
 - `knowledge-base/` — runbooks, architecture notes, and issue templates.
 - `recipes/azmon-lawappinsights/agents/` — agent configuration and handoff definitions.
-- `recipes/azmon-lawappinsights/incident-platforms/` — incident filters and scheduled tasks.
+- `scripts/post-provision.sh` — registers subagents, skills, response plans, and scheduled tasks with the agent data plane.
 
 ## When working on incidents
 

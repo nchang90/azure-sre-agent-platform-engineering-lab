@@ -123,4 +123,4 @@ curl -s "$(azd env get-value ORDERS_API_URL)/health" | jq .
 
 - [change-management-runbook.md](../knowledge-base/change-management-runbook.md)
 - [http-500-errors.md](../knowledge-base/http-500-errors.md)
-- [incident-report-template.md](../knowledge-base/incident-report-template.md)
+- [incident-report.md](../knowledge-base/incident-report.md)

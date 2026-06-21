@@ -37,8 +37,7 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S1 - Detect and triage](docs/scenario-s1-detect-triage.md): trigger a 5xx incident and investigate in review mode.
 - [S2 - Autonomous remediation](docs/scenario-s2-autonomous-remediation.md): rerun S1 with automatic action mode.
 - [S3 - Change issue triage](docs/scenario-s3-change-issue-triage.md): classify and respond to sample GitHub issues.
-- [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise%20guardrails%20and%20connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
-- [S5 - Infrastructure Resiliency Manager + Chaos Validation (Optional)](docs/scenario-s5-chaos-validation.md): run goal-driven resiliency drills in non-production with tight blast radius and rollback guardrails.
+- [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise-guardrails-connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
 
 ### Per-scenario configuration
 
@@ -55,7 +54,7 @@ terraform -chdir=infra apply -var-file=environment/demo.tfvars \
 | S1 Detect & triage | `Low` | `Review` | — |
 | S2 Autonomous remediation | `High` | `Automatic` | — |
 | S3 Change issue triage | `Low` | `Review` | — (reuses the S1/S2 agent) |
-| S4 Guardrails & connectors | `High` | `Review` | `enable_log_analytics_connector`, `enable_app_insights_connector`, `enable_azure_monitor_connector` = `true` |
+| S4 Guardrails & connectors | `High` | `Review` | `enable_log_analytics_connector`, `enable_app_insights_connector` = `true` |
 | S5 Chaos validation (optional) | `High` | `Review` | Chaos Studio + Resiliency Manager are portal-configured (no Terraform) |
 
 ## Reference Recipes
@@ -64,7 +63,7 @@ The reusable logic from the upstream [Microsoft SRE Agent](https://github.com/mi
 
 - Skills `investigate-azure-alerts` and `triage-app-errors` → [.github/skills/](.github/skills/)
 - Subagents `alert-investigator` → `remediation-advisor` → [recipes/azmon-lawappinsights/agents/](recipes/azmon-lawappinsights/agents/)
-- Automations `azmon-sev01` and `daily-health-check` → [recipes/azmon-lawappinsights/incident-platforms/azure-monitor/](recipes/azmon-lawappinsights/incident-platforms/azure-monitor/)
+- Automations `azmon-sev01` and `daily-health-check` → registered inline by [scripts/post-provision.sh](scripts/post-provision.sh), gated by the `enable_sev01_incident_filter` / `enable_daily_health_check` Terraform toggles
 
 These are registered with the agent by [scripts/post-provision.sh](scripts/post-provision.sh).
 

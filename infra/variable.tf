@@ -153,11 +153,6 @@ variable "law_resource_id" {
   default     = ""
 }
 
-variable "enable_azure_monitor_connector" {
-  description = "Enable an Azure Monitor connector (subscription-scoped alerts)."
-  type        = bool
-  default     = false
-}
 
 variable "azure_monitor_lookback_days" {
   description = "Lookback window in days for the Azure Monitor connector."

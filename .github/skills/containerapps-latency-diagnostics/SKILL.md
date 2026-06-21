@@ -82,7 +82,6 @@ ContainerAppConsoleLogs_CL
 ## Common evidence sources
 
 - `knowledge-base/orders-architecture.md`
-- `knowledge-base/slo-definitions.md`
 - App Insights requests and dependencies tables
 - Container App metrics: RequestLatency, CpuUsageNanoCores, MemoryWorkingSetBytes
 - Revision restart and scaling event logs

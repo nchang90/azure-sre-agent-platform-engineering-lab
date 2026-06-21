@@ -13,8 +13,8 @@ This lab does not copy the upstream recipe verbatim. It translates the recipe in
 |---|---|
 | Skills `investigate-azure-alerts`, `triage-app-errors` | `.github/skills/` |
 | Subagents `alert-investigator`, `remediation-advisor` | `recipes/azmon-lawappinsights/agents/` |
-| Incident filter `azmon-sev01` | `recipes/azmon-lawappinsights/incident-platforms/azure-monitor/incident-filters/azmon-sev01.yaml` |
-| Scheduled task `daily-health-check` | `recipes/azmon-lawappinsights/incident-platforms/azure-monitor/scheduled-tasks/daily-health-check.yaml` |
+| Incident filter `azmon-sev01` | Registered inline by `scripts/post-provision.sh` (gated by `enable_sev01_incident_filter`) |
+| Scheduled task `daily-health-check` | Registered inline by `scripts/post-provision.sh` (gated by `enable_daily_health_check`) |
 | Registration flow | `scripts/post-provision.sh` |
 
 ## Runtime Notes
