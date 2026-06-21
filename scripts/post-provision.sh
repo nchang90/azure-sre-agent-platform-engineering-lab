@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── logging ──
 log()  { echo "[INFO]  $*"; }
 ok()   { echo "[OK]    $*"; }
 warn() { echo "[WARN]  $*"; }
@@ -20,6 +19,10 @@ PYTHON="$(command -v python3 || command -v python)" || { err "Python not found";
 command -v jq >/dev/null                            || { err "jq not found";     exit 1; }
 
 GITHUB_REPO="${GITHUB_REPO:-NickAzureDevops/azure-sre-agent-platform-engineering-lab}"
+ENABLE_GITHUB_INTEGRATION="${ENABLE_GITHUB_INTEGRATION:-false}"
+STRICT_GITHUB_OAUTH_CHECK="${STRICT_GITHUB_OAUTH_CHECK:-false}"
+GITHUB_PAT="${GITHUB_PAT:-}"
+GITHUB_OAUTH_WAIT_SECONDS="${GITHUB_OAUTH_WAIT_SECONDS:-240}"
 
 # ── read values from Terraform state ──
 log "Loading Terraform outputs..."
@@ -29,8 +32,10 @@ read_tf() { jq -r ".${1}.value // empty" <<<"$TF_OUT"; }
 
 AGENT_ID="$(read_tf agent_id)"
 [[ -n "$AGENT_ID" ]] || { err "agent_id missing from Terraform outputs"; exit 1; }
+AGENT_SUBSCRIPTION_ID="$(cut -d/ -f3 <<<"$AGENT_ID")"
 RESOURCE_GROUP="$(cut -d/ -f5 <<<"$AGENT_ID")"
 AGENT_NAME="$(cut -d/ -f9 <<<"$AGENT_ID")"
+AGENT_PORTAL_URL="$(read_tf agent_portal_url)"
 
 # The data-plane host has a unique generated suffix — read it from the live resource.
 log "Resolving agent data-plane endpoint..."
@@ -38,6 +43,9 @@ AGENT_ENDPOINT="$(az resource show --ids "$AGENT_ID" --query properties.agentEnd
 [[ -n "$AGENT_ENDPOINT" ]] || { AGENT_ENDPOINT="$(read_tf agent_data_plane_url)"; warn "Falling back to Terraform output: $AGENT_ENDPOINT"; }
 AGENT_ENDPOINT="${AGENT_ENDPOINT%/}"
 [[ -n "$AGENT_ENDPOINT" ]] || { err "Could not resolve agent endpoint"; exit 1; }
+
+# Optional user-assigned identity for connector setup.
+AGENT_UAMI="$(az resource show --ids "$AGENT_ID" --query "keys(identity.userAssignedIdentities)[0]" -o tsv 2>/dev/null || true)"
 
 
 # Fetches a short-lived Bearer token for the SRE Agent data-plane.
@@ -47,9 +55,22 @@ auth() {
     || { err "Failed to get access token — run 'az login' first"; exit 1; }
 }
 
+check_subscription_context() {
+  local current_sub
+  current_sub="$(az account show --query id -o tsv 2>/dev/null || true)"
+  if [[ -z "$current_sub" ]]; then
+    die "Could not read current Azure subscription context. Run 'az login' first."
+  fi
+  if [[ "$current_sub" != "$AGENT_SUBSCRIPTION_ID" ]]; then
+    err "Active Azure subscription does not match Terraform agent subscription."
+    echo "  Active: $current_sub"
+    echo "  Agent:  $AGENT_SUBSCRIPTION_ID"
+    echo "  Fix:    az account set --subscription $AGENT_SUBSCRIPTION_ID"
+    die "Switch subscription and re-run post-provision."
+  fi
+}
+
 # Calls the SRE Agent data-plane API.
-# Usage: api METHOD /path [extra curl flags...]
-# Prints the HTTP status code; response body is written to $RESP.
 api() {
   local method="$1" path="$2"; shift 2
   curl -s -o "$RESP" -w "%{http_code}" --connect-timeout 15 --max-time 60 \
@@ -68,6 +89,33 @@ is_ok_status() {
   return 1
 }
 
+require_json_body() {
+  local op="$1" code="$2"
+  if ! is_ok_status "$code"; then
+    die "$op failed with HTTP $code"
+  fi
+  if ! jq -e . "$RESP" >/dev/null 2>&1; then
+    local preview
+    preview="$(head -c 140 "$RESP" | tr '\n' ' ')"
+    die "$op returned non-JSON response (endpoint mismatch or auth issue). Preview: ${preview}"
+  fi
+}
+
+api_json() {
+  local op="$1" method="$2" path="$3" body="$4"
+  local code
+  code="$(api "$method" "$path" -H "Content-Type: application/json" --data-binary "$body")"
+  require_json_body "$op" "$code"
+}
+
+best_effort_delete() {
+  local path="$1"
+  api DELETE "$path" >/dev/null 2>&1 || true
+}
+
+# GitHub integration step is defined in a separate file for maintainability.
+source "$SCRIPT_DIR/github.sh"
+
 # Converts a YAML agent config to JSON and registers it with the agent.
 register_subagent() {
   local yaml="$1" name="$2"
@@ -84,6 +132,87 @@ register_subagent() {
   is_ok_status "$code" && ok "  Registered: $name" || warn "  $name returned HTTP $code"
 }
 
+upload_knowledge_base() {
+  log "Step 1/5: Uploading knowledge base..."
+  local upload names f code
+  upload=(-F triggerIndexing=true)
+  names=""
+  for f in knowledge-base/*.md; do
+    upload+=(-F "files=@${f};type=text/plain")
+    names+=" $(basename "$f")"
+  done
+  code="$(api POST /api/v1/AgentMemory/upload "${upload[@]}")"
+  is_ok_status "$code" && ok "  Uploaded:$names" || warn "  Knowledge base upload returned HTTP $code"
+  echo
+}
+
+upload_skills() {
+  log "Step 2/5: Uploading skills..."
+  local f name code
+  for f in .github/skills/*/SKILL.md; do
+    [[ -f "$f" ]] || continue
+    name="$("$PYTHON" "$SCRIPT_DIR/skill-to-api-json.py" "$f" "$TEMP_DIR/skill.json")"
+    code="$(api PUT "/api/v2/extendedAgent/skills/${name}" \
+      -H "Content-Type: application/json" \
+      --data-binary @"$TEMP_DIR/skill.json")"
+    is_ok_status "$code" && ok "  Skill: $name" || warn "  Skill $name returned HTTP $code"
+  done
+  echo
+}
+
+register_subagents_step() {
+  log "Step 3/5: Registering subagents..."
+  register_subagent recipes/azmon-lawappinsights/agents/triage-agent.yaml         triage-agent
+  register_subagent recipes/azmon-lawappinsights/agents/issue-triager.yaml        issue-triager
+  register_subagent recipes/azmon-lawappinsights/agents/remediation-advisor.yaml  remediation-advisor
+  register_subagent recipes/azmon-lawappinsights/agents/alert-investigator.yaml   alert-investigator
+  register_subagent recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml   incident-orchestrator
+  echo
+}
+
+create_response_plans_step() {
+  log "Step 4/5: Creating response plan..."
+  local plan code prior_id
+
+  plan='{
+  "id":           "orders-api-errors",
+  "name":         "Orders API Errors",
+  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
+  "titleContains": "",
+  "handlingAgent": "incident-orchestrator",
+  "agentMode":    "autonomous",
+  "maxAttempts":  3
+}'
+  code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-errors \
+    -H "Content-Type: application/json" \
+    --data-binary "$plan")"
+  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator" || warn "  Response plan returned HTTP $code"
+
+  if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
+    code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \
+      -H "Content-Type: application/json" \
+      --data-binary '{"id":"azmon-sev01","name":"Azure Monitor Sev0/Sev1","priorities":["Sev0","Sev1"],"titleContains":"","handlingAgent":"alert-investigator","agentMode":"autonomous","maxAttempts":3}')"
+    is_ok_status "$code" 409 && ok "  Response plan -> alert-investigator (Sev0/Sev1)" || warn "  azmon-sev01 returned HTTP $code"
+  fi
+
+  if [[ "$(read_tf enable_daily_health_check)" == "true" ]]; then
+    api GET /api/v1/scheduledtasks >/dev/null 2>&1 || true
+    prior_id="$("$PYTHON" -c "import json,sys
+try:
+    for t in json.load(open('$RESP')):
+        if t.get('name')=='daily-health-check':
+            print(t.get('id','')); break
+except Exception:
+    pass" 2>/dev/null)"
+    [[ -n "$prior_id" ]] && api DELETE "/api/v1/scheduledtasks/$prior_id" >/dev/null 2>&1 || true
+    code="$(api POST /api/v1/scheduledtasks \
+      -H "Content-Type: application/json" \
+      --data-binary '{"name":"daily-health-check","description":"Daily 8am health summary across all monitored resources","cronExpression":"0 8 * * *","agentPrompt":"Summarize the last 24h of incidents, fired alerts, and resource health for all monitored resource groups. Flag anything that needs attention.","agent":"alert-investigator"}')"
+    is_ok_status "$code" && ok "  Scheduled task -> alert-investigator (daily 08:00)" || warn "  daily-health-check returned HTTP $code"
+  fi
+  echo
+}
+
 # ── main ──
 
 echo
@@ -96,129 +225,13 @@ ok "Name:  $AGENT_NAME"
 echo
 
 auth
+check_subscription_context
 
-# ── Step 1: knowledge base ──
-log "Step 1/5: Uploading knowledge base..."
-upload=(-F triggerIndexing=true)
-names=""
-for f in knowledge-base/*.md; do
-  upload+=(-F "files=@${f};type=text/plain")
-  names+=" $(basename "$f")"
-done
-code="$(api POST /api/v1/AgentMemory/upload "${upload[@]}")"
-is_ok_status "$code" && ok "  Uploaded:$names" || warn "  Knowledge base upload returned HTTP $code"
-echo
-
-# ── Step 2: skills ──
-log "Step 2/5: Uploading skills..."
-for f in .github/skills/*/SKILL.md; do
-  [[ -f "$f" ]] || continue
-  name="$("$PYTHON" "$SCRIPT_DIR/skill-to-api-json.py" "$f" "$TEMP_DIR/skill.json")"
-  code="$(api PUT "/api/v2/extendedAgent/skills/${name}" \
-    -H "Content-Type: application/json" \
-    --data-binary @"$TEMP_DIR/skill.json")"
-  is_ok_status "$code" && ok "  Skill: $name" || warn "  Skill $name returned HTTP $code"
-done
-echo
-
-# ── Step 3: subagents (specialists registered before orchestrator so handoffs resolve) ──
-log "Step 3/5: Registering subagents..."
-register_subagent recipes/azmon-lawappinsights/agents/triage-agent.yaml         triage-agent
-register_subagent recipes/azmon-lawappinsights/agents/issue-triager.yaml        issue-triager
-register_subagent recipes/azmon-lawappinsights/agents/remediation-advisor.yaml  remediation-advisor
-register_subagent recipes/azmon-lawappinsights/agents/alert-investigator.yaml   alert-investigator
-register_subagent recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml   incident-orchestrator
-echo
-
-# ── Step 4: response plan ──
-# Routes all orders-api alerts to the incident-orchestrator agent.
-log "Step 4/5: Creating response plan..."
-plan='{
-  "id":           "orders-api-errors",
-  "name":         "Orders API Errors",
-  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
-  "titleContains": "",
-  "handlingAgent": "incident-orchestrator",
-  "agentMode":    "autonomous",
-  "maxAttempts":  3
-}'
-code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-errors \
-  -H "Content-Type: application/json" \
-  --data-binary "$plan")"
-is_ok_status "$code" 409 && ok "  Response plan → incident-orchestrator" || warn "  Response plan returned HTTP $code"
-
-# Recipe automations (azmon-lawappinsights) — opt-in via infra toggles.
-# Active repo config lives under recipes/azmon-lawappinsights/incident-platforms/azure-monitor/.
-if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
-  code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \
-    -H "Content-Type: application/json" \
-    --data-binary '{"id":"azmon-sev01","name":"Azure Monitor Sev0/Sev1","priorities":["Sev0","Sev1"],"titleContains":"","handlingAgent":"alert-investigator","agentMode":"autonomous","maxAttempts":3}')"
-  is_ok_status "$code" 409 && ok "  Response plan → alert-investigator (Sev0/Sev1)" || warn "  azmon-sev01 returned HTTP $code"
-fi
-
-if [[ "$(read_tf enable_daily_health_check)" == "true" ]]; then
-  # POST is not idempotent — remove any prior task with the same name first.
-  api GET /api/v1/scheduledtasks >/dev/null 2>&1 || true
-  prior_id="$("$PYTHON" -c "import json,sys
-try:
-    for t in json.load(open('$RESP')):
-        if t.get('name')=='daily-health-check':
-            print(t.get('id','')); break
-except Exception:
-    pass" 2>/dev/null)"
-  [[ -n "$prior_id" ]] && api DELETE "/api/v1/scheduledtasks/$prior_id" >/dev/null 2>&1 || true
-  code="$(api POST /api/v1/scheduledtasks \
-    -H "Content-Type: application/json" \
-    --data-binary '{"name":"daily-health-check","description":"Daily 8am health summary across all monitored resources","cronExpression":"0 8 * * *","agentPrompt":"Summarize the last 24h of incidents, fired alerts, and resource health for all monitored resource groups. Flag anything that needs attention.","agent":"alert-investigator"}')"
-  is_ok_status "$code" && ok "  Scheduled task → alert-investigator (daily 08:00)" || warn "  daily-health-check returned HTTP $code"
-fi
-echo
-
-# ── Step 5: GitHub integration ──
-log "Step 5/5: GitHub integration..."
-if [[ ! "$GITHUB_REPO" =~ ^[^/]+/[^/]+$ ]]; then
-  die "GITHUB_REPO must be in 'owner/repo' format (current: $GITHUB_REPO)"
-fi
-REPO_OWNER="${GITHUB_REPO%%/*}"
-REPO_NAME="${GITHUB_REPO##*/}"
-
-# Register the GitHub OAuth connector (data-plane).
-code="$(api PUT /api/v2/extendedAgent/connectors/github \
-  -H "Content-Type: application/json" \
-  -d '{"name":"github","type":"AgentConnector","properties":{"dataConnectorType":"GitHubOAuth","dataSource":"github-oauth"}}')"
-is_ok_status "$code" && ok "  GitHub OAuth connector created" || warn "  GitHub OAuth connector returned HTTP $code"
-
-# If the agent needs OAuth authorization, surface the URL for the user to open.
-api GET /api/v1/github/config >/dev/null 2>&1 || true
-OAUTH_URL="$(jq -r '.oAuthUrl // .OAuthUrl // empty' "$RESP" 2>/dev/null || true)"
-if [[ -n "$OAUTH_URL" ]]; then
-  echo
-  echo "  Authorize the SRE Agent to access GitHub:"
-  echo "  $OAUTH_URL"
-  echo
-  if [[ -t 0 ]]; then
-    read -r -p "  Open the URL above, authorize, then press Enter to continue..." _
-  else
-    warn "  Non-interactive shell — open the URL above, authorize, then re-run."
-  fi
-fi
-
-# Re-auth in case the OAuth flow took long enough for the token to expire.
-auth
-
-# Clean up stale/default repo entry that often appears disconnected in the portal.
-# Keep this best-effort so re-runs stay idempotent.
-api DELETE /api/v2/repos/github >/dev/null 2>&1 || true
-api DELETE /api/v1/repos/github >/dev/null 2>&1 || true
-api DELETE /api/v1/codeRepos/github >/dev/null 2>&1 || true
-api DELETE /api/v1/codeRepositories/github >/dev/null 2>&1 || true
-
-code="$(api PUT "/api/v2/repos/${REPO_NAME}" \
-  -H "Content-Type: application/json" \
-  -d "{\"name\":\"${REPO_NAME}\",\"type\":\"CodeRepo\",\"properties\":{\"url\":\"https://github.com/${REPO_OWNER}/${REPO_NAME}\",\"authConnectorName\":\"github\"}}")"
-is_ok_status "$code" \
-  && ok  "  Code repo: $GITHUB_REPO" \
-  || warn "  Code repo returned HTTP $code (authorize GitHub first / check SRE Agent Administrator role)"
+upload_knowledge_base
+upload_skills
+register_subagents_step
+create_response_plans_step
+setup_github_integration
 echo
 
 echo "============================================="
@@ -233,5 +246,7 @@ echo "    Builder → Skills        (expect 6)"
 echo "    Incident Response Plans (expect 1, or 2 with azmon-sev01)"
 echo "    Scheduled Tasks         (daily-health-check, if enabled)"
 echo "    Settings → Incident Platform (Azure Monitor)"
-echo "    Code → Repositories     ($GITHUB_REPO)"
+if [[ "$ENABLE_GITHUB_INTEGRATION" == "true" ]]; then
+  echo "    Code → Repositories     ($GITHUB_REPO)"
+fi
 echo

@@ -59,36 +59,48 @@ A developer ships a release straight to production with no change request and no
 
 ```bash
 bash scripts/break-app.sh
-# To restore the app afterward:
-bash scripts/reset-app.sh
+```
+
+To restore afterward:
+
+```bash
+# If runtime 5xx simulation mode was used
+APP_URL="$(cd infra && terraform output -raw orders_api_url)"
+curl -X POST "$APP_URL/api/simulate/reset"
+curl -X POST "$APP_URL/api/simulate/clear-cr"
+
+# If fallback image-break mode was used, restore a working image
+az containerapp update -g <rg> -n orders-api --image <working-image>
 ```
 
 ---
 
 ## Step by Step
 
-1. `break-app.sh` ships a rogue revision directly to Container Apps with no CR.
-2. The `Orders API 5xx` Azure Monitor alert fires within ~1 minute.
-3. The Incident Response Plan routes the alert to `orchestrator-agent`.
-4. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.
-5. `orchestrator-agent` delegates to `triage-agent` for technical investigation.
-6. `triage-agent` queries Log Analytics (`ContainerAppConsoleLogs_CL`) for the 5xx spike and error patterns.
-7. `triage-agent` queries Azure Monitor metrics — CPU, memory, latency, and deployment history — and correlates timing with the rogue revision.
-8. `triage-agent` calls `GET /health` on orders-api and reads `activeChangeRequest: ""` (empty string).
-9. `triage-agent` queries `change-lookup /changes/active/now` and confirms no active CR.
-10. `triage-agent` searches the knowledge base and matches the Unauthorized Change runbook.
-11. `triage-agent` runs `az containerapp revision list` and identifies the rogue revision.
-12. `triage-agent` searches the source repository and identifies the root cause at `file:line` level.
-13. `orchestrator-agent` submits a fix PR with the proposed code change.
-14. `orchestrator-agent` resolves the Azure Monitor alert and posts a structured incident summary.
-15. Session insights are saved — the root cause, KQL queries, and fix pattern are stored for future incidents.
+1. `break-app.sh` first tries to announce an active change ID and force runtime `5xx` responses through the orders-api simulation endpoints.
+2. It sends a burst of failing order requests so the `Orders API 5xx` alert has real request failures to evaluate.
+3. If those runtime endpoints are unavailable, it falls back to updating the Container App to a placeholder image that fails the `/health` probe.
+4. The `Orders API 5xx` Azure Monitor alert evaluates on a 5 minute window and typically appears within a few minutes.
+5. The Incident Response Plan routes the alert to `orchestrator-agent`.
+6. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.
+7. `orchestrator-agent` delegates to `triage-agent` for technical investigation.
+8. `triage-agent` queries Log Analytics / Application Insights request data for the `5xx` spike and error patterns.
+9. `triage-agent` queries Azure Monitor metrics — CPU, memory, latency, and deployment history — and correlates timing with the rogue revision or simulated change window.
+10. If the app is reachable, `triage-agent` calls `GET /health` on orders-api and inspects `activeChangeRequest`.
+11. `triage-agent` queries `change-lookup /changes/active/now` and confirms whether there was an active CR.
+12. `triage-agent` searches the knowledge base and matches the Unauthorized Change runbook.
+13. `triage-agent` runs `az containerapp revision list` and identifies the rogue revision.
+14. `triage-agent` searches the source repository and identifies the root cause at `file:line` level.
+15. `orchestrator-agent` submits a fix PR with the proposed code change.
+16. `orchestrator-agent` resolves the Azure Monitor alert and posts a structured incident summary.
+17. Session insights are saved — the root cause, KQL queries, and fix pattern are stored for future incidents.
 
 ---
 
 ## Portal Steps
 
 1. Open [sre.azure.com](https://sre.azure.com) and navigate to your agent.
-2. Go to **Incidents** — a new incident thread appears within ~2 minutes of running `break-app.sh`.
+2. Go to **Incidents** — a new incident thread should appear after the alert evaluation window completes, typically within ~5 to 10 minutes of running `break-app.sh`.
 3. Open the incident thread and watch the agent work through steps 3–15 in real time.
 4. Inspect the **Artifacts** panel: KQL query used, metrics snapshot, revision list output, and source file reference.
 5. The final message shows the fix PR link, the resolved alert, and the saved session insight.
@@ -109,7 +121,7 @@ After the agent posts its findings, continue the thread to go deeper:
 
 ## Expected Output
 
-Within 2–3 minutes, the portal incident thread includes:
+After the alert window completes, the portal incident thread includes:
 
 - The offending rogue revision name
 - Evidence of missing CR (`change-lookup` returned no active CR)

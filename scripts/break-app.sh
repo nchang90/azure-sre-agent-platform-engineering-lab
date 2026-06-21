@@ -28,37 +28,48 @@ fi
 
 TF_OUT="$(cd "$ROOT/infra" && terraform output -json 2>/dev/null || true)"
 
-ACR_NAME="$(printf '%s' "$TF_OUT" | jq -r '.acr_name.value // empty')"
-ACR_LOGIN_SERVER="$(printf '%s' "$TF_OUT" | jq -r '.acr_login_server.value // empty')"
 ORDERS_API_NAME="$(printf '%s' "$TF_OUT" | jq -r '.orders_api_name.value // empty')"
+ORDERS_API_URL="$(printf '%s' "$TF_OUT" | jq -r '.orders_api_url.value // empty')"
 AGENT_ID="$(printf '%s' "$TF_OUT" | jq -r '.agent_id.value // empty')"
 RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 SUB_ID="$(echo "$AGENT_ID" | cut -d/ -f3)"
+PLACEHOLDER_IMAGE="mcr.microsoft.com/k8se/quickstart:latest"
 
-if [[ -z "$ACR_NAME" || -z "$ACR_LOGIN_SERVER" || -z "$ORDERS_API_NAME" || -z "$SUB_ID" ]]; then
+if [[ -z "$ORDERS_API_NAME" || -z "$ORDERS_API_URL" || -z "$SUB_ID" ]]; then
   echo "❌ Missing Terraform outputs. Run terraform apply for this environment first." >&2
   exit 1
 fi
 
-ROGUE_TAG="rogue-$(date +%s)"
+CHANGE_ID="CHG$(date +%s)"
 
-echo "  Building rogue image ($ROGUE_TAG) …"
-az acr build \
-  --subscription "$SUB_ID" \
-  --registry "$ACR_NAME" \
-  --image "orders-api:${ROGUE_TAG}" \
-  "$ROOT/src/orders-api/" \
-  --no-logs
-
-echo "  Updating Container App to rogue image …"
-az containerapp update \
-  --subscription "$SUB_ID" \
-  --name "$ORDERS_API_NAME" \
-  --resource-group "$RG" \
-  --image "$ACR_LOGIN_SERVER/orders-api:${ROGUE_TAG}" \
-  --output none
+echo "  Attempting runtime 5xx simulation ($CHANGE_ID) …"
+if curl -fsS -X POST "$ORDERS_API_URL/api/simulate/active-cr/$CHANGE_ID" >/dev/null \
+  && curl -fsS -X POST "$ORDERS_API_URL/api/simulate/failure-rate/100" >/dev/null; then
+  echo "  Sending traffic to generate 5xx responses …"
+  for i in $(seq 1 25); do
+    curl -fsS -X POST "$ORDERS_API_URL/api/orders" \
+      -H "Content-Type: application/json" \
+      -d '{"customerId":"chaos-'"$i"'","sku":"SKU-001","quantity":1}' >/dev/null || true
+  done
+  echo "  Triggering fixed 5xx endpoint …"
+  for i in $(seq 1 5); do
+    curl -fsS "$ORDERS_API_URL/api/orders/fail" >/dev/null || true
+  done
+else
+  echo "  Runtime simulation endpoint unavailable; switching to fallback break mode …"
+  echo "  Updating Container App to placeholder image that fails the /health probe …"
+  az containerapp update \
+    --subscription "$SUB_ID" \
+    --name "$ORDERS_API_NAME" \
+    --resource-group "$RG" \
+    --image "$PLACEHOLDER_IMAGE" \
+    --output none
+fi
 
 echo
-echo "✅ Container App updated to rogue revision."
+echo "✅ Break action applied."
+echo "   If runtime simulation succeeded, 5xx responses have been generated and the 5xx alert should evaluate within minutes."
+echo "   If fallback image mode was used, the Container App liveness probe should start failing within seconds."
 echo "   Watch the agent triage at: $(printf '%s' "$TF_OUT" | jq -r '.agent_portal_url.value // empty')"
-echo "   To restore:  bash scripts/reset-app.sh"
+echo "   To restore runtime mode:  POST $ORDERS_API_URL/api/simulate/reset && POST $ORDERS_API_URL/api/simulate/clear-cr"
+echo "   To restore image mode:    az containerapp update -g $RG -n $ORDERS_API_NAME --image <working-image>"
