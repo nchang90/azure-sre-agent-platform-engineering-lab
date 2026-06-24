@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Collections.Concurrent;
+using OrdersApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +50,7 @@ app.MapPost("/api/orders", (OrderRequest request, IConfiguration config) =>
     var failureRate = runtimeFailureRatePercent > 0 ? runtimeFailureRatePercent : configuredFailureRate;
     var roll = Random.Shared.Next(1, 101);
 
-    // Optional chaos toggle for incident demos: force intermittent 5xx errors.
+    
     if (failureRate > 0 && roll <= failureRate)
     {
         return Results.Problem(

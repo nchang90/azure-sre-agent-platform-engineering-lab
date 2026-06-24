@@ -1,0 +1,29 @@
+{
+  "toggles": {
+    "enableAppInsightsConnector": false,
+    "appInsightsResourceId": "",
+    "appInsightsAppId": "",
+    "enableLogAnalyticsConnector": "{{lawId:bool}}",
+    "lawResourceId": "{{lawId}}",
+    "enableAzureMonitorConnector": false,
+    "azureMonitorLookbackDays": 7,
+    "grafanaUrl": "",
+    "grafanaApiKey": "",
+    "enableServiceNowConnector": true,
+    "snowInstance": "{{snowInstance}}",
+    "snowUser": "{{snowUser}}",
+    "snowPassword": "{{snowPassword}}"
+  },
+  "connectors": [
+    {
+      "name": "servicenow",
+      "properties": {
+        "dataConnectorType": "ServiceNow",
+        "dataSource": "servicenow",
+        "connectionUrl": "{{snowInstance}}",
+        "connectionKey": "{\"endpoint\":\"{{snowInstance}}\",\"username\":\"{{snowUser}}\",\"password\":\"{{snowPassword}}\"}",
+        "identity": "system"
+      }
+    }
+  ]
+}

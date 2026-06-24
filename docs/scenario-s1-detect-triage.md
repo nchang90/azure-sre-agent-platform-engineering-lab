@@ -77,10 +77,7 @@ az containerapp update -g <rg> -n orders-api --image <working-image>
 
 ## Step by Step
 
-1. `break-app.sh` now defaults to `BREAK_MODE=both`, which means it tries to break both the runtime `5xx` path and the health-probe path in one run.
-2. It announces an active change ID, enables runtime `5xx` responses through the orders-api simulation endpoints, and sends a burst of failing requests so the `Orders API 5xx` alert has real request failures to evaluate.
-3. It then flips the app into unhealthy probe mode through `/api/simulate/health/unhealthy`; if that runtime endpoint is unavailable, it falls back to updating the Container App to a placeholder image that fails the `/health` probe.
-4. If the current revision does not expose the runtime simulation endpoints, the script exits with a partial-break warning instead of claiming that both alert paths were exercised.
+1. The `break-app.sh` script is no longer available (chaos monkey support has been removed).
 5. The `Orders API 5xx` Azure Monitor alert evaluates on a 5 minute window and typically appears within a few minutes.
 6. The Incident Response Plan routes the alert to `orchestrator-agent`.
 7. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.

@@ -115,6 +115,7 @@ best_effort_delete() {
 
 # GitHub integration step is defined in a separate file for maintainability.
 source "$SCRIPT_DIR/github.sh"
+source "$SCRIPT_DIR/servicenow.sh"
 
 # Converts a YAML agent config to JSON and registers it with the agent.
 register_subagent() {
@@ -183,7 +184,7 @@ create_response_plans_step() {
   "agentMode":    "autonomous",
   "maxAttempts":  3
 }'
-  code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-health-response \
+  code="$(api POST /api/v1/incidentPlayground/filters/orders-api-health-response \
     -H "Content-Type: application/json" \
     --data-binary "$plan")"
   is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (health)" || warn "  Health response plan returned HTTP $code"
@@ -197,7 +198,7 @@ create_response_plans_step() {
   "agentMode":    "autonomous",
   "maxAttempts":  3
 }'
-  code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-errors \
+  code="$(api POST /api/v1/incidentPlayground/filters/orders-api-errors \
     -H "Content-Type: application/json" \
     --data-binary "$plan")"
   is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (5xx)" || warn "  5xx response plan returned HTTP $code"
@@ -211,13 +212,13 @@ create_response_plans_step() {
   "agentMode":    "autonomous",
   "maxAttempts":  3
 }'
-  code="$(api PUT /api/v1/incidentPlayground/filters/orders-api-latency \
+  code="$(api POST /api/v1/incidentPlayground/filters/orders-api-latency \
     -H "Content-Type: application/json" \
     --data-binary "$plan")"
   is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (latency)" || warn "  Latency response plan returned HTTP $code"
 
   if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
-    code="$(api PUT /api/v1/incidentPlayground/filters/azmon-sev01 \
+    code="$(api POST /api/v1/incidentPlayground/filters/azmon-sev01 \
       -H "Content-Type: application/json" \
       --data-binary '{"id":"azmon-sev01","name":"Azure Monitor Sev0/Sev1","priorities":["Sev0","Sev1"],"titleContains":"","handlingAgent":"alert-investigator","agentMode":"autonomous","maxAttempts":3}')"
     is_ok_status "$code" 409 && ok "  Response plan -> alert-investigator (Sev0/Sev1)" || warn "  azmon-sev01 returned HTTP $code"
@@ -259,6 +260,7 @@ upload_knowledge_base
 upload_skills
 register_subagents_step
 create_response_plans_step
+setup_servicenow_integration
 setup_github_integration
 echo
 
@@ -274,6 +276,7 @@ echo "    Builder → Skills        (expect 6)"
 echo "    Incident Response Plans (expect 1, or 2 with azmon-sev01)"
 echo "    Scheduled Tasks         (daily-health-check, if enabled)"
 echo "    Settings → Incident Platform (Azure Monitor)"
+echo "    Settings → Incident Platform (ServiceNow, if SERVICENOW_* env vars are set)"
 if [[ "$ENABLE_GITHUB_INTEGRATION" == "true" ]]; then
   echo "    Code → Repositories     ($GITHUB_REPO)"
 fi

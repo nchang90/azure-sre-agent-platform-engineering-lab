@@ -24,7 +24,6 @@ After S1 (and optionally S2), the platform team needs proof that agent operation
 - **Requires:** Run S1 first so this scenario starts from a real incident thread and evidence set
 - **Recommended:** Run S3 before S4 so issue classification and labels can be compared against ServiceNow categorization
 - **Optional:** Run S2 to include autonomous rollback artifacts in the governed handoff narrative
-- **Unlocks:** S5 (optional chaos validation) with policy-aware incident response in a non-production environment
 
 ## Control Areas Evaluated
 
@@ -74,6 +73,8 @@ Then open a new chat thread on [sre.azure.com](https://sre.azure.com) and trigge
 - *"Create the linked GitHub Enterprise issue for engineering follow-up and include the ServiceNow ticket reference"*
 - *"List every policy gate encountered and whether it was approved, denied, or skipped"*
 - *"Summarize connector usage and provide an auditable action timeline"*
+
+ServiceNow recipe support lives under `recipes/azmon-lawappinsights/incident-platforms/servicenow/` and should be imported alongside the connector when you want the incident-to-ServiceNow handoff to appear in the portal. The connector can be auto-registered by `scripts/post-provision.sh` when `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME`, and `SERVICENOW_PASSWORD` are set.
 
 ## Expected Output
 

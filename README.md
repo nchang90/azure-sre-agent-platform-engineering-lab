@@ -15,6 +15,7 @@ Hands-on Azure SRE Agent lab with five progressive scenarios: detection and tria
 2. Run `terraform -chdir=infra init`.
 3. Run `terraform -chdir=infra apply -auto-approve -var-file=environment/demo.tfvars`.
 4. Run `bash scripts/post-provision.sh`.
+   - Optional: set `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME`, and `SERVICENOW_PASSWORD` first to auto-register the ServiceNow connector.
 
 Cloud Shell note: if data-plane setup fails, run `az login --scope "https://azuresre.dev/.default"` and rerun `bash scripts/post-provision.sh --retry`.
 
@@ -55,7 +56,6 @@ terraform -chdir=infra apply -var-file=environment/demo.tfvars \
 | S2 Autonomous remediation | `High` | `Automatic` | — |
 | S3 Change issue triage | `Low` | `Review` | — (reuses the S1/S2 agent) |
 | S4 Guardrails & connectors | `High` | `Review` | `enable_log_analytics_connector`, `enable_app_insights_connector` = `true` |
-| S5 Chaos validation (optional) | `High` | `Review` | Chaos Studio + Resiliency Manager are portal-configured (no Terraform) |
 
 ## Reference Recipes
 
