@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Collections.Concurrent;
-using OrdersApi;
 
 var builder = WebApplication.CreateBuilder(args);
 

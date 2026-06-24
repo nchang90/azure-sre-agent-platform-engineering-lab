@@ -81,8 +81,8 @@ jobs:
 
           echo "Building images in ACR: $ACR_NAME"
 
-          az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/ --no-logs
-          az acr build --registry "$ACR_NAME" --image change-lookup:latest change-lookup/ --no-logs
+          az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/
+          az acr build --registry "$ACR_NAME" --image change-lookup:latest change-lookup/
 
           echo "Updating Container Apps…"
 

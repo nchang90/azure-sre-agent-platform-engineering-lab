@@ -1,0 +1,8 @@
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/OrdersApi
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/appsettings.json
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/OrdersApi.dll
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/OrdersApi.deps.json
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/OrdersApi.runtimeconfig.json
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/OrdersApi.pdb
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/Microsoft.AspNetCore.OpenApi.dll
+/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/bin/Release/net9.0/publish/Microsoft.OpenApi.dll
