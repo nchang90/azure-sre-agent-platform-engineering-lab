@@ -1,11 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "zgx5Ydtdf2Y=",
+  "dgSpecHash": "R78E1UvSAYg=",
   "success": true,
-  "projectFilePath": "/Users/nicholas/Desktop/azure-sre-agent-platform-engineering-lab/src/orders-api/OrdersApi.csproj",
+  "projectFilePath": "/home/runner/work/azure-sre-agent-platform-engineering-lab/azure-sre-agent-platform-engineering-lab/src/orders-api/OrdersApi.csproj",
   "expectedPackageFiles": [
-    "/Users/nicholas/.nuget/packages/microsoft.aspnetcore.openapi/9.0.8/microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
-    "/Users/nicholas/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
+    "/tmp/codeql-scratch-806d6d2c64be1b5e/dbs/csharp/working/packages/microsoft.aspnetcore.openapi/9.0.8/microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
+    "/tmp/codeql-scratch-806d6d2c64be1b5e/dbs/csharp/working/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512",
+    "/tmp/codeql-scratch-806d6d2c64be1b5e/dbs/csharp/working/packages/microsoft.netcore.app.ref/9.0.17/microsoft.netcore.app.ref.9.0.17.nupkg.sha512",
+    "/tmp/codeql-scratch-806d6d2c64be1b5e/dbs/csharp/working/packages/microsoft.aspnetcore.app.ref/9.0.17/microsoft.aspnetcore.app.ref.9.0.17.nupkg.sha512",
+    "/tmp/codeql-scratch-806d6d2c64be1b5e/dbs/csharp/working/packages/microsoft.netcore.app.host.linux-x64/9.0.17/microsoft.netcore.app.host.linux-x64.9.0.17.nupkg.sha512"
   ],
   "logs": []
 }
