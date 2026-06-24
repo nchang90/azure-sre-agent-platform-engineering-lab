@@ -51,24 +51,10 @@ resource "azapi_resource" "sre_agent" {
   }
 
   depends_on = [
-    azurerm_role_assignment.target_reader,
-    azurerm_role_assignment.target_log_reader,
-    azurerm_role_assignment.target_contributor,
     azurerm_role_assignment.monitoring_reader,
+    azurerm_role_assignment.self_log_reader,
+    azurerm_role_assignment.self_smi_reader,
+    azurerm_role_assignment.self_smi_log_reader,
     azurerm_subnet.agent,
   ]
-}
-
-resource "azapi_resource" "github_data_connector" {
-  schema_validation_enabled = false
-  type                      = "Microsoft.App/agents/DataConnectors@2025-05-01-preview"
-  name                      = "github"
-  parent_id                 = azapi_resource.sre_agent[0].id
-
-  body = {
-    properties = {
-      dataConnectorType = "GitHubOAuth"
-      dataSource        = "github-oauth"
-    }
-  }
 }
