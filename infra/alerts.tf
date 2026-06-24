@@ -12,7 +12,11 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
-  depends_on          = [azurerm_log_analytics_workspace.law]
+  depends_on = [
+    azurerm_log_analytics_workspace.law,
+    azurerm_role_assignment.deployer_monitoring_contributor_rg,
+    azurerm_role_assignment.deployer_log_analytics_reader_rg,
+  ]
 
   description             = "Orders API: /health endpoint unhealthy or missing in the last 1 minute."
   display_name            = "Orders API health check failing"
@@ -48,7 +52,11 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
-  depends_on          = [azurerm_log_analytics_workspace.law]
+  depends_on = [
+    azurerm_log_analytics_workspace.law,
+    azurerm_role_assignment.deployer_monitoring_contributor_rg,
+    azurerm_role_assignment.deployer_log_analytics_reader_rg,
+  ]
 
   description             = "Orders API: container errors / back-off (crash loop) detected in the last 1 minute."
   display_name            = "Orders API container errors"
@@ -84,7 +92,11 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
-  depends_on          = [azurerm_log_analytics_workspace.law]
+  depends_on = [
+    azurerm_log_analytics_workspace.law,
+    azurerm_role_assignment.deployer_monitoring_contributor_rg,
+    azurerm_role_assignment.deployer_log_analytics_reader_rg,
+  ]
 
   description             = "Orders API: P99 request latency exceeded the 2s SLO over the last 1 minute."
   display_name            = "Orders API latency (P99) degraded"
