@@ -1,7 +1,0 @@
-api_version: azuresre.ai/v1
-kind: IncidentPlatform
-spec:
-  name: servicenow
-  platform_type: ServiceNow
-  display_name: "ServiceNow Incidents"
-  description: "Receives and updates ServiceNow incident records"

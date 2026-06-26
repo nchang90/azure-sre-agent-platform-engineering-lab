@@ -62,7 +62,7 @@ terraform -chdir=infra apply -var-file=environment/demo.tfvars \
 The reusable logic from the upstream [Microsoft SRE Agent](https://github.com/microsoft/sre-agent/tree/main/sreagent-templates/recipes/azmon-lawappinsights) `azmon-lawappinsights` recipe is **already integrated** into the lab (translated from upstream's CLI schema into the lab's schema):
 
 - Skills `investigate-azure-alerts` and `triage-app-errors` → [.github/skills/](.github/skills/)
-- Subagents `alert-investigator` → `remediation-advisor` → [recipes/azmon-lawappinsights/agents/](recipes/azmon-lawappinsights/agents/)
+- Subagent `alert-investigator` → [recipes/azmon-lawappinsights/agents/](recipes/azmon-lawappinsights/agents/)
 - Automations `azmon-sev01` and `daily-health-check` → registered inline by [scripts/post-provision.sh](scripts/post-provision.sh), gated by the `enable_sev01_incident_filter` / `enable_daily_health_check` Terraform toggles
 
 These are registered with the agent by [scripts/post-provision.sh](scripts/post-provision.sh).

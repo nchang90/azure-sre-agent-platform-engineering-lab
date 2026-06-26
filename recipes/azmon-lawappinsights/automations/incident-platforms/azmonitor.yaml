@@ -1,0 +1,4 @@
+metadata:
+  name: azmonitor
+spec:
+  platformType: AzMonitor

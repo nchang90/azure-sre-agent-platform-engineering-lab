@@ -1,0 +1,17 @@
+metadata:
+  name: snow-orders-api-latency
+spec:
+  name: ServiceNow Orders API Latency (P99)
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "5"
+  titleContains: alert-orders-api-latency
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

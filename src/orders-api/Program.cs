@@ -13,6 +13,12 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+if (Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true")
+{
+    app.UseMiddleware<ChaosMiddleware>();
+    app.Logger.LogWarning("CHAOS MONKEY ENABLED — faults will be injected into requests");
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

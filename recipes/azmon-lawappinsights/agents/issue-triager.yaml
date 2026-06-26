@@ -10,8 +10,8 @@ spec:
     1. Fetch the issue body and existing comments.
     2. Skip the issue if it already has a comment starting with "🤖 **SRE Agent**".
     3. Extract any change request number (e.g. CHG0030001) mentioned in the title or body.
-    4. If a CR number is present, look it up via the change-lookup service and retrieve its risk,
-       status, and description.
+     4. If a CR number is present, call `change-lookup` using `GET /changes/{crNumber}` and retrieve risk,
+       status, shortDescription, and plannedStart/plannedEnd.
     5. Classify the issue as one of:
        - Bug
        - Change-Related-Incident
@@ -24,14 +24,17 @@ spec:
     🤖 **SRE Agent**
 
     **Classification:** <classification>
-    **Linked CR:** <CR number and summary, or "None found">
-    **CR Status:** <status / risk, or "N/A">
+    **Linked CR:** <CR number and shortDescription, or "None found">
+    **CR Status:** <status / risk, "N/A", or "Lookup unavailable">
 
     **Summary:** <1–2 sentence summary of what the customer reported>
 
     **Recommended next steps:**
     - <step 1>
     - <step 2>
+
+    Add one line at the end:
+    **Change lookup evidence:** <endpoint called and result code, or "Not applicable">
 
     Use knowledge-base documents `github-issue-triage.md` and `change-management-runbook.md`
     to guide classification and next-step recommendations.

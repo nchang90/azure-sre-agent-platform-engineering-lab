@@ -51,8 +51,8 @@ github_oauth_url() {
 
 setup_github_integration() {
   local p REPO_OWNER REPO_NAME code OAUTH_URL wait_secs attempts attempt
-  local GITHUB_AUTH_READY CONNECTOR_IDENTITY connector_body repo_body
-  local BOUND_CONNECTOR CLONE_STATUS REPO_ERROR repo_wait_secs repo_poll_attempts
+  local GITHUB_AUTH_READY repo_body
+  local CLONE_STATUS REPO_ERROR repo_wait_secs repo_poll_attempts
 
   # Always clean stale/default repo aliases so disconnected placeholders do not linger.
   for p in /api/v2/repos/github /api/v1/repos/github /api/v1/codeRepos/github /api/v1/codeRepositories/github; do
@@ -136,24 +136,9 @@ setup_github_integration() {
     warn "GitHub OAuth is still not confirmed; proceeding in non-strict mode."
   fi
 
-  CONNECTOR_IDENTITY="${AGENT_UAMI:-SystemAssigned}"
-  connector_body="$(jq -nc --arg id "$CONNECTOR_IDENTITY" '{name:"github",type:"AgentConnector",properties:{dataConnectorType:"GitHubOAuth",dataSource:"github-oauth",identity:$id}}')"
-  code="$(api PUT /api/v2/extendedAgent/connectors/github \
-    -H "Content-Type: application/json" \
-    --data-binary "$connector_body")"
-  require_json_body "GitHub OAuth connector upsert" "$code"
-  ok "  GitHub OAuth connector created"
-
-  code="$(api GET /api/v2/extendedAgent/connectors/github)"
-  require_json_body "GitHub OAuth connector fetch" "$code"
-  CONNECTOR_IDENTITY="$(jq -r '.properties.identity // empty' "$RESP")"
-  if [[ -z "$CONNECTOR_IDENTITY" ]]; then
-    warn "Connector identity is empty after upsert; runtime push/PR may still be blocked."
-  fi
-
   auth
   repo_body="$(cat <<EOF
-{"name":"${REPO_NAME}","type":"CodeRepo","properties":{"url":"https://github.com/${REPO_OWNER}/${REPO_NAME}","type":"GitHub","authConnectorName":"github"}}
+{"name":"${REPO_NAME}","type":"CodeRepo","properties":{"url":"https://github.com/${REPO_OWNER}/${REPO_NAME}","type":"GitHub"}}
 EOF
 )"
   api_json "Code repo upsert" PUT "/api/v2/repos/${REPO_NAME}" "$repo_body"
@@ -168,11 +153,10 @@ EOF
   for attempt in $(seq 1 "$repo_poll_attempts"); do
     code="$(api GET /api/v2/repos)"
     require_json_body "Code repo list" "$code"
-    BOUND_CONNECTOR="$(jq -r --arg name "$REPO_NAME" '.value[]? | select(.name==$name) | .properties.authConnectorName // empty' "$RESP" | head -n1)"
     CLONE_STATUS="$(jq -r --arg name "$REPO_NAME" '.value[]? | select(.name==$name) | .properties.cloneStatus // empty' "$RESP" | head -n1)"
     REPO_ERROR="$(jq -r --arg name "$REPO_NAME" '.value[]? | select(.name==$name) | .properties.errorMessage // empty' "$RESP" | head -n1)"
 
-    if [[ "$BOUND_CONNECTOR" == "github" ]] || [[ "$CLONE_STATUS" == "Ready" && -z "$REPO_ERROR" ]]; then
+    if [[ "$CLONE_STATUS" == "Ready" && -z "$REPO_ERROR" ]]; then
       break
     fi
 
@@ -183,17 +167,17 @@ EOF
     fi
   done
 
-  if [[ "$BOUND_CONNECTOR" != "github" ]]; then
-    if [[ -n "$GITHUB_PAT" && -z "$REPO_ERROR" ]]; then
-      log "  Repo authConnectorName is empty in PAT mode, but no repo error reported; continuing."
-    elif [[ "$CLONE_STATUS" == "Ready" && -z "$REPO_ERROR" ]]; then
-      log "  Repo authConnectorName is empty, but clone status is Ready with no error; continuing."
-    elif [[ -z "$CLONE_STATUS" && -z "$REPO_ERROR" ]]; then
-      log "  Repo status is still materializing and no error is reported; continuing."
-    else
-      err "Repo '${REPO_NAME}' is not bound to auth connector 'github' (found: '${BOUND_CONNECTOR:-<empty>}')."
-      die "GitHub auth may not be materialized; reconnect OAuth and re-run post-provision."
-    fi
+  if [[ "$CLONE_STATUS" == "Ready" && -z "$REPO_ERROR" ]]; then
+    ok "  Code repo: $GITHUB_REPO"
+    return 0
   fi
-  ok "  Code repo: $GITHUB_REPO"
+
+  if [[ -z "$CLONE_STATUS" && -z "$REPO_ERROR" ]]; then
+    log "  Repo status is still materializing and no error is reported; continuing."
+    ok "  Code repo: $GITHUB_REPO"
+    return 0
+  fi
+
+  err "Repo '${REPO_NAME}' did not become ready (cloneStatus='${CLONE_STATUS:-<empty>}', error='${REPO_ERROR:-<empty>}')."
+  die "GitHub auth may not be materialized; reconnect OAuth/PAT and re-run post-provision."
 }

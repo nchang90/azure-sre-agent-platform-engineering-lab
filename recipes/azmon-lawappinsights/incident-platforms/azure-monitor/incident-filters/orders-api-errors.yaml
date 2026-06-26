@@ -1,0 +1,17 @@
+metadata:
+  name: orders-api-errors
+spec:
+  name: Orders API 5xx Errors
+  incidentPlatform: AzMonitor
+  isEnabled: true
+  priorities:
+  - Sev0
+  - Sev1
+  - Sev2
+  - Sev3
+  - Sev4
+  titleContains: alert-orders-api-errors
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

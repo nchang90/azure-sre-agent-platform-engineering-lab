@@ -1,0 +1,25 @@
+{
+  "_scenario": "azmon-lawappinsights",
+  "agent": {
+    "accessLevel": "Low",
+    "actionMode": "Review",
+    "upgradeChannel": "Preview",
+    "incidentPlatform": "AzMonitor"
+  },
+  "connectors": [
+    { "name": "azure-monitor", "type": "AzureMonitor" }
+  ],
+  "skills": [
+    "investigate-azure-alerts",
+    "triage-app-errors"
+  ],
+  "subagents": [
+    "alert-investigator"
+  ],
+  "scheduledTasks": [
+    "daily-health-check"
+  ],
+  "responsePlans": [
+    { "name": "azmon-sev01", "handlingAgent": "alert-investigator" }
+  ]
+}

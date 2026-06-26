@@ -7,7 +7,6 @@ warn() { echo "[WARN]  $*"; }
 err()  { echo "[ERROR] $*" >&2; }
 die()  { err "$*"; exit 1; }
 
-# ── paths & deps ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 TEMP_DIR="$SCRIPT_DIR/.tmp"
@@ -30,23 +29,31 @@ TF_OUT="$(terraform -chdir=infra output -json 2>/dev/null || true)"
 [[ -n "$TF_OUT" ]] || { err "Terraform outputs missing — run 'terraform apply' first"; exit 1; }
 read_tf() { jq -r ".${1}.value // empty" <<<"$TF_OUT"; }
 
-AGENT_ID="$(read_tf agent_id)"
-[[ -n "$AGENT_ID" ]] || { err "agent_id missing from Terraform outputs"; exit 1; }
+TF_AGENT_ID="$(read_tf agent_id)"
+AGENT_ID="${AGENT_ID:-$TF_AGENT_ID}"
+AGENT_ENDPOINT="${AGENT_ENDPOINT:-}"
+
+if [[ "$AGENT_ID" =~ ^https?:// ]]; then
+  warn "AGENT_ID looks like a URL; treating it as AGENT_ENDPOINT override."
+  AGENT_ENDPOINT="${AGENT_ID%/}"
+  AGENT_ID="$TF_AGENT_ID"
+fi
+
+[[ -n "$AGENT_ID" ]] || { err "agent_id missing from Terraform outputs and AGENT_ID env var"; exit 1; }
 AGENT_SUBSCRIPTION_ID="$(cut -d/ -f3 <<<"$AGENT_ID")"
 RESOURCE_GROUP="$(cut -d/ -f5 <<<"$AGENT_ID")"
 AGENT_NAME="$(cut -d/ -f9 <<<"$AGENT_ID")"
 AGENT_PORTAL_URL="$(read_tf agent_portal_url)"
 
-# The data-plane host has a unique generated suffix — read it from the live resource.
-log "Resolving agent data-plane endpoint..."
-AGENT_ENDPOINT="$(az resource show --ids "$AGENT_ID" --query properties.agentEndpoint -o tsv 2>/dev/null | tr -d '\r')"
-[[ -n "$AGENT_ENDPOINT" ]] || { AGENT_ENDPOINT="$(read_tf agent_data_plane_url)"; warn "Falling back to Terraform output: $AGENT_ENDPOINT"; }
+if [[ -z "$AGENT_ENDPOINT" ]]; then
+  log "Resolving agent data-plane endpoint..."
+  AGENT_ENDPOINT="$(az resource show --ids "$AGENT_ID" --query properties.agentEndpoint -o tsv 2>/dev/null | tr -d '\r')"
+  [[ -n "$AGENT_ENDPOINT" ]] || { AGENT_ENDPOINT="$(read_tf agent_data_plane_url)"; warn "Falling back to Terraform output: $AGENT_ENDPOINT"; }
+else
+  log "Using AGENT_ENDPOINT override from environment."
+fi
 AGENT_ENDPOINT="${AGENT_ENDPOINT%/}"
 [[ -n "$AGENT_ENDPOINT" ]] || { err "Could not resolve agent endpoint"; exit 1; }
-
-# Optional user-assigned identity for connector setup.
-AGENT_UAMI="$(az resource show --ids "$AGENT_ID" --query "keys(identity.userAssignedIdentities)[0]" -o tsv 2>/dev/null || true)"
-
 
 # Fetches a short-lived Bearer token for the SRE Agent data-plane.
 TOKEN=""
@@ -68,6 +75,28 @@ check_subscription_context() {
     echo "  Fix:    az account set --subscription $AGENT_SUBSCRIPTION_ID"
     die "Switch subscription and re-run post-provision."
   fi
+}
+
+target_platform_folder() {
+  local configured
+  configured="${INCIDENT_PLATFORM:-$(read_tf incident_platform)}"
+  configured="$(tr '[:upper:]' '[:lower:]' <<<"$configured")"
+
+  case "$configured" in
+    servicenow) echo "servicenow" ;;
+    azure-monitor|azmonitor) echo "azure-monitor" ;;
+    "")
+      if [[ -n "${SERVICENOW_INSTANCE_URL:-}" && -n "${SERVICENOW_USERNAME:-}" && -n "${SERVICENOW_PASSWORD:-}" ]]; then
+        echo "servicenow"
+      else
+        echo "azure-monitor"
+      fi
+      ;;
+    *)
+      warn "Unknown INCIDENT_PLATFORM='$configured'; defaulting to azure-monitor"
+      echo "azure-monitor"
+      ;;
+  esac
 }
 
 # Calls the SRE Agent data-plane API.
@@ -115,7 +144,6 @@ best_effort_delete() {
 
 # GitHub integration step is defined in a separate file for maintainability.
 source "$SCRIPT_DIR/github.sh"
-source "$SCRIPT_DIR/servicenow.sh"
 
 # Converts a YAML agent config to JSON and registers it with the agent.
 register_subagent() {
@@ -163,65 +191,131 @@ upload_skills() {
 
 register_subagents_step() {
   log "Step 3/5: Registering subagents..."
+  local needs_alert_investigator
+
+  # Core agents used by the main S1/S3/S4 paths.
   register_subagent recipes/azmon-lawappinsights/agents/triage-agent.yaml         triage-agent
   register_subagent recipes/azmon-lawappinsights/agents/issue-triager.yaml        issue-triager
-  register_subagent recipes/azmon-lawappinsights/agents/remediation-advisor.yaml  remediation-advisor
-  register_subagent recipes/azmon-lawappinsights/agents/alert-investigator.yaml   alert-investigator
   register_subagent recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml   incident-orchestrator
+
+  needs_alert_investigator="false"
+  if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]] || [[ "$(read_tf enable_daily_health_check)" == "true" ]]; then
+    needs_alert_investigator="true"
+  fi
+
+  if [[ "$needs_alert_investigator" == "true" ]]; then
+    register_subagent recipes/azmon-lawappinsights/agents/alert-investigator.yaml   alert-investigator
+  else
+    # Keep the portal clean when those optional automations are disabled.
+    best_effort_delete /api/v2/extendedAgent/agents/alert-investigator
+    best_effort_delete /api/v2/extendedAgent/agents/remediation-advisor
+    ok "  Skipped optional subagent: alert-investigator"
+  fi
+  echo
+}
+
+configure_incident_platforms_step() {
+  log "Step 4/6: Configuring incident platforms..."
+  local api_version body normalized connection_key platform_folder platform_type
+  api_version="2025-05-01-preview"
+  platform_folder="$(target_platform_folder)"
+
+  case "$platform_folder" in
+    servicenow) platform_type="ServiceNow" ;;
+    *) platform_type="AzMonitor" ;;
+  esac
+
+  if [[ "$platform_type" == "ServiceNow" ]]; then
+    if [[ -z "${SERVICENOW_INSTANCE_URL:-}" || -z "${SERVICENOW_USERNAME:-}" || -z "${SERVICENOW_PASSWORD:-}" ]]; then
+      warn "  ServiceNow selected, but SERVICENOW_* env vars are not configured."
+      echo
+      return
+    fi
+
+    normalized="${SERVICENOW_INSTANCE_URL%/}"
+    connection_key="$(jq -nc \
+      --arg endpoint "$normalized" \
+      --arg username "$SERVICENOW_USERNAME" \
+      --arg password "$SERVICENOW_PASSWORD" \
+      '{endpoint:$endpoint,username:$username,password:$password}')"
+
+    body="$(jq -nc \
+      --arg t "$platform_type" \
+      --arg u "$normalized" \
+      --arg k "$connection_key" \
+      '{properties:{incidentManagementConfiguration:{type:$t,connectionUrl:$u,connectionKey:$k}}}')"
+
+    if az rest --method PATCH \
+      --url "https://management.azure.com${AGENT_ID}?api-version=${api_version}" \
+      --body "$body" >/dev/null 2>&1; then
+      ok "  Incident platform set to ServiceNow"
+    else
+      warn "  Failed to set ServiceNow incident platform"
+    fi
+  else
+    body="$(jq -nc --arg t "$platform_type" '{properties:{incidentManagementConfiguration:{type:$t,connectionName:"azmonitor"}}}')"
+    if az rest --method PATCH \
+      --url "https://management.azure.com${AGENT_ID}?api-version=${api_version}" \
+      --body "$body" >/dev/null 2>&1; then
+      ok "  Incident platform set to Azure Monitor"
+    else
+      warn "  Failed to set Azure Monitor incident platform"
+    fi
+  fi
   echo
 }
 
 create_response_plans_step() {
-  log "Step 4/5: Creating response plan..."
-  local plan code prior_id
+  log "Step 5/6: Creating response plan..."
+  local code prior_id plan_yaml plan_body plan_id handling_agent
+  local platform_folder
 
-  plan='{
-  "id":           "orders-api-health-response",
-  "name":         "Orders API Health Response",
-  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
-  "titleContains": "alert-orders-api-health",
-  "handlingAgent": "incident-orchestrator",
-  "agentMode":    "autonomous",
-  "maxAttempts":  3
-}'
-  code="$(api POST /api/v1/incidentPlayground/filters/orders-api-health-response \
-    -H "Content-Type: application/json" \
-    --data-binary "$plan")"
-  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (health)" || warn "  Health response plan returned HTTP $code"
+  platform_folder="$(target_platform_folder)"
 
-  plan='{
-  "id":           "orders-api-errors",
-  "name":         "Orders API 5xx Errors",
-  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
-  "titleContains": "alert-orders-api-errors",
-  "handlingAgent": "incident-orchestrator",
-  "agentMode":    "autonomous",
-  "maxAttempts":  3
-}'
-  code="$(api POST /api/v1/incidentPlayground/filters/orders-api-errors \
-    -H "Content-Type: application/json" \
-    --data-binary "$plan")"
-  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (5xx)" || warn "  5xx response plan returned HTTP $code"
+  local -a base_plans=(
+    "recipes/azmon-lawappinsights/incident-platforms/${platform_folder}/incident-filters/orders-api-health-response.yaml"
+    "recipes/azmon-lawappinsights/incident-platforms/${platform_folder}/incident-filters/orders-api-errors.yaml"
+    "recipes/azmon-lawappinsights/incident-platforms/${platform_folder}/incident-filters/orders-api-latency.yaml"
+    "recipes/azmon-lawappinsights/incident-platforms/${platform_folder}/incident-filters/container-apps-alerts.yaml"
+  )
 
-  plan='{
-  "id":           "orders-api-latency",
-  "name":         "Orders API Latency (P99)",
-  "priorities":   ["Sev0","Sev1","Sev2","Sev3","Sev4"],
-  "titleContains": "alert-orders-api-latency",
-  "handlingAgent": "incident-orchestrator",
-  "agentMode":    "autonomous",
-  "maxAttempts":  3
-}'
-  code="$(api POST /api/v1/incidentPlayground/filters/orders-api-latency \
-    -H "Content-Type: application/json" \
-    --data-binary "$plan")"
-  is_ok_status "$code" 409 && ok "  Response plan -> incident-orchestrator (latency)" || warn "  Latency response plan returned HTTP $code"
+  for plan_yaml in "${base_plans[@]}"; do
+    [[ -f "$plan_yaml" ]] || { warn "  Missing response plan YAML: $plan_yaml"; continue; }
 
-  if [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
-    code="$(api POST /api/v1/incidentPlayground/filters/azmon-sev01 \
+    plan_body="$("$PYTHON" "$SCRIPT_DIR/build-api.py" incident-filter "$plan_yaml" 2>"$TEMP_DIR/err")" \
+      || { warn "  Could not parse response plan YAML ($plan_yaml): $(cat "$TEMP_DIR/err")"; continue; }
+
+    plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
+    handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
+    [[ -n "$plan_id" ]] || { warn "  Response plan YAML missing id: $plan_yaml"; continue; }
+
+    code="$(api PUT "/api/v1/incidentPlayground/filters/${plan_id}" \
       -H "Content-Type: application/json" \
-      --data-binary '{"id":"azmon-sev01","name":"Azure Monitor Sev0/Sev1","priorities":["Sev0","Sev1"],"titleContains":"","handlingAgent":"alert-investigator","agentMode":"autonomous","maxAttempts":3}')"
-    is_ok_status "$code" 409 && ok "  Response plan -> alert-investigator (Sev0/Sev1)" || warn "  azmon-sev01 returned HTTP $code"
+      --data-binary "$plan_body")"
+    is_ok_status "$code" 409 && ok "  Response plan -> ${handling_agent} (${plan_id})" || warn "  ${plan_id} returned HTTP $code"
+  done
+
+  if [[ "$platform_folder" == "azure-monitor" ]] && [[ "$(read_tf enable_sev01_incident_filter)" == "true" ]]; then
+    plan_yaml="recipes/azmon-lawappinsights/incident-platforms/${platform_folder}/incident-filters/azmon-sev01.yaml"
+    if [[ -f "$plan_yaml" ]]; then
+      plan_body="$("$PYTHON" "$SCRIPT_DIR/build-api.py" incident-filter "$plan_yaml" 2>"$TEMP_DIR/err")" \
+        || { warn "  Could not parse response plan YAML ($plan_yaml): $(cat "$TEMP_DIR/err")"; plan_body=""; }
+
+      if [[ -n "$plan_body" ]]; then
+        plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
+        handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
+        if [[ -n "$plan_id" ]]; then
+          code="$(api PUT "/api/v1/incidentPlayground/filters/${plan_id}" \
+            -H "Content-Type: application/json" \
+            --data-binary "$plan_body")"
+          is_ok_status "$code" 409 && ok "  Response plan -> ${handling_agent} (${plan_id})" || warn "  ${plan_id} returned HTTP $code"
+        else
+          warn "  Response plan YAML missing id: $plan_yaml"
+        fi
+      fi
+    else
+      warn "  Missing response plan YAML: $plan_yaml"
+    fi
   fi
 
   if [[ "$(read_tf enable_daily_health_check)" == "true" ]]; then
@@ -259,8 +353,8 @@ check_subscription_context
 upload_knowledge_base
 upload_skills
 register_subagents_step
+configure_incident_platforms_step
 create_response_plans_step
-setup_servicenow_integration
 setup_github_integration
 echo
 
@@ -271,12 +365,15 @@ echo "  Agent Portal: https://sre.azure.com"
 echo "  Agent API:    $AGENT_ENDPOINT"
 echo
 echo "  Verify in the portal:"
-echo "    Builder → Subagents     (expect 5)"
+echo "    Builder → Subagents     (core + optional alert-investigator)"
 echo "    Builder → Skills        (expect 6)"
-echo "    Incident Response Plans (expect 1, or 2 with azmon-sev01)"
+echo "    Incident Response Plans (expect orders-api + container-apps plans, plus optional azmon-sev01)"
 echo "    Scheduled Tasks         (daily-health-check, if enabled)"
-echo "    Settings → Incident Platform (Azure Monitor)"
-echo "    Settings → Incident Platform (ServiceNow, if SERVICENOW_* env vars are set)"
+if [[ "$(target_platform_folder)" == "servicenow" ]]; then
+  echo "    Settings → Incident Platform (ServiceNow)"
+else
+  echo "    Settings → Incident Platform (Azure Monitor)"
+fi
 if [[ "$ENABLE_GITHUB_INTEGRATION" == "true" ]]; then
   echo "    Code → Repositories     ($GITHUB_REPO)"
 fi
