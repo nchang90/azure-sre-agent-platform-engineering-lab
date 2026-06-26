@@ -53,8 +53,6 @@ resource "azapi_resource" "sre_agent" {
   depends_on = [
     azurerm_role_assignment.monitoring_reader,
     azurerm_role_assignment.self_log_reader,
-    azurerm_role_assignment.self_smi_reader,
-    azurerm_role_assignment.self_smi_log_reader,
     azurerm_subnet.agent,
   ]
 }
