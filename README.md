@@ -1,6 +1,6 @@
 # Azure SRE Agent - Platform Engineering Lab
 
-Hands-on Azure SRE Agent lab with five progressive scenarios: detection and triage, autonomous remediation, issue triage, enterprise guardrails/connectors, and optional infrastructure resiliency validation.
+Hands-on Azure SRE Agent lab with four progressive scenarios: detection and triage, autonomous remediation, issue triage, and enterprise guardrails/connectors.
 
 ## Prerequisites
 
@@ -23,15 +23,15 @@ Cloud Shell note: if data-plane setup fails, run `az login --scope "https://azur
 
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
-- Trigger: manual run only.
-- Inputs: `plan` and `apply` (both default to true).
+- Trigger: scheduled daily at 10:00 UTC and manual run.
+- Inputs: `environment` (`demo`/`sbox`, default `sbox`), `plan`, and `apply` (both default to true).
 - Secret required: `AZURE_CREDENTIALS`.
 - Behavior: Terraform init, plan, optional apply, and optional post-provision.
 
 Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.yml)
 
-- Trigger: scheduled daily at 21:00 UTC and manual run.
-- Manual safety input: `confirm_destroy=DESTROY`.
+- Trigger: scheduled daily at 00:00 UTC and manual run.
+- Manual safety input: `destroy=true` (the run exits unless confirmed).
 
 ## Scenarios
 
