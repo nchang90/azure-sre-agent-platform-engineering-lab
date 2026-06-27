@@ -102,8 +102,8 @@ curl -X POST "$APP_URL/api/simulate/clear-cr"   # leave CR state clean
 |-------|--------------|
 | **Detect** | Azure Monitor alert fires; the Incident Response Plan routes it to the agent — no human trigger |
 | **Triage** | Agent classifies severity, identifies `orders-api`, plans the investigation |
-| **Investigate** | Queries Log Analytics for the 5xx pattern, correlates with metrics and deployment history, checks `/health` and the active-CR state |
-| **Root cause** | Matches the _Unauthorized Change_ runbook — failures with no corresponding CR |
+| **Investigate** | Queries Log Analytics for the 5xx pattern, correlates with metrics and deployment history, checks `/health`, and calls `change-lookup` (the ServiceNow CR proxy) to see if an approved change covers the failing revision |
+| **Root cause** | Matches the _Unauthorized Change_ runbook — 5xx spike with **no approved ServiceNow CR** in `change-lookup` |
 | **Propose** | Posts a remediation recommendation (rollback / restore healthy state) with confidence |
 | **Optionally fix** | **Review** mode: you approve in the portal. **Automatic** mode: agent executes the rollback itself |
 | **Confirm** | Agent re-queries `/health` and metrics, posts a post-action summary, stores the incident in memory |
@@ -129,6 +129,7 @@ curl -X POST "$APP_URL/api/simulate/clear-cr"   # leave CR state clean
 In the incident thread, ask the agent:
 
 - *"What was the root cause, and how did you confirm it?"*
+- *"Was there an approved ServiceNow change request for this deployment?"*
 - *"What remediation do you recommend, and why?"*
 - *"How will you verify the fix worked?"*
 - *"Save this incident to memory so future investigations can reference it."*
