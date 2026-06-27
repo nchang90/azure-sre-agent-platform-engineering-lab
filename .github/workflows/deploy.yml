@@ -57,7 +57,7 @@ jobs:
 
       - name: Terraform plan
         if: ${{ inputs.plan || inputs.apply }}
-        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environment/${{ inputs.environment }}.tfvars
+        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environment/${{ env.ENVIRONMENT }}.tfvars
 
       - name: Terraform apply
         if: ${{ inputs.apply }}
