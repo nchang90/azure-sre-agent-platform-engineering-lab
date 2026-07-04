@@ -9,7 +9,7 @@ Hands-on Azure SRE Agent lab with four progressive scenarios: detection and tria
 | Azure CLI | `brew install azure-cli` or [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | Terraform 1.5+ | `brew install terraform` or [Install Terraform](https://developer.hashicorp.com/terraform/install) |
 
-## Quick Start
+## Quick Start (S2-S4 Terraform Path)
 
 1. Sign in to Azure and select your subscription.
 2. Run `terraform -chdir=infra/terraform init`.
@@ -32,6 +32,17 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S2 - Autonomous remediation](docs/scenario-s2-autonomous-remediation.md): break the running app with a `curl` and watch the agent detect, investigate, and remediate — runtime only, no redeploy.
 - [S3 - Change issue triage](docs/scenario-s3-change-issue-triage.md): classify and respond to sample GitHub issues.
 - [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise-guardrails-connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
+
+### Scenario Steps (Flexible)
+
+Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a new custom tfvars file you create. The table below shows recommended defaults only.
+
+| Scenario | Recommended tfvars | Required post-provision step | Optional step |
+|---|---|---|---|
+| S1 Detect and triage | N/A (uses `azd`/Bicep) | `azd env new s1-demo` then `azd provision` | `azd env get-values` |
+| S2 Autonomous remediation | Any existing tfvars (recommended: `environments/sbox.tfvars`) or a new custom tfvars | `bash scripts/post-provision.sh` | Configure GitHub in Azure SRE Agent portal (only if needed) |
+| S3 Change issue triage | `environments/demo.tfvars` or `environments/sbox.tfvars` | `bash scripts/post-provision.sh` | Configure GitHub in Azure SRE Agent portal (only if needed) |
+| S4 Guardrails/connectors | `environments/demo.tfvars` | `bash scripts/post-provision.sh` | Configure GitHub in Azure SRE Agent portal (when running GitHub-enabled flows) |
 
 ## Reference Recipes
 
