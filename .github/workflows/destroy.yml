@@ -3,13 +3,14 @@ name: Destroy SRE Agent Lab
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment"
+      scenario:
+        description: "Target scenario"
         type: choice
         options:
-          - demo
-          - sbox
-        default: demo
+          - autonomous
+          - change-request
+          - guardrails
+        default: guardrails
       destroy:
         description: "tf_destroy"
         required: true
@@ -54,7 +55,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ inputs.environment || 'sbox' }}.backend.tfvars
+        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ inputs.environment || 'guardrails' }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environment/${{ inputs.environment || 'sbox' }}.tfvars
+        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=scenarios/${{ inputs.environment || 'guardrails' }}.tfvars

@@ -2,7 +2,7 @@ agent_name               = "sre-agent-platform"
 resource_group_name      = "rg-sre-lab-demo"
 location                 = "uksouth"
 target_resource_groups   = []
-access_level             = "Low"
+access_level             = "High"
 action_mode              = "Review"
 upgrade_channel          = "Preview"
 monthly_agent_unit_limit = 10000
@@ -10,8 +10,9 @@ default_model_provider   = "MicrosoftFoundry"
 default_model_name       = "Automatic"
 
 tags = {
-  environment = "lab"
+  environment = "demo"
   project     = "sre-agent"
+  scenario    = "s4"
 }
 
 email_receiver_address = "nicholasc001@hotmail.com"
@@ -23,6 +24,9 @@ admin_principal_ids = [
 
 deploy_sre_agent = true
 
-# ── Recipe automations (azmon-lawappinsights) — enabled for the demo environment ──
+enable_app_insights_connector  = true
+enable_log_analytics_connector = true
+
+# Recipe automations (azmon-lawappinsights) enabled for the demo environment.
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true

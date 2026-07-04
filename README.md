@@ -13,7 +13,7 @@ Hands-on Azure SRE Agent lab with four progressive scenarios: detection and tria
 
 1. Sign in to Azure and select your subscription.
 2. Run `terraform -chdir=infra/terraform init`.
-3. Run `terraform -chdir=infra/terraform apply -auto-approve -var-file=environment/demo.tfvars`.
+3. Run `terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/demo.tfvars`.
 4. Run `bash scripts/post-provision.sh`.
    - Optional: set `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME`, and `SERVICENOW_PASSWORD` first to auto-register the ServiceNow connector.
 
@@ -24,7 +24,7 @@ Cloud Shell note: if data-plane setup fails, run `az login --scope "https://azur
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
 - Trigger: scheduled daily at 10:00 UTC and manual run.
-- Inputs: `environment` (`demo`/`sbox`, default `sbox`), `plan`, and `apply` (both default to true).
+- Inputs: `environment` (`demo`/`sbox`/`change-issue`, default `demo`), `plan`, and `apply` (both default to true).
 - Secret required: `AZURE_CREDENTIALS`.
 - Behavior: Terraform init, plan, optional apply, and optional post-provision.
 
@@ -40,17 +40,9 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S3 - Change issue triage](docs/scenario-s3-change-issue-triage.md): classify and respond to sample GitHub issues.
 - [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise-guardrails-connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
 
-### Per-scenario configuration
+Any scenario can run with any file in `infra/terraform/environments/*.tfvars`. The table below is guidance only (recommended defaults), not a hard mapping.
 
-The lab deploys **one shared stack** — scenarios differ only by a couple of agent settings, not by infrastructure. Set them by editing your `environment/*.tfvars` file, or pass `-var` flags at apply time:
-
-```bash
-# Example: deploy the demo environment configured for S2 (autonomous remediation)
-terraform -chdir=infra/terraform apply -var-file=environment/demo.tfvars \
-  -var access_level=High -var action_mode=Automatic
-```
-
-| Scenario | `access_level` | `action_mode` | Connectors |
+| Scenario (Recommended) | `access_level` | `action_mode` | Connectors |
 |---|---|---|---|
 | S1 Detect & triage | `Low` | `Review` | — |
 | S2 Autonomous remediation | `Low`/`High` (optional) | `Review`/`Automatic` (optional) | — (runtime-only scenario; `High`+`Automatic` lets the agent fix without approval) |
