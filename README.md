@@ -15,23 +15,16 @@ Hands-on Azure SRE Agent lab with four progressive scenarios: detection and tria
 2. Run `terraform -chdir=infra/terraform init`.
 3. Run `terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/demo.tfvars`.
 4. Run `bash scripts/post-provision.sh`.
-   - Optional: set `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME`, and `SERVICENOW_PASSWORD` first to auto-register the ServiceNow connector.
-
-Cloud Shell note: if data-plane setup fails, run `az login --scope "https://azuresre.dev/.default"` and rerun `bash scripts/post-provision.sh`.
 
 ## GitHub Actions
 
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-
-- Trigger: scheduled daily at 10:00 UTC and manual run.
-- Inputs: `environment` (`demo`/`sbox`/`change-issue`, default `demo`), `plan`, and `apply` (both default to true).
+- Trigger: daily schedule and manual run.
+- Inputs: `environment` (`demo`/`sbox`), `plan`, `apply`.
 - Secret required: `AZURE_CREDENTIALS`.
-- Behavior: Terraform init, plan, optional apply, and optional post-provision.
 
 Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.yml)
-
-- Trigger: scheduled daily at 00:00 UTC and manual run.
-- Manual safety input: `destroy=true` (the run exits unless confirmed).
+- Trigger: daily schedule and manual run.
 
 ## Scenarios
 
@@ -40,31 +33,15 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S3 - Change issue triage](docs/scenario-s3-change-issue-triage.md): classify and respond to sample GitHub issues.
 - [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise-guardrails-connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
 
-Any scenario can run with any file in `infra/terraform/environments/*.tfvars`. The table below is guidance only (recommended defaults), not a hard mapping.
-
-| Scenario (Recommended) | `access_level` | `action_mode` | Connectors |
-|---|---|---|---|
-| S1 Detect & triage | `Low` | `Review` | — |
-| S2 Autonomous remediation | `Low`/`High` (optional) | `Review`/`Automatic` (optional) | — (runtime-only scenario; `High`+`Automatic` lets the agent fix without approval) |
-| S3 Change issue triage | `Low` | `Review` | — (reuses the S1/S2 agent) |
-| S4 Guardrails & connectors | `High` | `Review` | `enable_log_analytics_connector`, `enable_app_insights_connector` = `true` |
-
 ## Reference Recipes
 
-The reusable logic from the upstream [Microsoft SRE Agent](https://github.com/microsoft/sre-agent/tree/main/sreagent-templates/recipes/azmon-lawappinsights) `azmon-lawappinsights` recipe is **already integrated** into the lab (translated from upstream's CLI schema into the lab's schema):
+The upstream `azmon-lawappinsights` recipe is integrated into this lab.
+- Skills: [.github/skills/](.github/skills/)
+- Agents and automations: [recipes/azmon-lawappinsights/](recipes/azmon-lawappinsights/)
+- Registration script: [scripts/post-provision.sh](scripts/post-provision.sh)
 
-- Skills `investigate-azure-alerts` and `triage-app-errors` → [.github/skills/](.github/skills/)
-- Subagent `alert-investigator` → [recipes/azmon-lawappinsights/agents/](recipes/azmon-lawappinsights/agents/)
-- Automations `azmon-sev01` and `daily-health-check` → registered inline by [scripts/post-provision.sh](scripts/post-provision.sh), gated by the `enable_sev01_incident_filter` / `enable_daily_health_check` Terraform toggles
+## Deployed Resources
 
-These are registered with the agent by [scripts/post-provision.sh](scripts/post-provision.sh).
-
-[recipes/azmon-lawappinsights/](recipes/azmon-lawappinsights/) documents the upstream-to-lab mapping and keeps the remaining recipe backlog in one place. The pieces **not yet wired** into the lab are the upstream `config/hooks/` items (`deny-prod-deletes`, `require-approval-for-restarts`) and `config/common-prompts/` (`investigation-guidelines`, `safety-rules`).
-
-## Deployed Components
-
-- Resource group, managed identity, and SRE Agent resource.
-- Log Analytics and Application Insights.
-- Container Apps environment, ACR, and two services: orders-api and change-lookup.
-- Alert rules and knowledge-base content.
-- Subagents from [recipes/azmon-lawappinsights/agents](recipes/azmon-lawappinsights/agents).
+- Core platform: resource group, managed identity, and SRE Agent resource.
+- Observability: Log Analytics, Application Insights, and alert rules.
+- Runtime: Container Apps environment, ACR, and the `orders-api` / `change-lookup` services.
