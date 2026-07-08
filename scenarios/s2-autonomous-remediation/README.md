@@ -16,7 +16,7 @@ No `terraform.tfvars` edits. No `azd up`. No connector wiring. It's a pure
 **runtime** scenario against the already-deployed `orders-api`: you inject a
 failure at runtime and observe the agent end to end.
 
-<img src="../images/story2.png" alt="autonomous remediation" width="600" />
+<img src="../../docs/images/story2.png" alt="autonomous remediation" width="600" />
 
 ---
 
@@ -27,7 +27,7 @@ S2 is **runtime only** — it changes nothing about your infrastructure or confi
 | Stage | What it is | Tooling |
 |-------|------------|---------|
 | **S1** | Base infrastructure | Bicep + azd |
-| **S2** | **This scenario — break it and watch** | **Runtime only (curl + portal)** |
+| **S2** | **This scenario — break it and watch** | Runtime trigger (curl); handled by agent on Terraform‑provisioned platform (observe in portal) |
 | **S3** | Agent / app configuration | Terraform |
 | **S4** | Day-2 operations | Terraform |
 

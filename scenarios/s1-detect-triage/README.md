@@ -10,7 +10,7 @@
 
 A developer ships a release straight to production with no change request and no peer review. The image is live and broken. The Azure Monitor alert fires automatically — the agent picks it up, triages the severity, queries Log Analytics for 5xx error patterns, correlates with Azure Monitor metrics and deployment history, pinpoints the root cause at the source file level, submits a fix PR, and resolves the alert — all before on-call wakes up. The session is saved so the next similar incident is handled faster.
 
-<img src="../images/story1.png" alt="detect and triage" width="600" />
+<img src="../../docs/images/story1.png" alt="detect and triage" width="600" />
 
 ---
 

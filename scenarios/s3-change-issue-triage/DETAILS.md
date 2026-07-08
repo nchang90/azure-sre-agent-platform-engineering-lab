@@ -10,7 +10,7 @@
 
 The morning after S2, customer issues flood GitHub. The `issue-triager` runs on schedule, extracts CR numbers, looks them up in `change-lookup`, classifies issues, applies labels, and posts structured triage comments. No human has to read every ticket — the agent handles first-pass triage automatically.
 
-<img src="../images/story3.png" alt="change issue triage" width="600" />
+<img src="../../docs/images/story3.png" alt="change issue triage" width="600" />
 
 ---
 
