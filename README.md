@@ -32,7 +32,7 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S2 - Autonomous remediation](docs/scenario-s2-autonomous-remediation.md): break the running app with a `curl` and watch the agent detect, investigate, and remediate — runtime only, no redeploy.
 - [S3 - Change issue triage](docs/scenario-s3-change-issue-triage.md): classify and respond to sample GitHub issues.
 - [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise-guardrails-connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
-- [S5 - PIM Elevation Audit & Alignment](docs/scenario-s5-pim-elevation-audit.md): daily audit of PIM activations, activity correlation, and alignment classification with email report.
+- [S5 - Security Incident Investigation](docs/scenario-s5-incident-investigation.md): analyze Sentinel incidents, correlate alerts/entities, and produce timeline + MITRE tactics.
 - [S6 - MCP Usage Monitoring & Governance](docs/scenario-s6-mcp-usage-governance.md): weekly usage, error-rate, and latency reporting with spike detection.
 
 ### Scenario Steps (Flexible)
