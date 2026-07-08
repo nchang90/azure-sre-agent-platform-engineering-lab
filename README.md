@@ -33,6 +33,7 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S3 - Change issue triage](docs/scenario-s3-change-issue-triage.md): classify and respond to sample GitHub issues.
 - [S4 - Enterprise Guardrails and Connectors at Scale](docs/scenario-s4-enterprise-guardrails-connectors.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
 - [S5 - PIM Elevation Audit & Alignment](docs/scenario-s5-pim-elevation-audit.md): daily audit of PIM activations, activity correlation, and alignment classification with email report.
+- [S6 - MCP Usage Monitoring & Governance](docs/scenario-s6-mcp-usage-governance.md): weekly usage, error-rate, and latency reporting with spike detection.
 
 ### Scenario Steps (Flexible)
 
