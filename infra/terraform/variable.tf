@@ -126,7 +126,7 @@ variable "existing_agent_app_insights_id" {
 variable "enable_app_insights_connector" {
   description = "Enable an Application Insights connector."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "app_insights_resource_id" {
@@ -144,7 +144,7 @@ variable "app_insights_app_id" {
 variable "enable_log_analytics_connector" {
   description = "Enable a Log Analytics connector."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "law_resource_id" {
