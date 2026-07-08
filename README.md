@@ -34,16 +34,9 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S4 - Enterprise Guardrails and Connectors at Scale](scenarios/s4-enterprise-guardrails/README.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
 - [S5 - PIM Elevation Audit & Alignment](docs/scenario-s5-pim-elevation-audit.md): audit Entra PIM activations, correlate Azure Activity, and classify alignment; email summary.
 
-### Scenario Steps (Flexible)
+### Scenario Steps
 
-Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a new custom tfvars file you create. The table below shows recommended defaults only.
-
-| Scenario | Recommended tfvars | Required post-provision step | Optional step |
-|---|---|---|---|
-| S1 Detect and triage | N/A (uses `azd`/Bicep) | `azd env new s1-demo` then `azd provision` | `azd env get-values` |
-| S2 Autonomous remediation | Any existing tfvars (recommended: `environments/sbox.tfvars`) or a new custom tfvars | `bash scripts/post-provision.sh` | Configure GitHub in Azure SRE Agent portal (only if needed) |
-| S3 Change issue triage | `environments/demo.tfvars` or `environments/sbox.tfvars` | `bash scripts/post-provision.sh` | Configure GitHub in Azure SRE Agent portal (only if needed) |
-| S4 Guardrails/connectors | `environments/demo.tfvars` | `bash scripts/post-provision.sh` | Configure GitHub in Azure SRE Agent portal (when running GitHub-enabled flows) |
+See [docs/scenarios.md](docs/scenarios.md) for detailed scenario steps and tfvars guidance.
 
 ## Reference Recipes
 
