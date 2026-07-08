@@ -36,7 +36,7 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 
 ### Scenario Steps
 
-See [docs/scenarios.md](docs/scenarios.md) for detailed scenario steps and tfvars guidance.
+See [scenarios/README.md](docs/scenarios.md) for detailed scenario steps and tfvars guidance.
 
 ## Reference Recipes
 
