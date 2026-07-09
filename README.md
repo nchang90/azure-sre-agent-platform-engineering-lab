@@ -9,12 +9,9 @@ Hands-on Azure SRE Agent lab with four progressive scenarios: detection and tria
 | Azure CLI | `brew install azure-cli` or [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | Terraform 1.5+ | `brew install terraform` or [Install Terraform](https://developer.hashicorp.com/terraform/install) |
 
-## Quick Start (S2-S4 Terraform Path)
+## Quick Start
 
-1. Sign in to Azure and select your subscription.
-2. Run `terraform -chdir=infra/terraform init`.
-3. Run `terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/demo.tfvars`.
-4. Run `bash scripts/post-provision.sh`.
+See [docs/quickstart.md](docs/quickstart.md) for step-by-step provisioning instructions.
 
 ## GitHub Actions
 
@@ -28,15 +25,7 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 
 ## Scenarios
 
-- [S1 - Detect and triage](scenarios/s1-detect-triage/README.md): trigger a 5xx incident and investigate in review mode.
-- [S2 - Autonomous remediation](scenarios/s2-autonomous-remediation/README.md): break the running app with a `curl` and watch the agent detect, investigate, and remediate — runtime only, no redeploy.
-- [S3 - Change issue triage](scenarios/s3-change-issue-triage/README.md): classify and respond to sample GitHub issues.
-- [S4 - Enterprise Guardrails and Connectors at Scale](scenarios/s4-enterprise-guardrails/README.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
-- [S5 - PIM Elevation Audit & Alignment](scenarios/s5-pim-elevation-audit/README.md): audit Entra PIM activations, correlate Azure Activity, and classify alignment; email summary.
-
-### Scenario Steps
-
-See [scenarios/README.md](scenarios/README.md) for detailed scenario steps and tfvars guidance.
+See [docs/scenarios.md](docs/scenarios.md) for the full scenario catalogue and steps.
 
 ## Reference Recipes
 
