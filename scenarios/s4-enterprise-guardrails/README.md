@@ -6,7 +6,7 @@ Persona: Platform Engineering / ITSM Owners
 
 After S1 (and optionally S2), the platform team needs proof that agent operations are enterprise-safe. This scenario validates end-to-end governance: managed connectors for ServiceNow, GitHub Enterprise, and observability, tool permissions (allow/ask/deny), and governed identity for work-item creation. The outcome is a repeatable pattern for secure production adoption, not just incident handling.
 
-<img src="../images/story4.png" alt="enterprise guardrails" width="600" />
+<img src="../../docs/images/story4.png" alt="enterprise guardrails" width="600" />
 
 ## Azure SRE Agent Concepts
 
