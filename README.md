@@ -32,11 +32,11 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 - [S2 - Autonomous remediation](scenarios/s2-autonomous-remediation/README.md): break the running app with a `curl` and watch the agent detect, investigate, and remediate — runtime only, no redeploy.
 - [S3 - Change issue triage](scenarios/s3-change-issue-triage/README.md): classify and respond to sample GitHub issues.
 - [S4 - Enterprise Guardrails and Connectors at Scale](scenarios/s4-enterprise-guardrails/README.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
-- [S5 - PIM Elevation Audit & Alignment](docs/scenario-s5-pim-elevation-audit.md): audit Entra PIM activations, correlate Azure Activity, and classify alignment; email summary.
+- [S5 - PIM Elevation Audit & Alignment](scenarios/s5-pim-elevation-audit/README.md): audit Entra PIM activations, correlate Azure Activity, and classify alignment; email summary.
 
 ### Scenario Steps
 
-See [scenarios/README.md](docs/scenarios.md) for detailed scenario steps and tfvars guidance.
+See [scenarios/README.md](scenarios/README.md) for detailed scenario steps and tfvars guidance.
 
 ## Reference Recipes
 
