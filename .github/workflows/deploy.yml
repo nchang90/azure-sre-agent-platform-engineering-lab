@@ -9,7 +9,7 @@ on:
         options:
           - demo
           - sbox
-        default: demo
+        default: sbox
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -29,7 +29,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'demo' }}
+      ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
 
     steps:
       - name: Checkout repository
