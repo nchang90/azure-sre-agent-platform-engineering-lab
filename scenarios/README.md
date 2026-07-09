@@ -4,7 +4,7 @@
 - [S2 Autonomous Remediation](./s2-autonomous-remediation/)
 - [S3 Change Issue Triage](./s3-change-issue-triage/)
 - [S4 Enterprise Guardrails](./s4-enterprise-guardrails/)
-- [S5 PIM Elevation Audit & Alignment](../docs/scenario-s5-pim-elevation-audit.md)
+- [S5 PIM Elevation Audit & Alignment](./s5-pim-elevation-audit/README.md)
 
 ## Scenario steps and tfvars guidance
 
