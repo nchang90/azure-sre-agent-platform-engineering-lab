@@ -9,12 +9,9 @@ Hands-on Azure SRE Agent lab with four progressive scenarios: detection and tria
 | Azure CLI | `brew install azure-cli` or [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | Terraform 1.5+ | `brew install terraform` or [Install Terraform](https://developer.hashicorp.com/terraform/install) |
 
-## Quick Start (S2-S4 Terraform Path)
+## Quick Start
 
-1. Sign in to Azure and select your subscription.
-2. Run `terraform -chdir=infra/terraform init`.
-3. Run `terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/demo.tfvars`.
-4. Run `bash scripts/post-provision.sh`.
+See [docs/quickstart.md](docs/quickstart.md) for step-by-step provisioning instructions.
 
 ## GitHub Actions
 
@@ -37,6 +34,7 @@ Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.ym
 ### Scenario Steps
 
 See [scenarios/README.md](scenarios/README.md) for detailed scenario steps and tfvars guidance.
+See [docs/scenarios.md](docs/scenarios.md) for the full scenario catalogue and steps.
 
 ## Reference Recipes
 

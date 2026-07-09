@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, HTTPException
 
 app = FastAPI(title="Change Request Lookup Service", version="1.0.0")
 
-NOW = datetime.utcnow()
+NOW = datetime.now(timezone.utc)
 
 # Mock ServiceNow Change Requests. In a real deployment this would proxy to /api/now/table/change_request.
 CHANGE_REQUESTS = {
@@ -15,8 +15,8 @@ CHANGE_REQUESTS = {
         "risk": "Moderate",
         "assignmentGroup": "Orders Platform",
         "assignedTo": "alex.morgan@example.com",
-        "plannedStart": (NOW - timedelta(minutes=20)).isoformat() + "Z",
-        "plannedEnd":   (NOW + timedelta(minutes=40)).isoformat() + "Z",
+        "plannedStart": (NOW - timedelta(minutes=20)).isoformat().replace("+00:00", "Z"),
+        "plannedEnd":   (NOW + timedelta(minutes=40)).isoformat().replace("+00:00", "Z"),
         "linkedCommit": "abc123def456",
         "linkedPullRequest": "https://github.com/example/orders-api/pull/142",
         "blastRadius": "orders-api production, all regions",
@@ -31,8 +31,8 @@ CHANGE_REQUESTS = {
         "risk": "Low",
         "assignmentGroup": "Data Platform",
         "assignedTo": "jordan.rivera@example.com",
-        "plannedStart": (NOW + timedelta(hours=6)).isoformat() + "Z",
-        "plannedEnd":   (NOW + timedelta(hours=7)).isoformat() + "Z",
+        "plannedStart": (NOW + timedelta(hours=6)).isoformat().replace("+00:00", "Z"),
+        "plannedEnd":   (NOW + timedelta(hours=7)).isoformat().replace("+00:00", "Z"),
         "linkedCommit": None,
         "linkedPullRequest": None,
         "blastRadius": "orders DB read replicas",
@@ -47,8 +47,8 @@ CHANGE_REQUESTS = {
         "risk": "High",
         "assignmentGroup": "Orders Platform",
         "assignedTo": "sam.kim@example.com",
-        "plannedStart": (NOW - timedelta(days=1)).isoformat() + "Z",
-        "plannedEnd":   (NOW - timedelta(days=1, hours=-1)).isoformat() + "Z",
+        "plannedStart": (NOW - timedelta(days=1)).isoformat().replace("+00:00", "Z"),
+        "plannedEnd":   (NOW - timedelta(days=1, hours=-1)).isoformat().replace("+00:00", "Z"),
         "linkedCommit": "9f8e7d6c5b4a",
         "linkedPullRequest": "https://github.com/example/orders-api/pull/138",
         "blastRadius": "orders-api production",

@@ -39,7 +39,7 @@ S2 is **runtime only** — it changes nothing about your infrastructure or confi
 |---------|-------------------------------|
 | **Runtime failure injection** | `POST /api/simulate/failure-rate/{percent}` makes `orders-api` return 5xx without redeploying anything |
 | **Unauthorized change signal** | Clearing the active CR (`/api/simulate/clear-cr`) makes the failure look like a rogue, un-reviewed change |
-| **ServiceNow CR check (`change-lookup`)** | The agent queries [`change-lookup`](../change-lookup/README.md) — the lab's ServiceNow `change_request` proxy — and finds the failing revision maps to **no approved CR**, confirming it's unauthorized |
+| **ServiceNow CR check (`change-lookup`)** | The agent queries [`change-lookup`](../../src/change-lookup/README.md) — the lab's ServiceNow `change_request` proxy — and finds the failing revision maps to **no approved CR**, confirming it's unauthorized |
 | **Detect → investigate → propose** | The agent picks up the Azure Monitor alert, queries logs/metrics, and pinpoints the root cause |
 | **Optional autonomous fix** | In **Review** mode you approve the proposed remediation in the portal; if the agent was provisioned **High + Automatic** (S3/S4) it executes the rollback itself |
 | **Post-action summary** | After remediation the agent re-checks `/health` and metrics to confirm recovery |

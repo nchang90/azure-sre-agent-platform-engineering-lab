@@ -33,7 +33,7 @@ A user elevates to a privileged role with a brief justification. The agent runs 
    - `REPLACE_WITH_WORKSPACE_ID` with your Log Analytics workspace ID
    - `REPLACE_WITH_CONNECTOR_ID` and `REPLACE_WITH_RECIPIENT_EMAILS`
 3. Register the agent (portal or API). Example API path used by this repo:
-   - `PUT /api/v2/extendedAgent/agents/PIM-Elevation` with the converted JSON body.
+   - `PUT /api/v2/extendedAgent/agents/pim-elevation` with the converted JSON body.
 
 > Tip: Keep this agent disabled in lower environments without PIM logs.
 

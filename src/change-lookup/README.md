@@ -14,7 +14,7 @@ A FastAPI service that gives the SRE Agent and ServiceNow workflow context about
 ## Run locally
 
 ```bash
-cd change-lookup
+cd src/change-lookup
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
