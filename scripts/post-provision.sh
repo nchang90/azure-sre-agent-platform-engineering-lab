@@ -123,7 +123,11 @@ register_subagent() {
 
   local code
   code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
-  is_ok_status "$code" && ok "  Registered: $name" || warn "  $name returned HTTP $code"
+  if is_ok_status "$code"; then
+    ok "  Registered: $name"
+  else
+    warn "  $name returned HTTP $code"
+  fi
 }
 
 register_response_plan_file() {
@@ -140,7 +144,11 @@ register_response_plan_file() {
   [[ -n "$plan_id" ]] || { warn "  Response plan YAML missing id: $yaml_path"; return; }
 
   code="$(put_json_body "/api/v1/incidentPlayground/filters/${plan_id}" "$plan_body")"
-  is_ok_status "$code" 409 && ok "  Response plan -> ${handling_agent} (${plan_id})" || warn "  ${plan_id} returned HTTP $code"
+  if is_ok_status "$code" 409; then
+    ok "  Response plan -> ${handling_agent} (${plan_id})"
+  else
+    warn "  ${plan_id} returned HTTP $code"
+  fi
 }
 
 upload_knowledge_base() {
@@ -155,7 +163,11 @@ upload_knowledge_base() {
   done
 
   code="$(api POST /api/v1/AgentMemory/upload "${upload[@]}")"
-  is_ok_status "$code" && ok "  Uploaded:$names" || warn "  Knowledge base upload returned HTTP $code"
+  if is_ok_status "$code"; then
+    ok "  Uploaded:$names"
+  else
+    warn "  Knowledge base upload returned HTTP $code"
+  fi
   echo
 }
 
@@ -167,7 +179,11 @@ upload_skills() {
     [[ -f "$f" ]] || continue
     name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" skill "$f" "$TMP_DIR/skill.json")"
     code="$(put_json_file "/api/v2/extendedAgent/skills/${name}" "$TMP_DIR/skill.json")"
-    is_ok_status "$code" && ok "  Skill: $name" || warn "  Skill $name returned HTTP $code"
+    if is_ok_status "$code"; then
+      ok "  Skill: $name"
+    else
+      warn "  Skill $name returned HTTP $code"
+    fi
   done
   echo
 }
