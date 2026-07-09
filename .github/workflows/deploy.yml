@@ -9,7 +9,7 @@ on:
         options:
           - demo
           - sbox
-        default: demo
+        default: sbox
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -29,7 +29,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'demo' }}
+      ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
 
     steps:
       - name: Checkout repository
@@ -78,7 +78,7 @@ jobs:
           echo "Building images in ACR: $ACR_NAME"
 
           az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/
-          az acr build --registry "$ACR_NAME" --image change-lookup:latest change-lookup/
+          az acr build --registry "$ACR_NAME" --image change-lookup:latest src/change-lookup/
 
           echo "Updating Container Apps…"
 
