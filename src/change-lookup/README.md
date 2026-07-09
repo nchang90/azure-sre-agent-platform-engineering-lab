@@ -53,4 +53,3 @@ CR, and recommend rollback.
   "serviceNowHint": "Update work_notes with App Insights link if 5xx > 5/min during the window."
 }
 ```
-
