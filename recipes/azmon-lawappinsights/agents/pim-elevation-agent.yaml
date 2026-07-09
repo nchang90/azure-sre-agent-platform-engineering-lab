@@ -1,7 +1,7 @@
 api_version: azuresre.ai/v1
 kind: AgentConfiguration
 spec:
-  name: PIM-Elevation
+  name: pim-elevation
   system_prompt: >
     Goal: Perform a daily UTC analysis to detect Microsoft Entra PIM activations, capture
     justification, build activation windows, correlate Azure Activity within those windows, and
