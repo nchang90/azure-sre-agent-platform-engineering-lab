@@ -9,7 +9,7 @@ on:
         options:
           - demo
           - sbox
-        default: sbox
+        default: demo
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -29,8 +29,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+      ENVIRONMENT: ${{ inputs.environment || 'demo' }}
 
     steps:
       - name: Checkout repository
@@ -50,26 +49,23 @@ jobs:
         run: pip install pyyaml
 
       - name: Terraform init
-        run: terraform -chdir=infra init -backend-config=backend/${{ env.ENVIRONMENT }}.backend.tfvars
+        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ env.ENVIRONMENT }}.backend.tfvars
 
       - name: Terraform validate
-        run: terraform -chdir=infra validate
+        run: terraform -chdir=infra/terraform validate
 
       - name: Terraform plan
-        if: ${{ inputs.plan || inputs.apply }}
-        run: terraform -chdir=infra plan -out=tfplan -var-file=environment/${{ inputs.environment }}.tfvars
+        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
 
       - name: Terraform apply
-        if: ${{ inputs.apply }}
-        run: terraform -chdir=infra apply -auto-approve tfplan
+        run: terraform -chdir=infra/terraform apply -auto-approve tfplan
 
       - name: Build and update Container Apps
-        if: ${{ inputs.apply }}
         shell: bash
         run: |
           set -euo pipefail
 
-          TF_OUT="$(terraform -chdir=infra output -json)"
+          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
           read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
 
           ACR_NAME="$(read_tf acr_name)"
@@ -98,7 +94,7 @@ jobs:
             --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
             --output none
 
-      - name: Run post-provision setup
+      - name: Run core post-provision setup
         shell: bash
         run: bash scripts/post-provision.sh
         continue-on-error: true

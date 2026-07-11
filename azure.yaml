@@ -1,0 +1,18 @@
+# azd manifest for S1 — the base Azure infrastructure stack.
+#
+# S1 is infrastructure-only (zero application logic, no AKS, no Terraform). It
+# stands up the foundational resources the rest of the platform builds on and
+# emits outputs that the Terraform layer (infra/terraform/) consumes.
+#
+# Usage:
+#   azd env new s1-demo            # create an azd environment
+#   azd env set AGENT_NAME sre-demo
+#   azd provision                  # deploy the Bicep stack
+#   azd env get-values             # outputs for Terraform / scripts
+name: sre-agent-s1
+metadata:
+  template: sre-agent-s1@0.1.0
+infra:
+  provider: bicep
+  path: infra/bicep
+  module: main
