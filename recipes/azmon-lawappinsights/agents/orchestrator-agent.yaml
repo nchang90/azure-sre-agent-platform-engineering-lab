@@ -39,6 +39,7 @@ spec:
   agent_type: Autonomous
   handoffs:
     - triage-agent
+    - aks-remediator
     - issue-triager
   tools:
     - SearchMemory

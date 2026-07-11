@@ -15,8 +15,6 @@ on:
         required: true
         type: boolean
         default: false
-  schedule:
-    - cron: "0 00 * * *"
 
 permissions:
   contents: read
@@ -54,7 +52,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra init -backend-config=backend/${{ inputs.environment || 'sbox' }}.backend.tfvars
+        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ inputs.environment }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra destroy -auto-approve -var-file=environment/${{ inputs.environment || 'sbox' }}.tfvars
+        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ inputs.environment }}.tfvars
