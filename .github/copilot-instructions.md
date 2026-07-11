@@ -2,14 +2,14 @@
 
 # Azure SRE Agent Lab
 
-This repository contains the Grubify sample app, Azure infrastructure, runbooks, and agent skills for incident response and issue triage.
+This repository contains the sample app, Azure infrastructure, runbooks, and agent skills for incident response and issue triage.
 
 ## What to optimize for
 
 - Keep changes small, safe, and reversible.
 - Prefer existing runbooks, knowledge-base docs, and skill files over inventing new workflows.
 - Preserve the lab’s incident response flow: detect, triage, correlate, remediate, and summarize.
-- Use the Grubify architecture and incident templates when generating reports or GitHub issues.
+- Use the architecture and incident templates when generating reports or GitHub issues.
 
 ## Key locations
 
