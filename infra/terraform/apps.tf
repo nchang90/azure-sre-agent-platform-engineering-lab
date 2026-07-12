@@ -1,36 +1,12 @@
-# ─────────────────────────────────────────────────────────────────────────
-# Apps: Azure Container Registry + Container Apps Environment + 3 apps
-# ─────────────────────────────────────────────────────────────────────────
-#
-# Optional full-lab apps deployed when `deploy_apps = true`:
-#   1. orders-api      — main monitored workload (.NET 9)
-#   2. change-lookup   — ServiceNow CR lookup tool (Python FastAPI)
-#
-# The AKS-only demo keeps this stack disabled. When enabled, the post-provision
-# script builds real images via ACR Tasks and updates the apps.
-# ─────────────────────────────────────────────────────────────────────────
-
-variable "deploy_apps" {
-  description = "Deploy the orders-api and change-lookup Container Apps."
-  type        = bool
-  default     = true
-}
-
-variable "acr_sku" {
-  description = "SKU for the Azure Container Registry."
-  type        = string
-  default     = "Basic"
-}
+# Legacy Container Apps stack moved from the root infra directory.
+# This stays gated behind deploy_apps so the SRE-agent-only demo can disable it.
 
 locals {
-  apps_enabled      = var.deploy_apps
   acr_name          = "acr${replace(local.suffix, "-", "")}"
   cae_name          = "cae-${local.suffix}"
   uami_apps_name    = "id-apps-${local.suffix}"
   placeholder_image = "mcr.microsoft.com/k8se/quickstart:latest"
 }
-
-# ── ACR ──────────────────────────────────────────────────────────────────
 
 resource "azurerm_container_registry" "acr" {
   count               = local.apps_enabled ? 1 : 0
@@ -42,7 +18,6 @@ resource "azurerm_container_registry" "acr" {
   tags                = var.tags
 }
 
-# UAMI used by all Container Apps to pull from ACR.
 resource "azurerm_user_assigned_identity" "apps" {
   count               = local.apps_enabled ? 1 : 0
   name                = local.uami_apps_name
@@ -59,8 +34,6 @@ resource "azurerm_role_assignment" "apps_acrpull" {
   principal_type       = "ServicePrincipal"
 }
 
-# ── Container Apps Environment ───────────────────────────────────────────
-
 resource "azurerm_container_app_environment" "cae" {
   count                      = local.apps_enabled ? 1 : 0
   name                       = local.cae_name
@@ -69,8 +42,6 @@ resource "azurerm_container_app_environment" "cae" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
   tags                       = var.tags
 }
-
-# ── orders-api ───────────────────────────────────────────────────────────
 
 resource "azurerm_container_app" "orders_api" {
   count                        = local.apps_enabled ? 1 : 0
@@ -94,6 +65,7 @@ resource "azurerm_container_app" "orders_api" {
     external_enabled = true
     target_port      = 8080
     transport        = "auto"
+
     traffic_weight {
       latest_revision = true
       percentage      = 100
@@ -114,6 +86,7 @@ resource "azurerm_container_app" "orders_api" {
         name  = "APPLICATIONINSIGHTS_CONNECTION_STRING"
         value = local.effective_ai_conn_str
       }
+
       env {
         name  = "ACTIVE_CR"
         value = ""
@@ -122,12 +95,9 @@ resource "azurerm_container_app" "orders_api" {
   }
 
   lifecycle {
-    # post-provision script updates the image; don't fight that on re-apply
     ignore_changes = [template[0].container[0].image]
   }
 }
-
-# ── change-lookup ────────────────────────────────────────────────────────
 
 resource "azurerm_container_app" "change_lookup" {
   count                        = local.apps_enabled ? 1 : 0
@@ -151,6 +121,7 @@ resource "azurerm_container_app" "change_lookup" {
     external_enabled = true
     target_port      = 8080
     transport        = "auto"
+
     traffic_weight {
       latest_revision = true
       percentage      = 100
