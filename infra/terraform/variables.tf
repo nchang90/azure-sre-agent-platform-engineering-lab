@@ -319,8 +319,8 @@ variable "admin_principal_ids" {
 
 variable "severity_threshold" {
   description = "Severity for the Application Insights smart detector alert."
-  type        = number
-  default     = 2
+  type        = string
+  default     = "Sev2"
 }
 
 variable "email_receiver_address" {

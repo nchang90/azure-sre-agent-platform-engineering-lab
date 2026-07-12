@@ -30,3 +30,7 @@ enable_log_analytics_connector = true
 # Recipe automations (azmon-lawappinsights) enabled for the demo environment.
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true
+
+# AKS deployment inputs for CI-friendly validation.
+aks_ssh_public_key_path = "./keys/demo_aks_id_rsa.pub"
+severity_threshold      = "Sev2"
