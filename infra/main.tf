@@ -131,7 +131,6 @@ resource "azurerm_role_assignment" "deployer_admin" {
   scope              = azapi_resource.sre_agent.id
   role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.sre_agent_admin_role_id}"
   principal_id       = data.azurerm_client_config.current.object_id
-  principal_type     = "User"
 }
 
 # ── SRE Agent Administrator — UAMI on the agent ──
