@@ -3,98 +3,57 @@ name: Deploy SRE Agent Lab
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment"
-        type: choice
-        options:
-          - demo
-          - sbox
-        default: sbox
       plan:
         description: "Run Terraform plan"
+        required: false
         type: boolean
         default: true
       apply:
-        description: "Run Terraform apply"
+        description: "Run Terraform apply and post-provision"
+        required: false
         type: boolean
         default: true
-
-  schedule:
-    - cron: "0 10 * * *"
 
 permissions:
   contents: read
 
+concurrency:
+  group: sre-agent-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
+    environment: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Azure CLI login
-        uses: azure/login@v2.1.0
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@v3.1.0
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
       - name: Install Python dependencies
-        run: pip install pyyaml
+        run: python3 -m pip install --user pyyaml
 
       - name: Terraform init
-        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ env.ENVIRONMENT }}.backend.tfvars
-
-      - name: Terraform validate
-        run: terraform -chdir=infra/terraform validate
+        run: terraform -chdir=infra init
 
       - name: Terraform plan
-        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
+        if: ${{ inputs.plan || inputs.apply }}
+        run: terraform -chdir=infra plan -out=tfplan -var-file=terraform.tfvars
 
       - name: Terraform apply
-        run: terraform -chdir=infra/terraform apply -auto-approve tfplan
+        if: ${{ inputs.apply }}
+        run: terraform -chdir=infra apply -auto-approve tfplan
 
-      - name: Build and update Container Apps
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
-          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
-
-          ACR_NAME="$(read_tf acr_name)"
-          ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
-          ORDERS_API_NAME="$(read_tf orders_api_name)"
-          CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
-          AGENT_ID="$(read_tf agent_id)"
-          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
-
-          echo "Building images in ACR: $ACR_NAME"
-
-          az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/
-          az acr build --registry "$ACR_NAME" --image change-lookup:latest src/change-lookup/
-
-          echo "Updating Container Apps…"
-
-          az containerapp update \
-            --name "$ORDERS_API_NAME" \
-            --resource-group "$RG" \
-            --image "$ACR_LOGIN_SERVER/orders-api:latest" \
-            --output none
-
-          az containerapp update \
-            --name "$CHANGE_LOOKUP_NAME" \
-            --resource-group "$RG" \
-            --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
-            --output none
-
-      - name: Run core post-provision setup
-        shell: bash
+      - name: Run post-provision setup
+        if: ${{ inputs.apply }}
         run: bash scripts/post-provision.sh
-        continue-on-error: true

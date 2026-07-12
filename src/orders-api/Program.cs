@@ -13,12 +13,6 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-if (Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true")
-{
-    app.UseMiddleware<ChaosMiddleware>();
-    app.Logger.LogWarning("CHAOS MONKEY ENABLED — faults will be injected into requests");
-}
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -26,7 +20,6 @@ if (app.Environment.IsDevelopment())
 
 var orders = new ConcurrentDictionary<string, OrderResult>();
 var runtimeFailureRatePercent = 0;
-var healthUnhealthy = false;
 
 // Active ServiceNow Change Request the orders-api thinks it is currently running under.
 // In a real system this is set by the deploy pipeline; here it's runtime-settable for demos.
@@ -40,9 +33,12 @@ app.MapGet("/", () => Results.Ok(new
     message = "Orders API is running"
 }));
 
-app.MapGet("/health", () => healthUnhealthy
-    ? Results.Problem(title: "unhealthy", statusCode: 503)
-    : Results.Ok(new { status = "healthy", service = "orders-api", activeChangeRequest }));
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "orders-api",
+    activeChangeRequest
+}));
 
 app.MapPost("/api/orders", (OrderRequest request, IConfiguration config) =>
 {
@@ -55,7 +51,7 @@ app.MapPost("/api/orders", (OrderRequest request, IConfiguration config) =>
     var failureRate = runtimeFailureRatePercent > 0 ? runtimeFailureRatePercent : configuredFailureRate;
     var roll = Random.Shared.Next(1, 101);
 
-    
+    // Optional chaos toggle for incident demos: force intermittent 5xx errors.
     if (failureRate > 0 && roll <= failureRate)
     {
         return Results.Problem(
@@ -121,14 +117,6 @@ app.MapPost("/api/simulate/clear-cr", () =>
 {
     activeChangeRequest = "";
     return Results.Ok(new { activeChangeRequest });
-});
-
-app.MapPost("/api/simulate/health/{mode}", (string mode) =>
-{
-    if (mode != "healthy" && mode != "unhealthy")
-        return Results.BadRequest(new { error = "mode must be healthy or unhealthy" });
-    healthUnhealthy = mode == "unhealthy";
-    return Results.Ok(new { healthUnhealthy });
 });
 
 app.MapGet("/api/orders/{id}", (string id) =>

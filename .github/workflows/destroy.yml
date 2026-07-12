@@ -3,22 +3,16 @@ name: Destroy SRE Agent Lab
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment"
-        type: choice
-        options:
-          - demo
-          - sbox
-        default: demo
-      destroy:
-        description: "tf_destroy"
+      confirm_destroy:
+        description: "Type DESTROY to confirm manual resource teardown"
         required: true
-        type: boolean
-        default: false
+        type: string
+  schedule:
+    # GitHub Actions cron is in UTC. This runs daily at 21:00 UTC.
+    - cron: "0 21 * * *"
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: sre-agent-destroy-${{ github.ref }}
@@ -33,8 +27,8 @@ jobs:
       - name: Validate confirmation input
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [ "${{ github.event.inputs.destroy }}" != "true" ]; then
-            echo "Destroy not confirmed. Exiting."
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+            echo "Confirmation failed. Type DESTROY to run this workflow."
             exit 1
           fi
 
@@ -52,7 +46,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ inputs.environment }}.backend.tfvars
+        run: terraform -chdir=infra init
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ inputs.environment }}.tfvars
+        run: terraform -chdir=infra destroy -auto-approve -var-file=terraform.tfvars

@@ -1,130 +1,126 @@
-# S3 (AKS) — Change Issue Triage & Auto‑Rollback
+# S3 — Change Issue Triage & Auto‑Rollback
 
 Persona: Platform SRE / On‑call
 Time to complete: ~15–20 minutes (after S1/S2)
-Prerequisite: AKS cluster, Azure Monitor + App Insights wired, SRE Agent deployed (Terraform), optional GitOps (Flux/Argo).
+Prerequisite: SRE Agent deployed (Terraform) and the optional app stack enabled for change correlation.
 
 ---
 
 ## Story
-A new deployment hits AKS and 5xx/latency spike. Some pods crashloop, nodes show pressure. Azure Monitor fires; the Azure SRE Agent triages evidence, restarts pods, drains bad nodes if needed, scales where appropriate, and rolls back to a known‑good revision (or reverts the last GitOps commit). Incident is auto‑created with timeline and evidence.
+A GitHub issue comes in after a deployment or change request. The Azure SRE Agent classifies the issue, looks up the related change record, correlates it with application telemetry, and drafts a clear response with the likely root cause and next action.
+
+## To enable the legacy change-triage path
+- Set `deploy_apps = true` in your tfvars file so Terraform creates the optional app stack.
+- Keep the `change-lookup` app deployed; the `issue-triager` agent reads change context from it.
+- Run the `change-lookup` service locally or deploy it with the lab so the agent can call `/changes/{cr}`.
+- Make sure the `issue-triager` scheduled task/agent config is present in `sre-config/agents/issue-triager.yaml`.
+- Use this path when you want GitHub issue classification plus CR correlation; use the S3 incident-response scenario when you want the Kubernetes flow.
 
 ---
 
 ## Architecture (high level)
 ```mermaid
 flowchart LR
-  Dev((Commit)) -->|Deploy| AKS[(AKS)]
-  AKS -->|Logs/metrics| AzMon[(Azure Monitor + LA/AppInsights)]
-  AzMon -->|Alert| Agent[Azure SRE Agent]
-  Agent -->|KQL| LA[(Log Analytics)]
-  Agent -->|App Insights API| AI[(Application Insights)]
-  Agent -->|kubectl/AKS API| AKS
-  Agent -->|Create incident| GH[(GitHub issues/incident log)]
+  Issue[(GitHub issue)] --> Agent[Azure SRE Agent]
+  Agent -->|Lookup change| CL[change-lookup]
+  CL --> Apps[(Optional app stack)]
+  Agent -->|Logs/metrics| AzMon[(Azure Monitor + LA/AppInsights)]
+  Agent -->|Create response| GH[(GitHub issue comment / response log)]
 ```
 
 ---
 
 ## Trigger
-- New deployment → within 2–5 minutes: 5xx↑, latency↑, CrashLoopBackOff, node CPU↑.
-- Azure Monitor alert → Action Group → Agent HTTP trigger.
+- New GitHub issue or triage request from the issue queue.
+- Optional app alert → Action Group → Agent HTTP trigger.
 
 ---
 
 ## Response plan (YAML sketch)
 ```yaml
-name: aks-change-triage-and-rollback
+name: change-issue-triage-and-response
 triggers:
-  - type: azureMonitor
-    filter: Sev0-1-Errors
+  - type: githubIssue
+    filter: S3-change-triage
 steps:
   - name: gather-evidence
     run:
+      - issueDetails: true
+      - changeLookup: true
       - kql: |
           AppRequests
           | where timestamp > ago(15m)
           | summarize errors=sum(toint(success==false)), p95=percentile(duration,95)
       - kql: |
-          KubePodInventory
-          | where TimeGenerated > ago(15m)
-          | where ContainerStatus =~ 'Terminated' or Reason =~ 'CrashLoopBackOff'
-      - aksEvents: { namespace: default }
-      - gitopsRecentCommit: true
-  - name: detect-regression
+          traces
+          | where timestamp > ago(15m)
+          | summarize by severityLevel, message
+  - name: classify-issue
     eval:
       compare:
-        errorRateDelta: "> 3x"
-        p95Delta: "> 2x"
-        restartCount: "> 5"
-    on_true: remediate
-  - name: remediate
+        issueType: "deployment regression"
+        confidence: ">= medium"
+    on_true: draft-response
+  - name: draft-response
     run:
-      - kubectl: "rollout restart deployment/orders-api -n default"
-      - when: nodePressure
-        kubectl: "drain ${node} --ignore-daemonsets --delete-emptydir-data"
-      - when: sustainedLoad
-        az: "aks nodepool scale --resource-group ${rg} --cluster-name ${aks} --name ${pool} --node-count ${n}"
-      - when: regressionPersists
-        kubectl: "rollout undo deployment/orders-api -n default"
-        # GitOps mode (optional): flux/argo rollback instead of kubectl
+      - summarizeRootCause: true
+      - suggestNextAction: true
+      - when: appRegression
+        recommend: "rollback latest deployment or revert the change request"
+      - when: noAppRegression
+        recommend: "route to product/engineering for functional triage"
   - name: incident
     createIncident:
       include:
         - timeline
-        - KQL graphs
-        - pod logs
-        - node metrics
-        - deployment diff
-        - actionsTaken
+        - issueSummary
+        - correlatedChange
+        - logs
+        - recommendedResponse
 ```
 
 ---
 
 ## Skills invoked (examples)
-- Kubernetes Ops: rollout restart/undo, get events, node drain.
-- Azure CLI Ops: AKS nodepool scale.
-- Observability: KQL against LA + App Insights for error/latency.
-- GitOps (optional): Flux/Argo rollback or commit revert.
+- GitHub issue triage and response drafting.
+- Change correlation via `change-lookup`.
+- Observability: KQL against Log Analytics + App Insights.
+- Optional app-stack diagnostics for the legacy path.
 
 Example commands the agent executes with Managed Identity:
 ```bash
-kubectl rollout restart deployment orders-api -n default
-kubectl drain <node> --ignore-daemonsets --delete-emptydir-data
-az aks nodepool scale -g <rg> -n <pool> --cluster-name <aks> --node-count 4
-kubectl rollout undo deployment orders-api -n default
+curl https://change-lookup/changes/<cr>
 ```
 
 ---
 
 ## Terraform references
-Use the included module under `infra/terraform`:
-- Log Analytics + App Insights: `main.tf`
-- SRE Agent resource: `sreagent.tf` (azapi `Microsoft.App/agents@2025-05-01-preview`)
-- RBAC least‑privilege + admin role: `rbac.tf`
-- Outputs: agent endpoint, MI id: `output.tf`
+Use the optional app module under `infra/apps.tf` when `deploy_apps = true`:
+- `orders-api` sample app
+- `change-lookup` service
+- outputs for app endpoints in `infra/output.tf`
 
 Inputs to set per environment:
 ```hcl
-variable "agent_name" {}
+variable "deploy_apps" { default = false }
 variable "resource_group_name" {}
 variable "location" { default = "uksouth" }
-variable "target_resource_groups" { default = ["app-rg"] }
 variable "action_mode" { default = "Review" } # use "Automatic" after confidence
 ```
 
 ---
 
 ## Run
-1) Deploy/scale a bad revision (e.g., raise error rate).
-2) Azure Monitor alert fires → agent plan runs.
-3) Agent gathers evidence, restarts pods, drains nodes if needed, and either stabilizes or rolls back.
+1) Open a GitHub issue or submit a change triage request.
+2) The agent looks up the related change and application telemetry.
+3) The agent posts a concise response with root cause, confidence, and next action.
 
 ---
 
 ## Validation
-- Error rate drops to baseline; pods healthy; no node pressure.
-- `kubectl rollout history deployment/orders-api -n default` shows undo when applied.
-- Incident record includes timeline, graphs, logs, diff, and actions taken.
+- The issue is classified correctly.
+- The response cites the correlated change and telemetry.
+- The incident record includes timeline, logs, and recommended action.
 
 ---
 
@@ -132,4 +128,3 @@ variable "action_mode" { default = "Review" } # use "Automatic" after confidence
 - [http-500-errors.md](../knowledge-base/http-500-errors.md)
 - On‑call handoff template: [on-call-handoff.md](../knowledge-base/on-call-handoff.md)
 - Incident report template: [incident-report.md](../knowledge-base/incident-report.md)
-```
