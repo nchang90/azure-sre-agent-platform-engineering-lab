@@ -1,6 +1,6 @@
 # On-Call Handoff Notes — Orders Platform
 
-Use this document for shift-change handoffs and to satisfy the on-call ownership guardrail in the platform reliability governance review.
+Use this document for shift-change handoffs and to satisfy on-call ownership checks in the enterprise guardrails and connectors scenario.
 
 ---
 
@@ -57,7 +57,7 @@ Before handing off to the next shift, confirm the following:
 
 ## Notes for the SRE Agent
 
-When the SRE Agent runs the platform reliability governance review (S4), it checks this file to confirm on-call handoff notes (ownership, escalation, and severity mapping) are defined. If this file is missing or incomplete, the `On-call handoff notes are present in knowledge base` guardrail will score **Fail**.
+When the SRE Agent runs the enterprise guardrails and connectors scenario (S4), it checks this file to confirm on-call handoff notes (ownership, escalation, and severity mapping) are defined. If this file is missing or incomplete, the on-call ownership control should be flagged as failed.
 
 The agent should:
 1. Verify the service ownership table covers all production services.

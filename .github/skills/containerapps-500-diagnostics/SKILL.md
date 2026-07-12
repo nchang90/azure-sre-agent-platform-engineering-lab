@@ -1,11 +1,11 @@
 ---
 name: containerapps-500-diagnostics
-description: Diagnose HTTP 5xx incidents in the Grubify Azure Container Apps stack using telemetry, logs, and code correlation. Use when the API returns 500/503 errors, requests fail after a deployment, or a memory leak/OOM pattern is suspected.
+description: Diagnose HTTP 5xx incidents in the Container Apps stack using telemetry, logs, and code correlation. Use when the API returns 500/503 errors, requests fail after a deployment, or a memory leak/OOM pattern is suspected.
 ---
 
 # Container Apps 5xx Diagnostics
 
-You diagnose HTTP 5xx incidents in the Grubify Container Apps stack using logs, metrics, and code correlation.
+You diagnose HTTP 5xx incidents in the Container Apps stack using logs, metrics, and code correlation.
 
 ## Authoritative external references
 
@@ -43,8 +43,8 @@ Use this skill when:
 ## Common evidence sources
 
 - `knowledge-base/http-500-errors.md`
-- `knowledge-base/grubify-architecture.md`
-- `knowledge-base/incident-report-template.md`
+- `knowledge-base/orders-architecture.md`
+- `knowledge-base/incident-report.md`
 - `https://sre.azure.com/docs`
 - `https://github.com/microsoft/sre-agent`
 - Container App logs and revision history

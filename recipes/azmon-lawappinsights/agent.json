@@ -1,0 +1,54 @@
+{
+  "_scenario": "azmon-lawappinsights",
+  "_description": "Azure Monitor recipe package aligned with the upstream sreagent-templates layout.",
+  "_prerequisites": [
+    "Azure subscription with SRE Agent RP access",
+    "At least one monitored resource group",
+    "(Optional) Existing Log Analytics workspace and App Insights resource"
+  ],
+  "_prompts": {
+    "agentName": { "ask": "Agent name", "default": "my-sre-agent" },
+    "resourceGroup": { "ask": "Resource group for the agent", "default": "sre-agent-rg" },
+    "location": {
+      "ask": "Region",
+      "options": ["eastus2", "swedencentral", "uksouth", "australiaeast"],
+      "required": true
+    },
+    "targetRGs": { "ask": "Resource groups to monitor (comma-separated)", "required": true },
+    "lawId": { "ask": "Log Analytics workspace resource ID", "default": "" },
+    "appInsightsId": { "ask": "Application Insights resource ID", "default": "" },
+    "appInsightsAppId": { "ask": "Application Insights Application ID (GUID)", "default": "" },
+    "githubRepo": { "ask": "GitHub repo (org/repo format)", "default": "" },
+    "existingUamiId": { "ask": "Existing UAMI resource ID (leave blank to create new)", "default": "" },
+    "existingAgentAppInsightsId": {
+      "ask": "Existing App Insights resource ID for agent telemetry (leave blank to create new)",
+      "default": ""
+    },
+    "modelProvider": {
+      "ask": "AI model provider",
+      "options": ["Anthropic", "MicrosoftFoundry"],
+      "default": "MicrosoftFoundry"
+    }
+  },
+  "identity": {
+    "agentName": "{{agentName}}",
+    "resourceGroup": "{{resourceGroup}}",
+    "subscription": "",
+    "location": "{{location}}",
+    "targetResourceGroups": "{{targetRGs}}"
+  },
+  "access": {
+    "accessLevel": "Low",
+    "actionMode": "Review"
+  },
+  "upgradeChannel": "Preview",
+  "defaultModelProvider": "{{modelProvider}}",
+  "monthlyAgentUnitLimit": 10000,
+  "tags": {},
+  "toggles": {
+    "enableWebhookBridge": false,
+    "webhookBridgeTriggerUrl": ""
+  },
+  "existingUamiId": "{{existingUamiId}}",
+  "existingAgentAppInsightsId": "{{existingAgentAppInsightsId}}"
+}

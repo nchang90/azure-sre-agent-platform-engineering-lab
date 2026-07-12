@@ -1,0 +1,17 @@
+metadata:
+  name: snow-container-apps-alerts
+spec:
+  name: ServiceNow Container Apps Alerts
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "5"
+  titleContains: container app
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

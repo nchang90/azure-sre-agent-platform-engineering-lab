@@ -1,0 +1,17 @@
+metadata:
+  name: snow-orders-api-errors
+spec:
+  name: ServiceNow Orders API 5xx Errors
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "5"
+  titleContains: alert-orders-api-errors
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "name": "default-read-observability",
+      "allow": [
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "QueryAppInsightsUsingAppId",
+        "RunAzCliReadCommands",
+        "SearchMemory"
+      ]
+    }
+  ]
+}

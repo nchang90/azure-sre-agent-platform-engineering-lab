@@ -1,0 +1,17 @@
+metadata:
+  name: container-apps-alerts
+spec:
+  name: Container Apps Alerts
+  incidentPlatform: AzMonitor
+  isEnabled: true
+  priorities:
+  - Sev0
+  - Sev1
+  - Sev2
+  - Sev3
+  - Sev4
+  titleContains: container app
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

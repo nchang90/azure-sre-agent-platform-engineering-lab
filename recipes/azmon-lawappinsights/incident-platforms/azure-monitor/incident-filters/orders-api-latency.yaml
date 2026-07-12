@@ -1,0 +1,17 @@
+metadata:
+  name: orders-api-latency
+spec:
+  name: Orders API Latency (P99)
+  incidentPlatform: AzMonitor
+  isEnabled: true
+  priorities:
+  - Sev0
+  - Sev1
+  - Sev2
+  - Sev3
+  - Sev4
+  titleContains: alert-orders-api-latency
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

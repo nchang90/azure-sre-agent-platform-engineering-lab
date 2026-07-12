@@ -1,0 +1,17 @@
+metadata:
+  name: snow-orders-api-health-response
+spec:
+  name: ServiceNow Orders API Health Response
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "5"
+  titleContains: alert-orders-api-health
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

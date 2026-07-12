@@ -1,50 +1,50 @@
 # Azure SRE Agent - Platform Engineering Lab
 
-Hands-on Azure SRE Agent lab with four progressive scenarios: detection and triage, autonomous remediation, incident root cause investigation, and reliability governance.
+Hands-on Azure SRE Agent lab with four progressive scenarios: detection and triage, autonomous remediation, issue triage, and enterprise guardrails/connectors.
 
 ## Prerequisites
 
 | Tool | Install |
 |---|---|
-| Azure CLI | `brew install azure-cli` or [guide](https://learn.microsoft.com/cli/azure/install-azure-cli) |
-| Terraform 1.5+ | `brew install terraform` or [guide](https://developer.hashicorp.com/terraform/install) |
+| Azure CLI | `brew install azure-cli` or [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+| Terraform 1.5+ | `brew install terraform` or [Install Terraform](https://developer.hashicorp.com/terraform/install) |
 
-## Quick Start (Local)
+## Quick Start
 
-1. Sign in to Azure and select your subscription.
-2. Run `terraform -chdir=infra init`.
-3. Run `terraform -chdir=infra apply -auto-approve -var-file=<your-tfvars-file>`.
-4. Run `bash scripts/post-provision.sh`.
-
-This default path deploys AKS only.
-
-Cloud Shell note: if data-plane setup fails, run `az login --scope "https://azuresre.dev/.default"` and rerun `bash scripts/post-provision.sh --retry`.
+See [docs/quickstart.md](docs/quickstart.md) for step-by-step provisioning instructions.
 
 ## GitHub Actions
 
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-
-- Trigger: manual run only.
-- Inputs: `plan` and `apply` (both default to true).
+- Trigger: daily schedule and manual run.
+- Inputs: `environment` (`demo`/`sbox`), `plan`, `apply`.
 - Secret required: `AZURE_CREDENTIALS`.
-- Behavior: Terraform init, plan, optional apply, and optional post-provision.
 
 Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.yml)
-
-- Trigger: scheduled daily at 21:00 UTC and manual run.
-- Manual safety input: `confirm_destroy=DESTROY`.
+- Trigger: daily schedule and manual run.
 
 ## Scenarios
 
-- [S1 - Detect and triage](docs/scenario-s1-detect-triage.md): trigger a 5xx incident and investigate in review mode.
-- [S2 - Autonomous remediation](docs/scenario-s2-autonomous-remediation.md): rerun S1 with automatic action mode.
-- [S3 — Incident Root Cause Investigation](scenarios/s3-incident-root-cause-investigation/README.md): investigate the AKS-backed S3 incident flow, correlate symptoms with recent changes, and document root cause. Use a tfvars file that matches your demo path.
-- [S4 - Platform reliability governance](docs/scenario-s4-platform-reliability-governance.md): run a governance review and create backlog actions.
+- [S1 - Detect and triage](scenarios/s1-detect-triage/README.md): trigger a 5xx incident and investigate in review mode.
+- [S2 - Autonomous remediation](scenarios/s2-autonomous-remediation/README.md): break the running app with a `curl` and watch the agent detect, investigate, and remediate — runtime only, no redeploy.
+- [S3 - Change issue triage](scenarios/s3-change-issue-triage/README.md): classify and respond to sample GitHub issues.
+- [S4 - Enterprise Guardrails and Connectors at Scale](scenarios/s4-enterprise-guardrails/README.md): demonstrate governed ServiceNow, GitHub Enterprise, and observability workflows with tool permissions and controlled handoffs.
+- [S5 - PIM Elevation Audit & Alignment](scenarios/s5-pim-elevation-audit/README.md): audit Entra PIM activations, correlate Azure Activity, and classify alignment; email summary.
 
-## Deployed Components
+### Scenario Steps
 
-- Resource group, managed identity, and SRE Agent resource.
-- Log Analytics and Application Insights.
-- AKS cluster for the incident root-cause investigation scenario.
-- Alert rules and knowledge-base content.
-- Subagents from [sre-config/agents](sre-config/agents).
+See [scenarios/README.md](scenarios/README.md) for detailed scenario steps and tfvars guidance.
+See [docs/scenarios.md](docs/scenarios.md) for the full scenario catalogue and steps.
+
+## Reference Recipes
+
+The upstream `azmon-lawappinsights` recipe is integrated into this lab.
+- Skills: [.github/skills/](.github/skills/)
+- Agents and automations: [recipes/azmon-lawappinsights/](recipes/azmon-lawappinsights/)
+- Registration script: [scripts/post-provision.sh](scripts/post-provision.sh)
+
+## Deployed Resources
+
+- Core platform: resource group, managed identity, and SRE Agent resource.
+- Observability: Log Analytics, Application Insights, and alert rules.
+- Runtime: Container Apps environment, ACR, and the `orders-api` / `change-lookup` services.
