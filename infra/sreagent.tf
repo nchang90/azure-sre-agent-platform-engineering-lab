@@ -6,6 +6,7 @@ resource "azapi_resource" "sre_agent" {
   parent_id                 = azurerm_resource_group.agent.id
   tags                      = var.tags
 
+  response_export_values = ["properties.agentEndpoint"]
   identity {
     type         = "SystemAssigned, UserAssigned"
     identity_ids = [local.effective_identity_id]
