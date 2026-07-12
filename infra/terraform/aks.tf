@@ -12,7 +12,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   automatic_upgrade_channel = "stable"
   azure_policy_enabled      = true
   oidc_issuer_enabled       = true
-  workload_identity_enabled  = true
+  workload_identity_enabled = true
 
   identity {
     type         = "UserAssigned"
