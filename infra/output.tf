@@ -1,6 +1,6 @@
 output "agent_id" {
   description = "Full ARM resource ID of the SRE Agent."
-  value       = var.deploy_sre_agent ? azapi_resource.sre_agent[0].id : ""
+  value       = azapi_resource.sre_agent.id
 }
 
 output "agent_portal_url" {
@@ -9,8 +9,8 @@ output "agent_portal_url" {
 }
 
 output "agent_data_plane_url" {
-  description = "Agent data plane endpoint (real host read from the resource)."
-  value       = var.deploy_sre_agent ? try(azapi_resource.sre_agent[0].output.properties.agentEndpoint, "https://${var.agent_name}.${var.location}.azuresre.ai") : ""
+  description = "Agent data plane endpoint."
+  value       = "https://${var.agent_name}.${var.location}.azuresre.ai"
 }
 
 output "managed_identity_id" {
@@ -26,6 +26,46 @@ output "law_id" {
 output "resource_group_portal_url" {
   description = "Link to the agent resource group in the Azure portal."
   value       = "https://portal.azure.com/#@/resource/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${azurerm_resource_group.agent.name}/overview"
+}
+
+output "aks_name" {
+  description = "Name of the AKS cluster."
+  value       = azurerm_kubernetes_cluster.aks.name
+}
+
+output "aks_id" {
+  description = "Resource ID of the AKS cluster."
+  value       = azurerm_kubernetes_cluster.aks.id
+}
+
+output "aks_node_resource_group" {
+  description = "Node resource group created for the AKS cluster."
+  value       = azurerm_kubernetes_cluster.aks.node_resource_group
+}
+
+output "aks_kubelet_identity_object_id" {
+  description = "Object ID of the AKS kubelet identity."
+  value       = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+}
+
+output "aks_kubelet_identity_client_id" {
+  description = "Client ID of the AKS kubelet identity."
+  value       = azurerm_kubernetes_cluster.aks.kubelet_identity[0].client_id
+}
+
+output "aks_identity_id" {
+  description = "Resource ID of the managed identity assigned to AKS."
+  value       = azurerm_user_assigned_identity.aks.id
+}
+
+output "aks_vnet_id" {
+  description = "Resource ID of the virtual network used by AKS."
+  value       = azurerm_virtual_network.aks.id
+}
+
+output "aks_subnet_id" {
+  description = "Resource ID of the subnet used by AKS nodes."
+  value       = azurerm_subnet.aks.id
 }
 
 # ── App outputs (only set when deploy_apps = true) ──
@@ -63,41 +103,4 @@ output "change_lookup_name" {
 output "change_lookup_url" {
   description = "Public URL of change-lookup."
   value       = local.apps_enabled ? "https://${azurerm_container_app.change_lookup[0].latest_revision_fqdn}" : ""
-}
-
-output "orders_api_health_alert_id" {
-  description = "Resource ID of the orders-api health scheduled query alert."
-  value       = local.apps_enabled ? azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_health[0].id : ""
-}
-
-output "orders_api_errors_alert_id" {
-  description = "Resource ID of the orders-api 5xx scheduled query alert."
-  value       = local.apps_enabled ? azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors[0].id : ""
-}
-
-output "action_mode" {
-  description = "Agent action mode (Review or Automatic)."
-  value       = var.action_mode
-}
-
-# ── Recipe automation toggles (read by scripts/post-provision.sh) ──
-
-output "enable_sev01_incident_filter" {
-  description = "Whether post-provision should create the azmon-sev01 response plan."
-  value       = var.enable_sev01_incident_filter
-}
-
-output "enable_daily_health_check" {
-  description = "Whether post-provision should create the daily-health-check scheduled task."
-  value       = var.enable_daily_health_check
-}
-
-output "vnet_id" {
-  description = "Resource ID of the VNet created for VNet integration (empty if disabled or BYO subnet)."
-  value       = local.create_vnet ? azurerm_virtual_network.agent[0].id : ""
-}
-
-output "agent_subnet_id" {
-  description = "Resource ID of the dedicated agent subnet used for VNet integration."
-  value       = local.vnet_enabled ? local.effective_subnet_id : ""
 }

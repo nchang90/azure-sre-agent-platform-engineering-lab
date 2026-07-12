@@ -8,18 +8,6 @@ variable "agent_name" {
   }
 }
 
-variable "severity_threshold" {
-  description = "Severity level for the failure anomalies smart detector alert."
-  type        = string
-  default     = "Sev1"
-}
-
-
-variable "email_receiver_address" {
-  description = "Email address for action group notifications (used by smart detector alert rule)."
-  type        = string
-}
-
 variable "resource_group_name" {
   description = "Resource group that holds the agent, identity, LAW, and App Insights."
   type        = string
@@ -99,12 +87,66 @@ variable "tags" {
   default     = {}
 }
 
-# ── Admin principals ──
+# ── AKS ──
 
-variable "admin_principal_ids" {
-  description = "Object IDs of users or service principals to grant SRE Agent Administrator on the agent resource."
-  type        = list(string)
-  default     = []
+variable "aks_node_vm_size" {
+  description = "VM size for the AKS system node pool."
+  type        = string
+  default     = "Standard_B2s"
+}
+
+variable "aks_node_count" {
+  description = "Initial node count for the AKS system node pool."
+  type        = number
+  default     = 1
+}
+
+variable "aks_min_count" {
+  description = "Minimum node count for the AKS system node pool autoscaler."
+  type        = number
+  default     = 1
+}
+
+variable "aks_max_count" {
+  description = "Maximum node count for the AKS system node pool autoscaler."
+  type        = number
+  default     = 3
+}
+
+variable "aks_ssh_public_key_path" {
+  description = "Path to the SSH public key used for AKS Linux profile access."
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}
+
+variable "aks_pod_cidr" {
+  description = "Pod CIDR for Azure CNI overlay networking."
+  type        = string
+  default     = "10.244.0.0/16"
+}
+
+variable "aks_service_cidr" {
+  description = "Kubernetes service CIDR for AKS."
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "aks_dns_service_ip" {
+  description = "DNS service IP for AKS."
+  type        = string
+  default     = "10.0.0.10"
+}
+
+variable "aks_vnet_cidr" {
+  description = "Address space for the AKS virtual network."
+  type        = string
+  default     = "10.50.0.0/16"
+}
+
+variable "aks_subnet_cidr" {
+  description = "Subnet range used by AKS nodes."
+  type        = string
+  default     = "10.50.1.0/24"
 }
 
 # ── Identity ──
@@ -126,7 +168,7 @@ variable "existing_agent_app_insights_id" {
 variable "enable_app_insights_connector" {
   description = "Enable an Application Insights connector."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "app_insights_resource_id" {
@@ -144,7 +186,7 @@ variable "app_insights_app_id" {
 variable "enable_log_analytics_connector" {
   description = "Enable a Log Analytics connector."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "law_resource_id" {
@@ -153,26 +195,16 @@ variable "law_resource_id" {
   default     = ""
 }
 
+variable "enable_azure_monitor_connector" {
+  description = "Enable an Azure Monitor connector (subscription-scoped alerts)."
+  type        = bool
+  default     = false
+}
 
 variable "azure_monitor_lookback_days" {
   description = "Lookback window in days for the Azure Monitor connector."
   type        = number
   default     = 7
-}
-
-# ── Recipe automations (azmon-lawappinsights) ──
-# Opt-in per environment. Applied at the data plane by scripts/post-provision.sh.
-
-variable "enable_sev01_incident_filter" {
-  description = "Create the azmon-sev01 response plan (Sev0/Sev1 Azure Monitor alerts → alert-investigator, autonomous)."
-  type        = bool
-  default     = false
-}
-
-variable "enable_daily_health_check" {
-  description = "Create the daily-health-check scheduled task (daily 08:00 resource-health summary → alert-investigator)."
-  type        = bool
-  default     = false
 }
 
 # ── Extension arrays (advanced) ──
@@ -227,37 +259,6 @@ variable "enable_webhook_bridge" {
 
 variable "webhook_bridge_trigger_url" {
   description = "Pre-existing webhook trigger URL (skip Logic App creation if set)."
-  type        = string
-  default     = ""
-}
-
-variable "deploy_sre_agent" {
-  description = "Deploy the SRE Agent resource."
-  type        = bool
-}
-
-# ── Network integration ──
-
-variable "enable_vnet" {
-  description = "Enable Azure VNet integration (Azure VNet egress mode). Creates a VNet and dedicated subnet delegated to Microsoft.App/environments."
-  type        = bool
-  default     = false
-}
-
-variable "vnet_address_space" {
-  description = "Address space for the VNet created when enable_vnet = true."
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "agent_subnet_prefix" {
-  description = "CIDR for the dedicated agent subnet. Must be /28 or larger."
-  type        = string
-  default     = "10.0.0.0/28"
-}
-
-variable "existing_subnet_id" {
-  description = "Resource ID of an existing subnet to use for VNet integration. If set, no VNet is created and enable_vnet is implied."
   type        = string
   default     = ""
 }
