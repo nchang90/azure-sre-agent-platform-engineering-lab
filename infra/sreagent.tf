@@ -1,6 +1,6 @@
 resource "azapi_resource" "sre_agent" {
   schema_validation_enabled = false
-  type                      = "Microsoft.App/agents@2026-01-01"
+  type                      = "Microsoft.App/agents@2025-05-01-preview"
   name                      = var.agent_name
   location                  = var.location
   parent_id                 = azurerm_resource_group.agent.id
