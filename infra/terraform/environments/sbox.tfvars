@@ -23,6 +23,8 @@ admin_principal_ids = [
 ]
 
 deploy_sre_agent = true
+# AKS-only deployment: skip the optional Container Apps stack.
+deploy_apps = false
 
 enable_app_insights_connector  = false
 enable_log_analytics_connector = false
