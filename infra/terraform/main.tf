@@ -19,6 +19,7 @@ locals {
   effective_ai_conn_str = local.create_app_insights ? azurerm_application_insights.ai[0].connection_string : data.azurerm_application_insights.existing_ai[0].connection_string
 
   sre_agent_admin_role_id = "e79298df-d852-4c6d-84f9-5d13249d1e55"
+  apps_enabled            = var.deploy_apps
 }
 
 resource "azurerm_resource_group" "agent" {

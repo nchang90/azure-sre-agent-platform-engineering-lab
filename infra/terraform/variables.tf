@@ -87,6 +87,20 @@ variable "tags" {
   default     = {}
 }
 
+# ── Apps ──
+
+variable "deploy_apps" {
+  description = "Deploy the orders-api and change-lookup Container Apps."
+  type        = bool
+  default     = true
+}
+
+variable "acr_sku" {
+  description = "SKU for the Azure Container Registry."
+  type        = string
+  default     = "Basic"
+}
+
 # ── AKS ──
 
 variable "aks_node_vm_size" {
@@ -161,6 +175,32 @@ variable "existing_agent_app_insights_id" {
   description = "Resource ID of an existing Application Insights for agent telemetry. If provided, skips creating a new one."
   type        = string
   default     = ""
+}
+
+# ── Networking ──
+
+variable "enable_vnet" {
+  description = "Create a dedicated virtual network for the agent."
+  type        = bool
+  default     = false
+}
+
+variable "existing_subnet_id" {
+  description = "Resource ID of an existing subnet to use instead of creating a new VNet."
+  type        = string
+  default     = ""
+}
+
+variable "vnet_address_space" {
+  description = "Address space for the agent virtual network."
+  type        = string
+  default     = "10.50.0.0/16"
+}
+
+variable "agent_subnet_prefix" {
+  description = "Subnet range used by the agent."
+  type        = string
+  default     = "10.50.1.0/24"
 }
 
 # ── Connector toggles ──
@@ -259,6 +299,32 @@ variable "enable_webhook_bridge" {
 
 variable "webhook_bridge_trigger_url" {
   description = "Pre-existing webhook trigger URL (skip Logic App creation if set)."
+  type        = string
+  default     = ""
+}
+
+# ── Agent runtime and alerting ──
+
+variable "deploy_sre_agent" {
+  description = "Deploy the SRE agent runtime and associated resources."
+  type        = bool
+  default     = true
+}
+
+variable "admin_principal_ids" {
+  description = "Additional principal IDs granted SRE agent admin access."
+  type        = list(string)
+  default     = []
+}
+
+variable "severity_threshold" {
+  description = "Severity for the Application Insights smart detector alert."
+  type        = number
+  default     = 2
+}
+
+variable "email_receiver_address" {
+  description = "Email address used for the alert action group receiver."
   type        = string
   default     = ""
 }
