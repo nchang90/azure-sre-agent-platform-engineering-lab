@@ -1,6 +1,6 @@
 output "agent_id" {
   description = "Full ARM resource ID of the SRE Agent."
-  value       = azapi_resource.sre_agent.id
+  value       = azapi_resource.sre_agent[0].id
 }
 
 output "agent_portal_url" {
@@ -67,8 +67,6 @@ output "aks_subnet_id" {
   description = "Resource ID of the subnet used by AKS nodes."
   value       = azurerm_subnet.aks.id
 }
-
-# ── App outputs (only set when deploy_apps = true) ──
 
 output "acr_name" {
   description = "Azure Container Registry name (for ACR-Tasks builds)."
