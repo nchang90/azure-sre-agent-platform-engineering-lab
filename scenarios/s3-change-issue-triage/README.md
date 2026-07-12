@@ -125,6 +125,6 @@ variable "action_mode" { default = "Review" } # use "Automatic" after confidence
 ---
 
 ## Knowledge base
-- [http-500-errors.md](../knowledge-base/http-500-errors.md)
-- On‑call handoff template: [on-call-handoff.md](../knowledge-base/on-call-handoff.md)
-- Incident report template: [incident-report.md](../knowledge-base/incident-report.md)
+- [http-500-errors.md](../../knowledge-base/http-500-errors.md)
+- On‑call handoff template: [on-call-handoff.md](../../knowledge-base/on-call-handoff.md)
+- Incident report template: [incident-report.md](../../knowledge-base/incident-report.md)
