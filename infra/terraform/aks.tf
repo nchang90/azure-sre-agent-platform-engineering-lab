@@ -2,6 +2,11 @@ locals {
   aks_suffix = substr(sha256("${data.azurerm_subscription.current.subscription_id}-${var.resource_group_name}-aks"), 0, 8)
 }
 
+resource "tls_private_key" "aks_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = "aks-${local.aks_suffix}"
   location            = var.location
@@ -34,7 +39,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     admin_username = "azureuser"
 
     ssh_key {
-      key_data = file(pathexpand(var.aks_ssh_public_key_path))
+      key_data = tls_private_key.aks_ssh.public_key_openssh
     }
   }
 
