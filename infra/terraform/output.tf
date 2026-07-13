@@ -30,42 +30,42 @@ output "resource_group_portal_url" {
 
 output "aks_name" {
   description = "Name of the AKS cluster."
-  value       = azurerm_kubernetes_cluster.aks.name
+  value       = var.deploy_aks ? azurerm_kubernetes_cluster.aks[0].name : null
 }
 
 output "aks_id" {
   description = "Resource ID of the AKS cluster."
-  value       = azurerm_kubernetes_cluster.aks.id
+  value       = var.deploy_aks ? azurerm_kubernetes_cluster.aks[0].id : null
 }
 
 output "aks_node_resource_group" {
   description = "Node resource group created for the AKS cluster."
-  value       = azurerm_kubernetes_cluster.aks.node_resource_group
+  value       = var.deploy_aks ? azurerm_kubernetes_cluster.aks[0].node_resource_group : null
 }
 
 output "aks_kubelet_identity_object_id" {
   description = "Object ID of the AKS kubelet identity."
-  value       = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+  value       = var.deploy_aks ? azurerm_kubernetes_cluster.aks[0].kubelet_identity[0].object_id : null
 }
 
 output "aks_kubelet_identity_client_id" {
   description = "Client ID of the AKS kubelet identity."
-  value       = azurerm_kubernetes_cluster.aks.kubelet_identity[0].client_id
+  value       = var.deploy_aks ? azurerm_kubernetes_cluster.aks[0].kubelet_identity[0].client_id : null
 }
 
 output "aks_identity_id" {
   description = "Resource ID of the managed identity assigned to AKS."
-  value       = azurerm_user_assigned_identity.aks.id
+  value       = var.deploy_aks ? azurerm_user_assigned_identity.aks[0].id : null
 }
 
 output "aks_vnet_id" {
   description = "Resource ID of the virtual network used by AKS."
-  value       = azurerm_virtual_network.aks.id
+  value       = var.deploy_aks ? azurerm_virtual_network.aks[0].id : null
 }
 
 output "aks_subnet_id" {
   description = "Resource ID of the subnet used by AKS nodes."
-  value       = azurerm_subnet.aks.id
+  value       = var.deploy_aks ? azurerm_subnet.aks[0].id : null
 }
 
 output "acr_name" {
