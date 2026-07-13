@@ -72,6 +72,12 @@ jobs:
           ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
           ORDERS_API_NAME="$(read_tf orders_api_name)"
           CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
+
+          if [[ -z "$ACR_NAME" || -z "$ACR_LOGIN_SERVER" || -z "$ORDERS_API_NAME" || -z "$CHANGE_LOOKUP_NAME" ]]; then
+            echo "Container Apps are disabled for this environment; skipping image build and update."
+            exit 0
+          fi
+
           AGENT_ID="$(read_tf agent_id)"
           RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 
