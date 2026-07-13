@@ -12,16 +12,8 @@ resource "azurerm_subnet" "aks" {
   virtual_network_name = azurerm_virtual_network.aks.name
   address_prefixes     = [var.aks_subnet_cidr]
 
-  delegation {
-    name = "aks-delegation"
-
-    service_delegation {
-      name = "Microsoft.ContainerService/managedClusters"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
-  }
+  # AKS node pool subnets must not be delegated; AKS needs to manage the
+  # subnet directly for the agent pool network plugin configuration.
 }
 
 resource "azurerm_user_assigned_identity" "aks" {
