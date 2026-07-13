@@ -3,6 +3,11 @@ output "agent_id" {
   value       = azapi_resource.sre_agent[0].id
 }
 
+output "apps_enabled" {
+  description = "Whether Container Apps are enabled for this deployment."
+  value       = local.apps_enabled
+}
+
 output "agent_portal_url" {
   description = "Direct link to the agent in the SRE Agent portal."
   value       = "https://sre.azure.com/#/agent/${data.azurerm_subscription.current.subscription_id}/${azurerm_resource_group.agent.name}/${var.agent_name}"
