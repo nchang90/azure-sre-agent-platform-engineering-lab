@@ -66,9 +66,8 @@ jobs:
           set -euo pipefail
 
           TFVARS_FILE="infra/terraform/environments/${ENVIRONMENT}.tfvars"
-          DEPLOY_APPS="$(awk -F'= *' '/^deploy_apps[[:space:]]*=/{gsub(/[[:space:]]/, "", $2); print tolower($2)}' "$TFVARS_FILE")"
-          DEPLOY_AKS="$(awk -F'= *' '/^deploy_aks[[:space:]]*=/{gsub(/[[:space:]]/, "", $2); print tolower($2)}' "$TFVARS_FILE")"
-
+          DEPLOY_APPS="$(awk -F'= *' '/^[[:space:]]*deploy_apps[[:space:]]*=/{val=$2; sub(/#.*/, "", val); gsub(/[[:space:]]/, "", val); print tolower(val); exit}' "$TFVARS_FILE")"
+          DEPLOY_AKS="$(awk -F'= *' '/^[[:space:]]*deploy_aks[[:space:]]*=/{val=$2; sub(/#.*/, "", val); gsub(/[[:space:]]/, "", val); print tolower(val); exit}' "$TFVARS_FILE")"
           if [[ "$DEPLOY_APPS" == "false" || "$DEPLOY_AKS" == "true" ]]; then
             echo "Container Apps are disabled for this environment; skipping image build and update."
             exit 0
