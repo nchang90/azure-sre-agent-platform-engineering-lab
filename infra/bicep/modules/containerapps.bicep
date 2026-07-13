@@ -14,6 +14,9 @@ param tags object = {}
 @description('Name of the Log Analytics workspace the environment ships its logs to.')
 param logAnalyticsWorkspaceName string
 
+@description('Resource ID of the delegated subnet used for Container Apps infrastructure.')
+param infrastructureSubnetId string
+
 resource law 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
   name: logAnalyticsWorkspaceName
 }
@@ -29,6 +32,9 @@ resource containerAppsEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
         customerId: law.properties.customerId
         sharedKey: law.listKeys().primarySharedKey
       }
+    }
+    vnetConfiguration: {
+      infrastructureSubnetId: infrastructureSubnetId
     }
   }
 }
