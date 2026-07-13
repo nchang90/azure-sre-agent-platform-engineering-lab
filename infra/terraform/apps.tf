@@ -6,6 +6,7 @@ locals {
   cae_name          = "cae-${local.suffix}"
   uami_apps_name    = "id-apps-${local.suffix}"
   placeholder_image = "mcr.microsoft.com/k8se/quickstart:latest"
+  cae_subnet_id     = var.enable_vnet ? coalesce(var.existing_subnet_id, try(azurerm_subnet.agent[0].id, "")) : ""
 }
 
 resource "azurerm_container_registry" "acr" {
@@ -40,6 +41,7 @@ resource "azurerm_container_app_environment" "cae" {
   resource_group_name        = azurerm_resource_group.agent.name
   location                   = var.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+  infrastructure_subnet_id   = local.cae_subnet_id != "" ? local.cae_subnet_id : null
   tags                       = var.tags
 }
 
