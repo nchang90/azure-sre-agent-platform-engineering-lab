@@ -1,34 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Dedicated virtual network and delegated subnet for the Container Apps
-// managed environment.
+// Delegated subnet for the Container Apps managed environment inside the
+// existing AKS virtual network.
 // ─────────────────────────────────────────────────────────────────────────────
 
-@description('Azure region for the network resources.')
-param location string
-
-@description('Stable token used to make resource names unique within the subscription.')
-param resourceToken string
-
-@description('Tags applied to the network resources.')
-param tags object = {}
-
-@description('Virtual network address space.')
-param virtualNetworkAddressPrefix string = '10.50.0.0/16'
+@description('Name of the existing virtual network to place the agent subnet in.')
+param virtualNetworkName string
 
 @description('Delegated subnet address prefix for the Container Apps managed environment.')
 param infrastructureSubnetPrefix string = '10.50.1.0/24'
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
-  name: 'vnet-${resourceToken}'
-  location: location
-  tags: tags
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        virtualNetworkAddressPrefix
-      ]
-    }
-  }
+resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' existing = {
+  name: virtualNetworkName
 }
 
 resource infrastructureSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-07-01' = {
