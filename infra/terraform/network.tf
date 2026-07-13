@@ -1,14 +1,5 @@
 locals {
-  vnet_enabled        = var.enable_vnet || var.existing_subnet_id != ""
-  create_vnet         = var.enable_vnet && var.existing_subnet_id == ""
-  effective_subnet_id = var.existing_subnet_id != "" ? var.existing_subnet_id : try(azurerm_subnet.agent[0].id, "")
-
-  network_config = local.vnet_enabled ? {
-    networkConfiguration = {
-      egressMode = "AzureVNet"
-      subnetId   = local.effective_subnet_id
-    }
-  } : {}
+  create_vnet = var.enable_vnet && var.existing_subnet_id == ""
 }
 
 resource "azurerm_virtual_network" "agent" {
@@ -101,18 +92,6 @@ resource "azurerm_network_security_group" "agent" {
     destination_port_range     = "443"
     source_address_prefix      = "VirtualNetwork"
     destination_address_prefix = "AzureKeyVault"
-  }
-
-  security_rule {
-    name                       = "AllowAzureKubernetesService"
-    priority                   = 160
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureKubernetesService"
   }
 
   # Catch-all for any other Azure service (Container Apps control plane,
