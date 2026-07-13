@@ -42,6 +42,9 @@ param targetResourceGroups array = []
 @description('Additional tags applied to every resource.')
 param tags object = {}
 
+@description('Name of the existing AKS virtual network that will host the agent subnet.')
+param aksVirtualNetworkName string
+
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var resourceGroupName = 'rg-${environmentName}'
 
@@ -82,9 +85,7 @@ module network 'modules/network.bicep' = {
   name: 'network'
   scope: rg
   params: {
-    location: location
-    resourceToken: resourceToken
-    tags: defaultTags
+    virtualNetworkName: aksVirtualNetworkName
   }
 }
 
