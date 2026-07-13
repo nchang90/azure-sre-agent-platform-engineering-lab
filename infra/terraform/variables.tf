@@ -184,7 +184,7 @@ variable "existing_agent_app_insights_id" {
 variable "enable_vnet" {
   description = "Create a dedicated virtual network for the agent."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "existing_subnet_id" {
