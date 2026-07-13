@@ -26,6 +26,8 @@ deploy_sre_agent = true
 # Keep the Container Apps stack for sandbox; AKS stays disabled here.
 deploy_apps                    = true
 deploy_aks                     = false
+# Sandbox now gets its own VNet for the agent stack.
+enable_vnet                    = true
 enable_app_insights_connector  = false
 enable_log_analytics_connector = false
 enable_sev01_incident_filter   = false
