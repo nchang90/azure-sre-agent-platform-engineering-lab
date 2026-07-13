@@ -1,4 +1,5 @@
 resource "azurerm_virtual_network" "aks" {
+  count               = local.aks_enabled ? 1 : 0
   name                = "vnet-aks-${local.aks_suffix}"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
@@ -7,24 +8,20 @@ resource "azurerm_virtual_network" "aks" {
 }
 
 resource "azurerm_subnet" "aks" {
+  count                = local.aks_enabled ? 1 : 0
   name                 = "snet-aks"
   resource_group_name  = azurerm_resource_group.agent.name
-  virtual_network_name = azurerm_virtual_network.aks.name
+  virtual_network_name = azurerm_virtual_network.aks[0].name
   address_prefixes     = [var.aks_subnet_cidr]
 
-  delegation {
-    name = "aks-delegation"
-
-    service_delegation {
-      name = "Microsoft.ContainerService/managedClusters"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
-  }
+  # Do not add a delegation block to this subnet. In this Terraform/AKS setup,
+  # delegating to Microsoft.ContainerService/managedClusters causes AKS
+  # create/update to fail. The subnet is left undelegated so AKS can manage it
+  # directly for the agent pool network plugin configuration.
 }
 
 resource "azurerm_user_assigned_identity" "aks" {
+  count               = local.aks_enabled ? 1 : 0
   name                = "aks-${local.aks_suffix}-uami"
   resource_group_name = azurerm_resource_group.agent.name
   location            = var.location
@@ -32,15 +29,17 @@ resource "azurerm_user_assigned_identity" "aks" {
 }
 
 resource "azurerm_role_assignment" "aks_network_contributor" {
-  scope                = azurerm_subnet.aks.id
+  count                = local.aks_enabled ? 1 : 0
+  scope                = azurerm_subnet.aks[0].id
   role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.aks.principal_id
+  principal_id         = azurerm_user_assigned_identity.aks[0].principal_id
   principal_type       = "ServicePrincipal"
 }
 
 resource "azurerm_role_assignment" "aks_vnet_network_contributor" {
-  scope                = azurerm_virtual_network.aks.id
+  count                = local.aks_enabled ? 1 : 0
+  scope                = azurerm_virtual_network.aks[0].id
   role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.aks.principal_id
+  principal_id         = azurerm_user_assigned_identity.aks[0].principal_id
   principal_type       = "ServicePrincipal"
 }

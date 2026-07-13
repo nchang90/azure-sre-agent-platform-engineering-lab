@@ -95,6 +95,12 @@ variable "deploy_apps" {
   default     = true
 }
 
+variable "deploy_aks" {
+  description = "Deploy the AKS cluster and supporting network resources."
+  type        = bool
+  default     = false
+}
+
 variable "acr_sku" {
   description = "SKU for the Azure Container Registry."
   type        = string
