@@ -14,8 +14,10 @@ resource "azurerm_subnet" "aks" {
   virtual_network_name = azurerm_virtual_network.aks[0].name
   address_prefixes     = [var.aks_subnet_cidr]
 
-  # AKS node pool subnets must not be delegated; AKS needs to manage the
-  # subnet directly for the agent pool network plugin configuration.
+  # Do not add a delegation block to this subnet. In this Terraform/AKS setup,
+  # delegating to Microsoft.ContainerService/managedClusters causes AKS
+  # create/update to fail. The subnet is left undelegated so AKS can manage it
+  # directly for the agent pool network plugin configuration.
 }
 
 resource "azurerm_user_assigned_identity" "aks" {
