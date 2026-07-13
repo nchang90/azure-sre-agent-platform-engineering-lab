@@ -78,6 +78,16 @@ module monitoring 'modules/loganalytics.bicep' = {
   }
 }
 
+module network 'modules/network.bicep' = {
+  name: 'network'
+  scope: rg
+  params: {
+    location: location
+    resourceToken: resourceToken
+    tags: defaultTags
+  }
+}
+
 module containerApps 'modules/containerapps.bicep' = {
   name: 'containerapps'
   scope: rg
@@ -86,6 +96,7 @@ module containerApps 'modules/containerapps.bicep' = {
     resourceToken: resourceToken
     tags: defaultTags
     logAnalyticsWorkspaceName: monitoring.outputs.workspaceName
+    infrastructureSubnetId: network.outputs.id
   }
 }
 
