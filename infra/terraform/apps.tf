@@ -6,7 +6,7 @@ locals {
   cae_name          = "cae-${local.suffix}"
   uami_apps_name    = "id-apps-${local.suffix}"
   placeholder_image = "mcr.microsoft.com/k8se/quickstart:latest"
-  cae_subnet_id     = var.enable_vnet ? coalesce(var.existing_subnet_id, try(azurerm_subnet.agent[0].id, "")) : ""
+  cae_subnet_id     = coalesce(var.existing_subnet_id, try(azurerm_subnet.agent[0].id, ""))
 }
 
 resource "azurerm_container_registry" "acr" {
