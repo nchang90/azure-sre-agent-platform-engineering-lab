@@ -60,34 +60,39 @@ jobs:
       - name: Terraform apply
         run: terraform -chdir=infra/terraform apply -auto-approve tfplan
 
-      - name: Build and update Container Apps
+      - name: Read Terraform outputs
+        id: tf
         shell: bash
         run: |
           set -euo pipefail
 
-          TFVARS_FILE="infra/terraform/environments/${ENVIRONMENT}.tfvars"
-          DEPLOY_APPS="$(awk -F'= *' '/^[[:space:]]*deploy_apps[[:space:]]*=/{val=$2; sub(/#.*/, "", val); gsub(/[[:space:]]/, "", val); print tolower(val); exit}' "$TFVARS_FILE")"
-          DEPLOY_AKS="$(awk -F'= *' '/^[[:space:]]*deploy_aks[[:space:]]*=/{val=$2; sub(/#.*/, "", val); gsub(/[[:space:]]/, "", val); print tolower(val); exit}' "$TFVARS_FILE")"
-          if [[ "$DEPLOY_APPS" == "false" || "$DEPLOY_AKS" == "true" ]]; then
-            echo "Container Apps are disabled for this environment; skipping image build and update."
-            exit 0
-          fi
-
           TF_OUT="$(terraform -chdir=infra/terraform output -json)"
           read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
 
-          ACR_NAME="$(read_tf acr_name)"
-          ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
-          ORDERS_API_NAME="$(read_tf orders_api_name)"
-          CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
+          echo "apps_enabled=$(read_tf apps_enabled)" >> "$GITHUB_OUTPUT"
+          echo "acr_name=$(read_tf acr_name)" >> "$GITHUB_OUTPUT"
+          echo "acr_login_server=$(read_tf acr_login_server)" >> "$GITHUB_OUTPUT"
+          echo "orders_api_name=$(read_tf orders_api_name)" >> "$GITHUB_OUTPUT"
+          echo "change_lookup_name=$(read_tf change_lookup_name)" >> "$GITHUB_OUTPUT"
+          echo "agent_id=$(read_tf agent_id)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and update Container Apps
+        if: steps.tf.outputs.apps_enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACR_NAME="${{ steps.tf.outputs.acr_name }}"
+          ACR_LOGIN_SERVER="${{ steps.tf.outputs.acr_login_server }}"
+          ORDERS_API_NAME="${{ steps.tf.outputs.orders_api_name }}"
+          CHANGE_LOOKUP_NAME="${{ steps.tf.outputs.change_lookup_name }}"
+          AGENT_ID="${{ steps.tf.outputs.agent_id }}"
+          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 
           if [[ -z "$ACR_NAME" || -z "$ACR_LOGIN_SERVER" || -z "$ORDERS_API_NAME" || -z "$CHANGE_LOOKUP_NAME" ]]; then
-            echo "Container Apps are disabled for this environment; skipping image build and update."
+            echo "Terraform outputs for Container Apps are empty; skipping image build and update."
             exit 0
           fi
-
-          AGENT_ID="$(read_tf agent_id)"
-          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 
           echo "Building images in ACR: $ACR_NAME"
 
