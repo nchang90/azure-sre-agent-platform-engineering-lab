@@ -13,6 +13,7 @@ name: sre-agent-s1
 metadata:
   template: sre-agent-s1@0.1.0
 infra:
+  location: uksouth
   provider: bicep
   path: infra/bicep
   module: main

@@ -19,7 +19,7 @@
     },
     "agentName": {
       "type": "string",
-      "defaultValue": "sre-agent",
+      "defaultValue": "sre-agent-demo",
       "minLength": 2,
       "maxLength": 63,
       "metadata": {
