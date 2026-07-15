@@ -18,7 +18,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "terraform-tfstate-rg"
-    storage_account_name = "terraformstatesbox"
+    storage_account_name = "terraformstatesboxprd"
     container_name       = "tfstate"
     key                  = "azuresre.tfstate"
   }
@@ -29,7 +29,6 @@ provider "azapi" {}
 provider "azurerm" {
   features {
     resource_group {
-      # Allow teardown to remove Azure-managed nested resources inside the RG.
       prevent_deletion_if_contains_resources = false
     }
   }

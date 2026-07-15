@@ -43,6 +43,7 @@ azd env new s1-demo
 
 # 2. Pick a region supported by the SRE Agent RP
 azd env set AZURE_LOCATION eastus2          # or swedencentral | uksouth | australiaeast
+azd env set AZD_LOCATION eastus2            # required by subscription-scope deployment validation
 
 # 3. (optional) override defaults
 azd env set AGENT_NAME sre-demo             # default: sre-agent
@@ -62,6 +63,12 @@ az deployment sub create \
   --location eastus2 \
   --template-file main.bicep \
   --parameters environmentName=s1-demo location=eastus2 agentName=sre-demo
+```
+
+If deploying through `azd`, make sure `AZD_LOCATION` is set in the environment:
+
+```bash
+azd env set AZD_LOCATION eastus2
 ```
 
 ## Outputs (for the Terraform layer)
