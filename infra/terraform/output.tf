@@ -68,6 +68,11 @@ output "aks_subnet_id" {
   value       = azurerm_subnet.aks.id
 }
 
+output "deploy_apps" {
+  description = "Whether the optional Container Apps stack is enabled."
+  value       = var.deploy_apps
+}
+
 output "acr_name" {
   description = "Azure Container Registry name (for ACR-Tasks builds)."
   value       = local.apps_enabled ? azurerm_container_registry.acr[0].name : ""
