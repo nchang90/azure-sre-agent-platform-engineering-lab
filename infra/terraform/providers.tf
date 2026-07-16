@@ -33,3 +33,7 @@ provider "azurerm" {
     }
   }
 }
+
+resource "azurerm_resource_provider_registration" "alerts_management" {
+  name = "Microsoft.AlertsManagement"
+}
