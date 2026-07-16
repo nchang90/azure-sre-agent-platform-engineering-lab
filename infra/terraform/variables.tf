@@ -313,6 +313,12 @@ variable "admin_principal_ids" {
   default     = []
 }
 
+variable "manage_privileged_role_assignments" {
+  description = "Create Terraform-managed role assignments that require Microsoft.Authorization/roleAssignments/write."
+  type        = bool
+  default     = false
+}
+
 variable "severity_threshold" {
   description = "Severity for the Application Insights smart detector alert."
   type        = string
