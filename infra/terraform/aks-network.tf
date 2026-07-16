@@ -21,6 +21,7 @@ resource "azurerm_user_assigned_identity" "aks" {
 }
 
 resource "azurerm_role_assignment" "aks_network_contributor" {
+  count                = var.manage_privileged_role_assignments ? 1 : 0
   scope                = azurerm_subnet.aks.id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.aks.principal_id
@@ -28,6 +29,7 @@ resource "azurerm_role_assignment" "aks_network_contributor" {
 }
 
 resource "azurerm_role_assignment" "aks_vnet_network_contributor" {
+  count                = var.manage_privileged_role_assignments ? 1 : 0
   scope                = azurerm_virtual_network.aks.id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.aks.principal_id

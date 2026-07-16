@@ -136,6 +136,7 @@ resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
   detector_type       = "FailureAnomaliesDetector"
   frequency           = "PT1M"
   enabled             = true
+  depends_on          = [azurerm_resource_provider_registration.alerts_management]
 
   action_group {
     ids = [azurerm_monitor_action_group.ai_smart_detection.id]
