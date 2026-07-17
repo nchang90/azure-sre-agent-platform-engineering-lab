@@ -9,6 +9,8 @@ Hands-on Azure SRE Agent lab with four progressive scenarios: detection and tria
 | Azure CLI | `brew install azure-cli` or [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | Terraform 1.5+ | `brew install terraform` or [Install Terraform](https://developer.hashicorp.com/terraform/install) |
 
+> Note: the Terraform identity used for `apply` must be able to create Azure role assignments at the target resource scopes (for example, Owner or User Access Administrator).
+
 ## Quick Start
 
 See [docs/quickstart.md](docs/quickstart.md) for step-by-step provisioning instructions.
