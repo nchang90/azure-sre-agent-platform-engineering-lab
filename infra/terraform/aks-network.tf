@@ -11,17 +11,6 @@ resource "azurerm_subnet" "aks" {
   resource_group_name  = azurerm_resource_group.agent.name
   virtual_network_name = azurerm_virtual_network.aks.name
   address_prefixes     = [var.aks_subnet_cidr]
-
-  delegation {
-    name = "aks-delegation"
-
-    service_delegation {
-      name = "Microsoft.ContainerService/managedClusters"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
-  }
 }
 
 resource "azurerm_user_assigned_identity" "aks" {
