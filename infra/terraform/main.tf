@@ -20,6 +20,7 @@ locals {
 
   sre_agent_admin_role_id = "e79298df-d852-4c6d-84f9-5d13249d1e55"
   apps_enabled            = var.deploy_apps
+  aks_enabled             = !var.deploy_apps
 }
 
 resource "azurerm_resource_group" "agent" {

@@ -69,6 +69,11 @@ jobs:
           read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
 
           ACR_NAME="$(read_tf acr_name)"
+          if [[ -z "$ACR_NAME" ]]; then
+            echo "Container Apps stack is disabled for this environment; skipping image build and app updates."
+            exit 0
+          fi
+
           ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
           ORDERS_API_NAME="$(read_tf orders_api_name)"
           CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
