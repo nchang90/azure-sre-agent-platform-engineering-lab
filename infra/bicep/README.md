@@ -9,7 +9,7 @@ everything else builds on and emits outputs the Terraform layer
 
 | Resource | Bicep type | Module | Notes |
 |---|---|---|---|
-| Resource group | `Microsoft.Resources/resourceGroups` | `main.bicep` | `rg-<env>`, created at subscription scope |
+| Resource group | `Microsoft.Resources/resourceGroups` | `main.bicep` | `azure-cloud-commanders-<env>`, created at subscription scope |
 | Managed identity | `Microsoft.ManagedIdentity/userAssignedIdentities` | `identity.bicep` | The agent's user-assigned identity |
 | Log Analytics workspace | `Microsoft.OperationalInsights/workspaces` | `loganalytics.bicep` | PerGB2018, 30-day retention |
 | Application Insights | `Microsoft.Insights/components` | `loganalytics.bicep` | Workspace-based; the agent's log config points here |
