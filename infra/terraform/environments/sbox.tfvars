@@ -12,7 +12,7 @@ default_model_name       = "Automatic"
 tags = {
   environment = "sbox"
   project     = "sre-agent"
-  scenario    = "s1"
+  scenario    = "s2"
 }
 
 email_receiver_address = "nicholasc001@hotmail.com"
@@ -23,8 +23,8 @@ admin_principal_ids = [
 ]
 
 deploy_sre_agent = true
-# AKS-only deployment: skip the optional Container Apps stack.
-deploy_apps = false
+# S2 runtime scenario uses the optional Container Apps stack.
+deploy_apps = true
 
 enable_app_insights_connector  = false
 enable_log_analytics_connector = false

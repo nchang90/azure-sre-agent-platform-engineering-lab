@@ -43,7 +43,7 @@ param targetResourceGroups array = []
 param tags object = {}
 
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
-var resourceGroupName = 'rg-${environmentName}'
+var resourceGroupName = 'azure-cloud-commanders-${toLower(environmentName)}'
 
 var defaultTags = union(tags, {
   'azd-env-name': environmentName
