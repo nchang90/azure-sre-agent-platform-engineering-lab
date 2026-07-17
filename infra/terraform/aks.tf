@@ -3,11 +3,13 @@ locals {
 }
 
 resource "tls_private_key" "aks_ssh" {
+  count     = local.aks_enabled ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
+  count               = local.aks_enabled ? 1 : 0
   name                = "aks-${local.aks_suffix}"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
@@ -21,7 +23,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.aks.id]
+    identity_ids = [azurerm_user_assigned_identity.aks[0].id]
   }
 
   default_node_pool {
@@ -31,7 +33,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     auto_scaling_enabled         = true
     min_count                    = var.aks_min_count
     max_count                    = var.aks_max_count
-    vnet_subnet_id               = azurerm_subnet.aks.id
+    vnet_subnet_id               = azurerm_subnet.aks[0].id
     only_critical_addons_enabled = true
   }
 
@@ -39,7 +41,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     admin_username = "azureuser"
 
     ssh_key {
-      key_data = tls_private_key.aks_ssh.public_key_openssh
+      key_data = tls_private_key.aks_ssh[0].public_key_openssh
     }
   }
 
