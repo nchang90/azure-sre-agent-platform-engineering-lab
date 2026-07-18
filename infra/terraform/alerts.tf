@@ -14,8 +14,6 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
   tags                = var.tags
   depends_on = [
     azurerm_log_analytics_workspace.law,
-    azurerm_role_assignment.deployer_monitoring_contributor_rg,
-    azurerm_role_assignment.deployer_log_analytics_reader_rg,
   ]
 
   description             = "Orders API: /health endpoint unhealthy or missing in the last 1 minute."
@@ -54,8 +52,6 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
   tags                = var.tags
   depends_on = [
     azurerm_log_analytics_workspace.law,
-    azurerm_role_assignment.deployer_monitoring_contributor_rg,
-    azurerm_role_assignment.deployer_log_analytics_reader_rg,
   ]
 
   description             = "Orders API: container errors / back-off (crash loop) detected in the last 1 minute."
@@ -94,8 +90,6 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   tags                = var.tags
   depends_on = [
     azurerm_log_analytics_workspace.law,
-    azurerm_role_assignment.deployer_monitoring_contributor_rg,
-    azurerm_role_assignment.deployer_log_analytics_reader_rg,
   ]
 
   description             = "Orders API: P99 request latency exceeded the 2s SLO over the last 1 minute."
