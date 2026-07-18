@@ -14,12 +14,13 @@
     "triage-app-errors"
   ],
   "subagents": [
+    "incident-orchestrator",
     "alert-investigator"
   ],
   "scheduledTasks": [
     "daily-health-check"
   ],
   "responsePlans": [
-    { "name": "azmon-sev01", "handlingAgent": "alert-investigator" }
+    { "name": "all-incidents", "handlingAgent": "incident-orchestrator" }
   ]
 }

@@ -1,16 +1,15 @@
 metadata:
-  name: orders-api-errors
+  name: snow-all-incidents
 spec:
-  name: Orders API 5xx Errors
-  incidentPlatform: AzMonitor
+  name: ServiceNow Shared Scenario Incident Response
+  incidentPlatform: ServiceNow
   isEnabled: true
   priorities:
-  - Sev0
-  - Sev1
-  - Sev2
-  - Sev3
-  - Sev4
-  titleContains: alert-orders-api-errors
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "5"
   handlingAgent: incident-orchestrator
   agentMode: autonomous
   deepInvestigationEnabled: false

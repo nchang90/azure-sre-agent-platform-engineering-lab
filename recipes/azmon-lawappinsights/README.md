@@ -12,7 +12,7 @@ Upstream-style mirror of the Microsoft SRE Agent template recipe:
 - expected-config.json
 - tool-permissions.json
 - automations/incident-platforms/azmonitor.yaml
-- automations/incident-filters/azmon-sev01.yaml
+- incident-platforms/azure-monitor/incident-filters/all-incidents.yaml
 - automations/scheduled-tasks/daily-health-check.yaml
 
 ## Lab Runtime Layout (existing)
@@ -20,7 +20,7 @@ Upstream-style mirror of the Microsoft SRE Agent template recipe:
 This repo still uses its existing runtime apply flow for day-to-day operation:
 
 - subagents in `recipes/azmon-lawappinsights/agents/`
-- platform-specific plans in `recipes/azmon-lawappinsights/incident-platforms/`
+- one shared scenario response plan in `recipes/azmon-lawappinsights/incident-platforms/`
 - registration logic in `scripts/apply-extras.sh`
 
 Both layouts are kept so the lab is easy to run while also matching the upstream recipe shape.
