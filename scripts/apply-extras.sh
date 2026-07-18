@@ -52,7 +52,17 @@ ALL_KB_NAMES=(
   orders-architecture.md
 )
 
+ALL_SKILL_NAMES=(
+  aks-change-triage-rollback
+  containerapps-500-diagnostics
+  containerapps-latency-diagnostics
+  incident-orchestrator-coordination
+  investigate-azure-alerts
+  triage-app-errors
+)
+
 KB_NAMES=("${ALL_KB_NAMES[@]}")
+SKILL_NAMES=("${ALL_SKILL_NAMES[@]}")
 SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
@@ -163,6 +173,12 @@ configure_catalog_scope() {
         orders-architecture.md
         incident-report.md
       )
+      SKILL_NAMES=(
+        incident-orchestrator-coordination
+        investigate-azure-alerts
+        containerapps-500-diagnostics
+        containerapps-latency-diagnostics
+      )
       ;;
     s4)
       log "Including S4 alert response issue-triage catalog from tags.scenario=s4."
@@ -193,7 +209,13 @@ load_context_from_terraform() {
   [[ -n "$AGENT_ID" ]] || die "agent_id missing from Terraform outputs"
 
   endpoint="$(az resource show --ids "$AGENT_ID" --query properties.agentEndpoint -o tsv 2>/dev/null | tr -d '\r')"
-  AGENT_ENDPOINT="${endpoint%/}"
+  AGENT_ENDPOINT="${endpoint%/  }
+
+  skill_path() {
+    local name="$1"
+    [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
+    echo ".github/skills/$name/SKILL.md"
+  }"
   [[ -n "$AGENT_ENDPOINT" ]] || die "Could not resolve agent endpoint"
 }
 
@@ -330,17 +352,25 @@ upload_knowledge_base() {
 
 upload_skills() {
   log "Step 2/4: Uploading skills..."
-  local f name code count
-  count=0
+  local f name code
 
-  for f in .github/skills/*/SKILL.md; do
-    [[ -f "$f" ]] || continue
-    count=$((count + 1))
+  for name in "${SKILL_NAMES[@]}"; do
+    f="$(skill_path "$name")"
     name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" skill "$f" "$TMP_DIR/skill.json")"
     code="$(put_json_file "/api/v2/extendedAgent/skills/${name}" "$TMP_DIR/skill.json")"
     report_result "$code" "Skill: $name" "Skill $name"
   done
-  [[ "$count" -gt 0 ]] || warn "  No skill files found under .github/skills/*/SKILL.md"
+  echo
+}
+
+cleanup_out_of_scope_skills() {
+  log "Cleaning up out-of-scope skills..."
+  local name
+
+  for name in "${ALL_SKILL_NAMES[@]}"; do
+    contains "$name" "${SKILL_NAMES[@]}" && continue
+    delete_resource "/api/v2/extendedAgent/skills/${name}" "Skill: $name"
+  done
   echo
 }
 
@@ -397,6 +427,7 @@ main() {
   auth
   upload_knowledge_base
   upload_skills
+  cleanup_out_of_scope_skills
   register_subagents
   cleanup_out_of_scope_subagents
   configure_incident_platform
