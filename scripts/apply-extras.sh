@@ -83,6 +83,7 @@ The selected tfvars file scopes the catalog:
   all scenarios      -> one shared incident response plan
   deploy_apps = true -> Container Apps subagents
   deploy_apps = false -> AKS subagents
+  tags.scenario = s2   -> autonomous remediation extras
   tags.scenario = s4   -> alert response issue-triage extras
   tags.scenario = s5   -> PIM elevation audit extras
 
@@ -90,26 +91,6 @@ Examples:
   bash scripts/apply-extras.sh sbox
   bash scripts/apply-extras.sh demo
 EOF
-}
-
-configure_custom_instructions() {
-  local patch_file="$TMP_DIR/custom-instructions.json"
-
-  [[ -f "$CUSTOM_INSTRUCTIONS_FILE" ]] || { warn "  Missing custom instructions file: $CUSTOM_INSTRUCTIONS_FILE"; return; }
-
-  log "Configuring custom instructions..."
-  jq -n --rawfile instructions "$CUSTOM_INSTRUCTIONS_FILE" \
-    '{properties:{customInstructions:$instructions}}' >"$patch_file"
-
-  if az rest --method PATCH \
-    --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
-    --headers "Content-Type=application/json" \
-    --body @"$patch_file" \
-    --output none 2>/dev/null; then
-    ok "  Custom instructions: $(basename "$CUSTOM_INSTRUCTIONS_FILE")"
-  else
-    warn "  Could not configure custom instructions"
-  fi
 }
 
 parse_args() {
@@ -149,7 +130,15 @@ configure_environment() {
   [[ -f "$TFVARS_FILE" ]] || die "Missing Terraform environment tfvars: $TFVARS_FILE"
 
   log "Selecting Terraform environment: $ENVIRONMENT"
-  SCENARIO="$(awk -F= '/^[[:space:]]*scenario[[:space:]]*=/{gsub(/[ "]/, "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
+  SCENARIO="$(awk -F= '
+    /^[[:space:]]*tags[[:space:]]*=/ { in_tags = 1; next }
+    in_tags && /^[[:space:]]*}/ { in_tags = 0; next }
+    in_tags && /^[[:space:]]*scenario[[:space:]]*=/ {
+      gsub(/[ ",]/, "", $2)
+      print tolower($2)
+      exit
+    }
+  ' "$TFVARS_FILE")"
   DEPLOY_APPS="$(awk -F= '/^[[:space:]]*deploy_apps[[:space:]]*=/{gsub(/[ "]/, "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
   DEPLOY_APPS="${DEPLOY_APPS:-true}"
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
@@ -321,6 +310,13 @@ register_subagent() {
   "$PYTHON" "$SCRIPT_DIR/build-api.py" agent "$yaml_path" >"$body" 2>"$TMP_DIR/err" \
     || { warn "  $name: YAML conversion failed — $(cat "$TMP_DIR/err")"; return; }
 
+  if [[ -f "$CUSTOM_INSTRUCTIONS_FILE" ]]; then
+    jq --rawfile instructions "$CUSTOM_INSTRUCTIONS_FILE" \
+      '.properties.instructions = ((.properties.instructions // "") + "\n\n" + $instructions)' \
+      "$body" >"$TMP_DIR/agent-with-instructions.json"
+    mv "$TMP_DIR/agent-with-instructions.json" "$body"
+  fi
+
   code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
   report_result "$code" "Registered: $name" "$name"
 }
@@ -460,7 +456,6 @@ main() {
   cleanup_out_of_scope_skills
   register_subagents
   cleanup_out_of_scope_subagents
-  configure_custom_instructions
   configure_incident_platform
   create_response_plans
   cleanup_out_of_scope_response_plans
