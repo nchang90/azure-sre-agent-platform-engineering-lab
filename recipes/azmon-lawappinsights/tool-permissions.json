@@ -2,13 +2,50 @@
   "version": 1,
   "rules": [
     {
-      "name": "default-read-observability",
+      "name": "incident-orchestrator-shared-read",
       "allow": [
+        "SearchMemory"
+      ]
+    },
+    {
+      "name": "observability-investigation",
+      "allow": [
+        "GetAzCliHelp",
         "QueryLogAnalyticsByWorkspaceId",
         "QueryAppInsightsByResourceId",
         "QueryAppInsightsUsingAppId",
         "RunAzCliReadCommands",
+        "SearchMemory",
+        "ExecutePythonCode"
+      ]
+    },
+    {
+      "name": "guarded-remediation",
+      "ask": [
+        "RunAzCliWriteCommands"
+      ]
+    },
+    {
+      "name": "github-issue-triage",
+      "allow": [
+        "FetchGithubIssue",
+        "FetchGithubIssues",
+        "FetchGithubIssueComments",
+        "FindConnectedGitHubRepo",
         "SearchMemory"
+      ],
+      "ask": [
+        "CreateGithubIssueComment",
+        "UpdateGithubIssue"
+      ]
+    },
+    {
+      "name": "pim-audit-notification",
+      "allow": [
+        "QueryLogAnalyticsByWorkspaceId"
+      ],
+      "ask": [
+        "SendOutlookEmail"
       ]
     }
   ]

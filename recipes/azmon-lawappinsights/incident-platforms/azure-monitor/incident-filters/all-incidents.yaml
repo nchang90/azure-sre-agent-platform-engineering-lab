@@ -1,14 +1,15 @@
 metadata:
-  name: aks-critical-errors
+  name: all-incidents
 spec:
-  name: AKS Critical Errors
+  name: Shared Scenario Incident Response
   incidentPlatform: AzMonitor
   isEnabled: true
   priorities:
   - Sev0
   - Sev1
   - Sev2
-  titleContains: alert-aks-errors
+  - Sev3
+  - Sev4
   handlingAgent: incident-orchestrator
   agentMode: autonomous
   deepInvestigationEnabled: false

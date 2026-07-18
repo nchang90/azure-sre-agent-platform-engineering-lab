@@ -30,11 +30,13 @@ ALL_SUBAGENT_NAMES=(
   alert-investigator
   incident-orchestrator
   issue-triager
+  pim-elevation
   triage-agent
 )
 
 ALL_RESPONSE_PLAN_NAMES=(
   aks-critical-errors
+  all-incidents
   azmon-sev01
   container-apps-alerts
   orders-api-health-response
@@ -43,7 +45,9 @@ ALL_RESPONSE_PLAN_NAMES=(
 )
 
 SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
-RESPONSE_PLAN_NAMES=("${ALL_RESPONSE_PLAN_NAMES[@]}")
+RESPONSE_PLAN_NAMES=(
+  all-incidents
+)
 
 usage() {
   cat <<'EOF'
@@ -55,9 +59,11 @@ ENVIRONMENT selects matching Terraform files:
 
 The selected tfvars file scopes the catalog:
   all environments   -> all skills and knowledge-base docs
-  deploy_apps = true -> Container Apps subagents/response plans
-  deploy_apps = false -> AKS subagents/response plans
+  all scenarios      -> one shared incident response plan
+  deploy_apps = true -> Container Apps subagents
+  deploy_apps = false -> AKS subagents
   tags.scenario = s4   -> enterprise issue-triage extras
+  tags.scenario = s5   -> PIM elevation audit extras
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -110,8 +116,8 @@ configure_catalog_scope() {
   esac
 
   case "$SCENARIO" in
-    ""|s2|s3|s4) ;;
-    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s2, s3, s4." ;;
+    ""|s1|s2|s3|s4|s5) ;;
+    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s1, s2, s3, s4, s5." ;;
   esac
 
   SUBAGENT_NAMES=(
@@ -119,7 +125,7 @@ configure_catalog_scope() {
     alert-investigator
   )
   RESPONSE_PLAN_NAMES=(
-    azmon-sev01
+    all-incidents
   )
 
   if [[ "$DEPLOY_APPS" == "true" ]]; then
@@ -127,19 +133,10 @@ configure_catalog_scope() {
     SUBAGENT_NAMES+=(
       triage-agent
     )
-    RESPONSE_PLAN_NAMES+=(
-      orders-api-health-response
-      orders-api-errors
-      orders-api-latency
-      container-apps-alerts
-    )
   else
     log "Including AKS incident catalog from deploy_apps=false."
     SUBAGENT_NAMES+=(
       aks-remediator
-    )
-    RESPONSE_PLAN_NAMES+=(
-      aks-critical-errors
     )
   fi
 
@@ -148,6 +145,12 @@ configure_catalog_scope() {
       log "Including S4 enterprise issue-triage catalog from tags.scenario=s4."
       SUBAGENT_NAMES+=(
         issue-triager
+      )
+      ;;
+    s5)
+      log "Including S5 PIM elevation audit catalog from tags.scenario=s5."
+      SUBAGENT_NAMES+=(
+        pim-elevation
       )
       ;;
     "")
@@ -230,6 +233,7 @@ subagent_path() {
     aks-remediator) echo "recipes/azmon-lawappinsights/agents/aks-remediator.yaml" ;;
     incident-orchestrator) echo "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml" ;;
     issue-triager) echo "recipes/azmon-lawappinsights/agents/issue-triager.yaml" ;;
+    pim-elevation) echo "recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml" ;;
     triage-agent) echo "recipes/azmon-lawappinsights/agents/triage-agent.yaml" ;;
     *) die "Unknown subagent catalog entry: $1" ;;
   esac
