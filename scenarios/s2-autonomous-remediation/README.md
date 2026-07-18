@@ -2,7 +2,7 @@
 
 **Persona:** Platform / SRE
 **Time to complete:** ~10 minutes (after S1)
-**Prerequisite:** The platform from [S1](./scenario-s1-detect-triage.md) is deployed and the agent is configured. Nothing else to provision.
+**Prerequisite:** Deploy the `sbox` Terraform environment and run `bash scripts/apply-extras.sh sbox` so the S2 skills, subagents, telemetry connectors, and incident response plans are registered.
 
 ---
 
@@ -22,12 +22,12 @@ failure at runtime and observe the agent end to end.
 
 ## Where S2 sits
 
-S2 is **runtime only** — it changes nothing about your infrastructure or config.
+S2 is **runtime only** after the `sbox` environment is provisioned — it changes nothing about your infrastructure or config while you run the scenario.
 
 | Stage | What it is | Tooling |
 |-------|------------|---------|
 | **S1** | Base infrastructure | Bicep + azd |
-| **S2** | **This scenario — break it and watch** | Runtime trigger (curl); handled by agent on Terraform‑provisioned platform (observe in portal) |
+| **S2** | **This scenario — break it and watch** | `sbox.tfvars` + `bash scripts/apply-extras.sh sbox`, then runtime trigger (`curl`) |
 | **S3** | Agent / app configuration | Terraform |
 | **S4** | Day-2 operations | Terraform |
 
@@ -59,9 +59,13 @@ S2 is **runtime only** — it changes nothing about your infrastructure or confi
 
 ## Setup
 
-Grab the running app's URL — that's all you need:
+Deploy and register the S2 environment, then grab the running app's URL. For another environment such as `prod`, use matching files at `environments/prod.tfvars` and `backend/prod.backend.tfvars`, keep the S2-required toggles enabled, and replace `sbox` with `prod` in the commands:
 
 ```bash
+terraform -chdir=infra/terraform init -reconfigure -backend-config=backend/sbox.backend.tfvars
+terraform -chdir=infra/terraform apply -var-file=environments/sbox.tfvars
+bash scripts/apply-extras.sh sbox
+
 APP_URL="$(cd infra/terraform && terraform output -raw orders_api_url)"
 # or, if you prefer azd:
 # APP_URL="$(azd env get-value ORDERS_API_URL)"

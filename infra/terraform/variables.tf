@@ -243,6 +243,18 @@ variable "azure_monitor_lookback_days" {
   default     = 7
 }
 
+variable "enable_sev01_incident_filter" {
+  description = "Register the optional Sev0/Sev1 Azure Monitor incident response plan during post-provision."
+  type        = bool
+  default     = false
+}
+
+variable "enable_daily_health_check" {
+  description = "Register the optional daily health check automation during post-provision."
+  type        = bool
+  default     = false
+}
+
 # ── Extension arrays (advanced) ──
 
 variable "skills" {

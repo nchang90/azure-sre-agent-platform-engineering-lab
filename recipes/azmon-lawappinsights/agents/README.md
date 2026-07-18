@@ -19,4 +19,4 @@ These are only needed for optional Azure Monitor automations like:
 - Sev0/Sev1 incident filter (`enable_sev01_incident_filter`)
 - Daily health check task (`enable_daily_health_check`)
 
-The post-provision script handles this automatically.
+The apply-extras script handles this automatically.

@@ -21,6 +21,6 @@ This repo still uses its existing runtime apply flow for day-to-day operation:
 
 - subagents in `recipes/azmon-lawappinsights/agents/`
 - platform-specific plans in `recipes/azmon-lawappinsights/incident-platforms/`
-- registration logic in `scripts/post-provision.sh`
+- registration logic in `scripts/apply-extras.sh`
 
 Both layouts are kept so the lab is easy to run while also matching the upstream recipe shape.
