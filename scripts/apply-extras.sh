@@ -44,6 +44,15 @@ ALL_RESPONSE_PLAN_NAMES=(
   orders-api-latency
 )
 
+ALL_KB_NAMES=(
+  github-issue-triage.md
+  http-500-errors.md
+  incident-report.md
+  on-call-handoff.md
+  orders-architecture.md
+)
+
+KB_NAMES=("${ALL_KB_NAMES[@]}")
 SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
@@ -58,7 +67,7 @@ ENVIRONMENT selects matching Terraform files:
   infra/terraform/environments/ENVIRONMENT.tfvars
 
 The selected tfvars file scopes the catalog:
-  all environments   -> all skills and knowledge-base docs
+  all environments   -> all skills and scenario-scoped knowledge-base docs
   all scenarios      -> one shared incident response plan
   deploy_apps = true -> Container Apps subagents
   deploy_apps = false -> AKS subagents
@@ -79,6 +88,12 @@ parse_args() {
     -*) die "Unknown option: $1" ;;
     *) ENVIRONMENT="$1" ;;
   esac
+}
+
+knowledge_base_path() {
+  local name="$1"
+  [[ -f "knowledge-base/$name" ]] || die "Missing knowledge-base catalog entry: $name"
+  echo "knowledge-base/$name"
 }
 
 require_tools() {
@@ -141,6 +156,14 @@ configure_catalog_scope() {
   fi
 
   case "$SCENARIO" in
+    s2)
+      log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
+      KB_NAMES=(
+        http-500-errors.md
+        orders-architecture.md
+        incident-report.md
+      )
+      ;;
     s4)
       log "Including S4 alert response issue-triage catalog from tags.scenario=s4."
       SUBAGENT_NAMES+=(
@@ -290,13 +313,14 @@ configure_incident_platform() {
 
 upload_knowledge_base() {
   log "Step 1/4: Uploading knowledge base..."
-  local upload names f code
+  local upload names name f code
   upload=(-F triggerIndexing=true)
   names=""
 
-  for f in knowledge-base/*.md; do
+  for name in "${KB_NAMES[@]}"; do
+    f="$(knowledge_base_path "$name")"
     upload+=(-F "files=@${f};type=text/plain")
-    names+=" $(basename "$f")"
+    names+=" $name"
   done
 
   code="$(api POST /api/v1/AgentMemory/upload "${upload[@]}")"

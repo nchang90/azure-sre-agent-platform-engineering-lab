@@ -190,13 +190,13 @@ variable "existing_subnet_id" {
 variable "vnet_address_space" {
   description = "Address space for the agent virtual network."
   type        = string
-  default     = "10.50.0.0/16"
+  default     = "10.70.0.0/16"
 }
 
 variable "agent_subnet_prefix" {
   description = "Subnet range used by the agent."
   type        = string
-  default     = "10.50.1.0/24"
+  default     = "10.70.0.0/24"
 }
 
 # ── Connector toggles ──

@@ -23,6 +23,7 @@ admin_principal_ids = [
 ]
 
 deploy_sre_agent = true
+
 # S2 runtime scenario uses the optional Container Apps stack without AKS.
 deploy_apps = true
 
