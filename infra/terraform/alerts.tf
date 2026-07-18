@@ -4,6 +4,16 @@ resource "azurerm_monitor_action_group" "sre_lab" {
   resource_group_name = azurerm_resource_group.agent.name
   short_name          = "sreLab"
   tags                = var.tags
+
+  dynamic "webhook_receiver" {
+    for_each = var.webhook_bridge_trigger_url == "" ? [] : [var.webhook_bridge_trigger_url]
+
+    content {
+      name                    = "sre-agent-hook"
+      service_uri             = webhook_receiver.value
+      use_common_alert_schema = true
+    }
+  }
 }
 
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {

@@ -13,7 +13,7 @@ this document is the durable record written once the incident is resolved.
 |-------|-------|
 | Incident ID | `INC-{number}` |
 | Service | `{container-app-name}` |
-| Severity | `{Sev1 \| Sev2 \| Sev3}` |
+| Severity | `{S1 \| S2}` |
 | Status | `{Investigating \| Mitigated \| Resolved}` |
 | Detected | `{UTC timestamp}` |
 | Resolved | `{UTC timestamp}` |

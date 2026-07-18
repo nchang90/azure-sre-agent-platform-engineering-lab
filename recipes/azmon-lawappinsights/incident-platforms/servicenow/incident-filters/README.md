@@ -1,12 +1,12 @@
 # ServiceNow Incident Filters
 
-This folder contains ServiceNow-native incident response plans for the
+This folder contains the ServiceNow-native incident response plan for the
 azmon-lawappinsights scenario.
 
-Each filter uses:
+The filter uses:
 
 - incidentPlatform: ServiceNow
 - priorities: "1".."5"
 
-These files are applied directly by the recipe extras script when the active
+This file is applied directly by the recipe extras script when the active
 incident platform is ServiceNow.

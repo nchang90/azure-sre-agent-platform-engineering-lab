@@ -15,7 +15,11 @@ spec:
     - links (dashboards, logs, traces, runbooks, recent deploys)
     - incident_id
 
-    Route all incidents to triage-agent for deep technical investigation.
+    Route incidents to the specialist whose skills and approved tools match the incident:
+    - Container Apps or Orders API errors/latency/health: triage-agent.
+    - AKS regressions, CrashLoopBackOff, node pressure, or rollout rollback: aks-remediator.
+    - Customer GitHub issue triage or change-related issue classification: issue-triager.
+    - Entra PIM elevation audit or justification/activity alignment: pim-elevation.
 
     triage-agent responsibilities:
     - Query Log Analytics and Application Insights for error traces and metrics.
@@ -41,5 +45,6 @@ spec:
     - triage-agent
     - aks-remediator
     - issue-triager
+    - pim-elevation
   tools:
     - SearchMemory
