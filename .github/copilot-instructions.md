@@ -17,7 +17,7 @@ This repository contains the sample app, Azure infrastructure, runbooks, and age
 - `.github/skills/` — Copilot-discoverable skills for this repository.
 - `knowledge-base/` — runbooks, architecture notes, and issue templates.
 - `recipes/azmon-lawappinsights/agents/` — agent configuration and handoff definitions.
-- `scripts/post-provision.sh` — registers subagents, skills, response plans, and scheduled tasks with the agent data plane.
+- `scripts/apply-extras.sh` — registers subagents, skills, response plans, and scheduled tasks with the agent data plane.
 
 ## When working on incidents
 

@@ -74,7 +74,7 @@ Then open a new chat thread on [sre.azure.com](https://sre.azure.com) and trigge
 - *"List every policy gate encountered and whether it was approved, denied, or skipped"*
 - *"Summarize connector usage and provide an auditable action timeline"*
 
-ServiceNow recipe support lives under `recipes/azmon-lawappinsights/incident-platforms/servicenow/` and should be imported alongside the connector when you want the incident-to-ServiceNow handoff to appear in the portal. The connector can be auto-registered by `scripts/post-provision.sh` when `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME`, and `SERVICENOW_PASSWORD` are set.
+ServiceNow recipe support lives under `recipes/azmon-lawappinsights/incident-platforms/servicenow/` and should be imported alongside the connector when you want the incident-to-ServiceNow handoff to appear in the portal.
 
 ## Expected Output
 

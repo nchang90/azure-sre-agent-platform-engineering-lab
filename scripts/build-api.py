@@ -44,8 +44,8 @@ def build_agent(path):
         if src in spec and spec[src] is not None:
             properties[dst] = spec[src]
 
-    # The v2 extendedAgent API requires a handoffs array (empty is allowed).
-    properties["handoffs"] = spec.get("handoffs") or []
+    # Workspace-mode agents do not support agent-to-agent handoff registration.
+    properties["handoffs"] = []
 
     json.dump(
         {"name": name, "type": "ExtendedAgent", "tags": [], "properties": properties},
@@ -117,14 +117,19 @@ def build_incident_filter(path):
     if isinstance(agent_mode, str):
         agent_mode = agent_mode.lower()
 
+    max_attempts = spec.get("maxAttempts") or spec.get("maxAutomatedInvestigationAttempts") or 3
     result = {
         "id": filter_id,
         "name": spec.get("name") or filter_id,
+        "incidentPlatform": spec.get("incidentPlatform") or spec.get("incident_platform") or "",
+        "isEnabled": spec.get("isEnabled", True),
         "priorities": spec.get("priorities") or [],
         "titleContains": spec.get("titleContains") or "",
         "handlingAgent": spec.get("handlingAgent") or "default",
         "agentMode": agent_mode,
-        "maxAttempts": spec.get("maxAttempts") or spec.get("maxAutomatedInvestigationAttempts") or 3,
+        "deepInvestigationEnabled": spec.get("deepInvestigationEnabled", False),
+        "maxAttempts": max_attempts,
+        "maxAutomatedInvestigationAttempts": max_attempts,
     }
     json.dump(result, sys.stdout)
 

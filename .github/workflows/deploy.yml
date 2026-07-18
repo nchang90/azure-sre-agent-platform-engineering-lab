@@ -99,7 +99,7 @@ jobs:
             --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
             --output none
 
-      - name: Run core post-provision setup
+      - name: Apply recipe extras
         shell: bash
-        run: bash scripts/post-provision.sh
+        run: bash scripts/apply-extras.sh "${ENVIRONMENT}"
         continue-on-error: true

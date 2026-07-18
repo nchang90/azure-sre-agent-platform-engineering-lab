@@ -8,5 +8,5 @@ Each filter uses:
 - incidentPlatform: ServiceNow
 - priorities: "1".."5"
 
-These files are applied directly by scripts/post-provision.sh when the active
+These files are applied directly by the recipe extras script when the active
 incident platform is ServiceNow.

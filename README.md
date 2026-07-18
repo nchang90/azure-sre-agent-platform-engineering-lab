@@ -43,7 +43,7 @@ See [docs/scenarios.md](docs/scenarios.md) for the full scenario catalogue and s
 The upstream `azmon-lawappinsights` recipe is integrated into this lab.
 - Skills: [.github/skills/](.github/skills/)
 - Agents and automations: [recipes/azmon-lawappinsights/](recipes/azmon-lawappinsights/)
-- Registration script: [scripts/post-provision.sh](scripts/post-provision.sh)
+- Apply extras script: [scripts/apply-extras.sh](scripts/apply-extras.sh)
 
 ## Deployed Resources
 
