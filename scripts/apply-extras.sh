@@ -24,6 +24,7 @@ TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
 TOKEN=""
+CUSTOM_INSTRUCTIONS_FILE=""
 
 ALL_SUBAGENT_NAMES=(
   aks-remediator
@@ -44,10 +45,30 @@ ALL_RESPONSE_PLAN_NAMES=(
   orders-api-latency
 )
 
+ALL_KB_NAMES=(
+  github-issue-triage.md
+  http-500-errors.md
+  incident-report.md
+  on-call-handoff.md
+  orders-architecture.md
+)
+
+ALL_SKILL_NAMES=(
+  aks-change-triage-rollback
+  containerapps-500-diagnostics
+  containerapps-latency-diagnostics
+  incident-orchestrator-coordination
+  investigate-azure-alerts
+  triage-app-errors
+)
+
+KB_NAMES=("${ALL_KB_NAMES[@]}")
+SKILL_NAMES=("${ALL_SKILL_NAMES[@]}")
 SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
 )
+CUSTOM_INSTRUCTIONS_FILE="recipes/azmon-lawappinsights/custom-instructions/default.txt"
 
 usage() {
   cat <<'EOF'
@@ -58,7 +79,7 @@ ENVIRONMENT selects matching Terraform files:
   infra/terraform/environments/ENVIRONMENT.tfvars
 
 The selected tfvars file scopes the catalog:
-  all environments   -> all skills and knowledge-base docs
+  all environments   -> all skills and scenario-scoped knowledge-base docs
   all scenarios      -> one shared incident response plan
   deploy_apps = true -> Container Apps subagents
   deploy_apps = false -> AKS subagents
@@ -71,6 +92,26 @@ Examples:
 EOF
 }
 
+configure_custom_instructions() {
+  local patch_file="$TMP_DIR/custom-instructions.json"
+
+  [[ -f "$CUSTOM_INSTRUCTIONS_FILE" ]] || { warn "  Missing custom instructions file: $CUSTOM_INSTRUCTIONS_FILE"; return; }
+
+  log "Configuring custom instructions..."
+  jq -n --rawfile instructions "$CUSTOM_INSTRUCTIONS_FILE" \
+    '{properties:{customInstructions:$instructions}}' >"$patch_file"
+
+  if az rest --method PATCH \
+    --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
+    --headers "Content-Type=application/json" \
+    --body @"$patch_file" \
+    --output none 2>/dev/null; then
+    ok "  Custom instructions: $(basename "$CUSTOM_INSTRUCTIONS_FILE")"
+  else
+    warn "  Could not configure custom instructions"
+  fi
+}
+
 parse_args() {
   [[ $# -le 1 ]] || die "Usage: bash scripts/apply-extras.sh [ENVIRONMENT]"
   case "${1:-}" in
@@ -79,6 +120,18 @@ parse_args() {
     -*) die "Unknown option: $1" ;;
     *) ENVIRONMENT="$1" ;;
   esac
+}
+
+knowledge_base_path() {
+  local name="$1"
+  [[ -f "knowledge-base/$name" ]] || die "Missing knowledge-base catalog entry: $name"
+  echo "knowledge-base/$name"
+}
+
+skill_path() {
+  local name="$1"
+  [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
+  echo ".github/skills/$name/SKILL.md"
 }
 
 require_tools() {
@@ -141,6 +194,20 @@ configure_catalog_scope() {
   fi
 
   case "$SCENARIO" in
+    s2)
+      log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
+      KB_NAMES=(
+        http-500-errors.md
+        orders-architecture.md
+        incident-report.md
+      )
+      SKILL_NAMES=(
+        incident-orchestrator-coordination
+        investigate-azure-alerts
+        containerapps-500-diagnostics
+        containerapps-latency-diagnostics
+      )
+      ;;
     s4)
       log "Including S4 alert response issue-triage catalog from tags.scenario=s4."
       SUBAGENT_NAMES+=(
@@ -157,6 +224,14 @@ configure_catalog_scope() {
       log "No scenario-specific extras requested."
       ;;
   esac
+
+  local scenario_instructions="recipes/azmon-lawappinsights/custom-instructions/${SCENARIO}.txt"
+  if [[ -n "$SCENARIO" && -f "$scenario_instructions" ]]; then
+    CUSTOM_INSTRUCTIONS_FILE="$scenario_instructions"
+    log "Including scenario custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
+  else
+    log "Including default custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
+  fi
 }
 
 load_context_from_terraform() {
@@ -290,13 +365,14 @@ configure_incident_platform() {
 
 upload_knowledge_base() {
   log "Step 1/4: Uploading knowledge base..."
-  local upload names f code
+  local upload names name f code
   upload=(-F triggerIndexing=true)
   names=""
 
-  for f in knowledge-base/*.md; do
+  for name in "${KB_NAMES[@]}"; do
+    f="$(knowledge_base_path "$name")"
     upload+=(-F "files=@${f};type=text/plain")
-    names+=" $(basename "$f")"
+    names+=" $name"
   done
 
   code="$(api POST /api/v1/AgentMemory/upload "${upload[@]}")"
@@ -306,17 +382,25 @@ upload_knowledge_base() {
 
 upload_skills() {
   log "Step 2/4: Uploading skills..."
-  local f name code count
-  count=0
+  local f name code
 
-  for f in .github/skills/*/SKILL.md; do
-    [[ -f "$f" ]] || continue
-    count=$((count + 1))
+  for name in "${SKILL_NAMES[@]}"; do
+    f="$(skill_path "$name")"
     name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" skill "$f" "$TMP_DIR/skill.json")"
     code="$(put_json_file "/api/v2/extendedAgent/skills/${name}" "$TMP_DIR/skill.json")"
     report_result "$code" "Skill: $name" "Skill $name"
   done
-  [[ "$count" -gt 0 ]] || warn "  No skill files found under .github/skills/*/SKILL.md"
+  echo
+}
+
+cleanup_out_of_scope_skills() {
+  log "Cleaning up out-of-scope skills..."
+  local name
+
+  for name in "${ALL_SKILL_NAMES[@]}"; do
+    contains "$name" "${SKILL_NAMES[@]}" && continue
+    delete_resource "/api/v2/extendedAgent/skills/${name}" "Skill: $name"
+  done
   echo
 }
 
@@ -373,8 +457,10 @@ main() {
   auth
   upload_knowledge_base
   upload_skills
+  cleanup_out_of_scope_skills
   register_subagents
   cleanup_out_of_scope_subagents
+  configure_custom_instructions
   configure_incident_platform
   create_response_plans
   cleanup_out_of_scope_response_plans

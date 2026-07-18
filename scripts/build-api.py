@@ -18,6 +18,49 @@ import os
 import re
 import sys
 
+SKILL_TOOLS = {
+    "aks-change-triage-rollback": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "RunAzCliWriteCommands",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+    ],
+    "containerapps-500-diagnostics": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "RunAzCliWriteCommands",
+        "GetAzCliHelp",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "ExecutePythonCode",
+    ],
+    "containerapps-latency-diagnostics": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "RunAzCliWriteCommands",
+        "GetAzCliHelp",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "ExecutePythonCode",
+    ],
+    "incident-orchestrator-coordination": [
+        "SearchMemory",
+    ],
+    "investigate-azure-alerts": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "QueryAppInsightsUsingAppId",
+        "QueryLogAnalyticsByWorkspaceId",
+    ],
+    "triage-app-errors": [
+        "SearchMemory",
+        "QueryAppInsightsByResourceId",
+        "QueryAppInsightsUsingAppId",
+        "QueryLogAnalyticsByWorkspaceId",
+    ],
+}
+
 
 def build_agent(path):
     import yaml  # imported lazily so `skill` mode has no YAML dependency
@@ -66,7 +109,11 @@ def build_skill(src, out):
     envelope = {
         "name": name,
         "type": "Skill",
-        "properties": {"description": field("description"), "tools": [], "skillContent": txt},
+        "properties": {
+            "description": field("description"),
+            "tools": SKILL_TOOLS.get(name, []),
+            "skillContent": txt,
+        },
     }
     out_dir = os.path.dirname(out)
     if out_dir:

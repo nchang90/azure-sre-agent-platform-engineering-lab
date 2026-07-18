@@ -168,6 +168,6 @@ az containerapp revision list -n <orders-api-name> -g <rg> \
 
 ## Knowledge Base
 
-- [change-management-runbook.md](../knowledge-base/change-management-runbook.md)
-- [http-500-errors.md](../knowledge-base/http-500-errors.md)
-- [incident-report.md](../knowledge-base/incident-report.md)
+- [http-500-errors.md](../../knowledge-base/http-500-errors.md)
+- [orders-architecture.md](../../knowledge-base/orders-architecture.md)
+- [incident-report.md](../../knowledge-base/incident-report.md)
