@@ -51,6 +51,8 @@ resource "azurerm_container_app" "orders_api" {
   revision_mode                = "Single"
   tags                         = var.tags
 
+  depends_on = [azurerm_role_assignment.apps_acrpull]
+
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.apps[0].id]
@@ -106,6 +108,8 @@ resource "azurerm_container_app" "change_lookup" {
   container_app_environment_id = azurerm_container_app_environment.cae[0].id
   revision_mode                = "Single"
   tags                         = var.tags
+
+  depends_on = [azurerm_role_assignment.apps_acrpull]
 
   identity {
     type         = "UserAssigned"

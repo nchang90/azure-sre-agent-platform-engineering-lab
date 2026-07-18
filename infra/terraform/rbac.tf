@@ -36,17 +36,6 @@ resource "azurerm_role_assignment" "deployer_admin" {
   principal_id       = data.azurerm_client_config.current.object_id
 }
 
-resource "azurerm_role_assignment" "deployer_monitoring_contributor_rg" {
-  scope                = azurerm_resource_group.agent.id
-  role_definition_name = "Monitoring Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
-}
-
-resource "azurerm_role_assignment" "deployer_log_analytics_reader_rg" {
-  scope                = azurerm_resource_group.agent.id
-  role_definition_name = "Log Analytics Reader"
-  principal_id         = data.azurerm_client_config.current.object_id
-}
 
 resource "azurerm_role_assignment" "uami_admin" {
   count              = var.deploy_sre_agent ? 1 : 0
