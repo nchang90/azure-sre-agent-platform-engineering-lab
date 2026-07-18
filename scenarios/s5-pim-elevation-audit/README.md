@@ -5,11 +5,13 @@ Persona: Security/Compliance Ops  •  Time: ~15 minutes  •  Entry point: Opti
 ---
 
 ## Story
+
 A user elevates to a privileged role with a brief justification. The agent runs daily, discovers PIM activations, builds each activation window, correlates actual Azure Activity performed during elevation, and classifies whether actions align with the stated justification. A JSON report and an email summary are produced; misalignment is flagged for review.
 
 ---
 
 ## How the Agent Handles It
+
 | Step | What happens |
 |------|--------------|
 | Discover | Query Entra AuditLogs for PIM activation requests/completions and extract justification |
@@ -21,6 +23,7 @@ A user elevates to a privileged role with a brief justification. The agent runs 
 ---
 
 ## Prerequisites
+
 - Entra PIM enabled; AuditLogs exported to Log Analytics
 - Azure Activity exported to the same Log Analytics workspace
 - Outlook connector configured for the SRE Agent
@@ -28,6 +31,7 @@ A user elevates to a privileged role with a brief justification. The agent runs 
 ---
 
 ## Setup
+
 1. Open `recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml`.
 2. Replace:
    - `REPLACE_WITH_WORKSPACE_ID` with your Log Analytics workspace ID
@@ -40,6 +44,7 @@ A user elevates to a privileged role with a brief justification. The agent runs 
 ---
 
 ## Run & Validate
+
 - Wait for the daily schedule or manually trigger the agent.
 - Perform a short PIM elevation with a clear justification (e.g., "restore storage backup").
 - Verify:
@@ -50,11 +55,13 @@ A user elevates to a privileged role with a brief justification. The agent runs 
 ---
 
 ## Expected Output
+
 - JSON: `runUtc`, analysis window, and per-activation entries (user, role, scope, justification, sample activities, verdict, notes)
 - Email: Plaintext rollup with per-activation verdicts; Non-aligned activities called out in the header
 
 ---
 
 ## Notes
+
 - Extend keyword rules as needed for your environment
 - Treat reports as advisory; no remediation actions are performed

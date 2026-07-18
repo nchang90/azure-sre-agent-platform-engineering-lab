@@ -116,6 +116,7 @@ dependencies
 ## Expected Output
 
 The scenario should produce:
+
 - A confirmed monitoring signal with alert ID, severity, affected service, and evaluation window
 - A telemetry summary covering failed requests, exceptions, traces, dependencies, and recovery state
 - A short incident update suitable for chat or ticketing systems
@@ -136,12 +137,14 @@ The scenario should produce:
 ## Escalation and Close Criteria
 
 Escalate when:
+
 - Availability is still failing after the first investigation pass.
 - Failed requests remain above the alert threshold.
 - The suspected cause points to a deployment, infrastructure change, or downstream dependency owner.
 - The agent cannot access required telemetry or the action group route is broken.
 
 Close the incident monitoring loop when:
+
 - The alert has recovered for at least one full evaluation window.
 - Customer impact and timeline are documented.
 - Follow-up issues or tickets are linked.
@@ -158,6 +161,7 @@ gh issue list -R OWNER/REPO --search 'incident monitoring' --state open
 ```
 
 Manual validation:
+
 - Confirm the alert name clearly identifies the service and environment.
 - Confirm the action group destination is owned by the platform or service team.
 - Confirm the agent summary includes exact UTC timestamps and telemetry evidence.
