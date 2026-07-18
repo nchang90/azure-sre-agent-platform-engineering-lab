@@ -24,6 +24,7 @@ TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
 TOKEN=""
+CUSTOM_INSTRUCTIONS_FILE=""
 
 ALL_SUBAGENT_NAMES=(
   aks-remediator
@@ -67,6 +68,7 @@ SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
 )
+CUSTOM_INSTRUCTIONS_FILE="recipes/azmon-lawappinsights/custom-instructions/default.txt"
 
 usage() {
   cat <<'EOF'
@@ -90,6 +92,26 @@ Examples:
 EOF
 }
 
+configure_custom_instructions() {
+  local patch_file="$TMP_DIR/custom-instructions.json"
+
+  [[ -f "$CUSTOM_INSTRUCTIONS_FILE" ]] || { warn "  Missing custom instructions file: $CUSTOM_INSTRUCTIONS_FILE"; return; }
+
+  log "Configuring custom instructions..."
+  jq -n --rawfile instructions "$CUSTOM_INSTRUCTIONS_FILE" \
+    '{properties:{customInstructions:$instructions}}' >"$patch_file"
+
+  if az rest --method PATCH \
+    --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
+    --headers "Content-Type=application/json" \
+    --body @"$patch_file" \
+    --output none 2>/dev/null; then
+    ok "  Custom instructions: $(basename "$CUSTOM_INSTRUCTIONS_FILE")"
+  else
+    warn "  Could not configure custom instructions"
+  fi
+}
+
 parse_args() {
   [[ $# -le 1 ]] || die "Usage: bash scripts/apply-extras.sh [ENVIRONMENT]"
   case "${1:-}" in
@@ -104,6 +126,12 @@ knowledge_base_path() {
   local name="$1"
   [[ -f "knowledge-base/$name" ]] || die "Missing knowledge-base catalog entry: $name"
   echo "knowledge-base/$name"
+}
+
+skill_path() {
+  local name="$1"
+  [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
+  echo ".github/skills/$name/SKILL.md"
 }
 
 require_tools() {
@@ -196,6 +224,14 @@ configure_catalog_scope() {
       log "No scenario-specific extras requested."
       ;;
   esac
+
+  local scenario_instructions="recipes/azmon-lawappinsights/custom-instructions/${SCENARIO}.txt"
+  if [[ -n "$SCENARIO" && -f "$scenario_instructions" ]]; then
+    CUSTOM_INSTRUCTIONS_FILE="$scenario_instructions"
+    log "Including scenario custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
+  else
+    log "Including default custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
+  fi
 }
 
 load_context_from_terraform() {
@@ -209,13 +245,7 @@ load_context_from_terraform() {
   [[ -n "$AGENT_ID" ]] || die "agent_id missing from Terraform outputs"
 
   endpoint="$(az resource show --ids "$AGENT_ID" --query properties.agentEndpoint -o tsv 2>/dev/null | tr -d '\r')"
-  AGENT_ENDPOINT="${endpoint%/  }
-
-  skill_path() {
-    local name="$1"
-    [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
-    echo ".github/skills/$name/SKILL.md"
-  }"
+  AGENT_ENDPOINT="${endpoint%/}"
   [[ -n "$AGENT_ENDPOINT" ]] || die "Could not resolve agent endpoint"
 }
 
@@ -430,6 +460,7 @@ main() {
   cleanup_out_of_scope_skills
   register_subagents
   cleanup_out_of_scope_subagents
+  configure_custom_instructions
   configure_incident_platform
   create_response_plans
   cleanup_out_of_scope_response_plans

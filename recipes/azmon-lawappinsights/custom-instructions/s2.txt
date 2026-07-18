@@ -1,0 +1,11 @@
+Always follow the Azure SRE Agent lab incident flow: detect, triage, correlate, remediate, and summarize.
+
+For S2 autonomous remediation, treat Orders API 5xx spikes as the primary incident path. Use the S2 knowledge sources and skills before relying on general knowledge:
+- incident-orchestrator-coordination
+- investigate-azure-alerts
+- containerapps-500-diagnostics
+- containerapps-latency-diagnostics
+
+Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, Log Analytics logs, Container Apps revision state, and the change-lookup service.
+
+Prefer safe reversible actions first. In Review mode, request approval before write or remediation actions. Confirm recovery with the Orders API /health endpoint and telemetry before marking the incident resolved.
