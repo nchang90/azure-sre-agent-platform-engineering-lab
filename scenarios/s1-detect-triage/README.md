@@ -51,7 +51,7 @@ A developer ships a release straight to production with no change request and no
 | **Prerequisites** | None — this is the entry point |
 | **Unlocks** | [S2](./scenario-s2-autonomous-remediation.md) — break the running app at runtime and watch the agent remediate |
 | **Unlocks** | [S3](./scenario-s3-change-issue-triage.md) — customer issues reference this incident's CHG numbers |
-| **Unlocks** | [S4](./scenario-s4-enterprise-guardrails-connectors.md) — enterprise controls walkthrough uses this incident as the governed starting point |
+| **Unlocks** | [S4](../s4-alert-response-incident-operations/README.md) — alert response uses this incident as a realistic alert and telemetry baseline |
 
 ---
 

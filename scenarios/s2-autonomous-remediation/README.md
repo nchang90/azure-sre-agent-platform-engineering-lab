@@ -53,7 +53,7 @@ S2 is **runtime only** after the `sbox` environment is provisioned — it change
 |-------------|----------|
 | **Prerequisites** | [S1](./scenario-s1-detect-triage.md) — platform deployed, agent configured |
 | **Unlocks** | [S3](./scenario-s3-change-issue-triage.md) — this incident becomes context customer issues reference |
-| **Unlocks** | [S4](./scenario-s4-enterprise-guardrails-connectors.md) — post-remediation evidence reused in enterprise connector controls |
+| **Unlocks** | [S4](../s4-alert-response-incident-operations/README.md) — post-remediation evidence can be reused to validate monitoring recovery and incident updates |
 
 ---
 

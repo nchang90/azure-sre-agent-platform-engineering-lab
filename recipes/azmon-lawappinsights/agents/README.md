@@ -8,7 +8,7 @@ This folder contains both core and optional subagents.
 - `triage-agent.yaml`
 - `issue-triager.yaml`
 
-These are used by the main lab paths (S1, S3, and S4).
+These are used by the main lab paths (S1, S3, and S4 alert response follow-up).
 
 ## Optional (registered only when related automations are enabled)
 
