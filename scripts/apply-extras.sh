@@ -18,26 +18,32 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 PYTHON="${PYTHON:-python3}"
 
 ENVIRONMENT=""
+SCENARIO=""
+DEPLOY_APPS="true"
+TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
 TOKEN=""
 
-SUBAGENTS=(
-  "recipes/azmon-lawappinsights/agents/triage-agent.yaml:triage-agent"
-  "recipes/azmon-lawappinsights/agents/issue-triager.yaml:issue-triager"
-  "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml:incident-orchestrator"
-  "recipes/azmon-lawappinsights/agents/alert-investigator.yaml:alert-investigator"
-  "recipes/azmon-lawappinsights/agents/aks-remediator.yaml:aks-remediator"
+ALL_SUBAGENT_NAMES=(
+  aks-remediator
+  alert-investigator
+  incident-orchestrator
+  issue-triager
+  triage-agent
 )
 
-RESPONSE_PLANS=(
+ALL_RESPONSE_PLAN_NAMES=(
+  aks-critical-errors
+  azmon-sev01
+  container-apps-alerts
   orders-api-health-response
   orders-api-errors
   orders-api-latency
-  container-apps-alerts
-  azmon-sev01
-  aks-critical-errors
 )
+
+SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
+RESPONSE_PLAN_NAMES=("${ALL_RESPONSE_PLAN_NAMES[@]}")
 
 usage() {
   cat <<'EOF'
@@ -46,6 +52,12 @@ Usage: bash scripts/apply-extras.sh [ENVIRONMENT]
 ENVIRONMENT selects matching Terraform files:
   infra/terraform/backend/ENVIRONMENT.backend.tfvars
   infra/terraform/environments/ENVIRONMENT.tfvars
+
+The selected tfvars file scopes the catalog:
+  all environments   -> all skills and knowledge-base docs
+  deploy_apps = true -> Container Apps subagents/response plans
+  deploy_apps = false -> AKS subagents/response plans
+  tags.scenario = s4   -> enterprise issue-triage extras
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -72,12 +84,76 @@ configure_environment() {
   [[ -n "$ENVIRONMENT" ]] || return 0
 
   local backend_file="backend/${ENVIRONMENT}.backend.tfvars"
+  TFVARS_FILE="infra/terraform/environments/${ENVIRONMENT}.tfvars"
 
   [[ -f "infra/terraform/${backend_file}" ]] || die "Missing Terraform backend config: infra/terraform/${backend_file}"
-  [[ -f "infra/terraform/environments/${ENVIRONMENT}.tfvars" ]] || die "Missing Terraform environment tfvars: infra/terraform/environments/${ENVIRONMENT}.tfvars"
+  [[ -f "$TFVARS_FILE" ]] || die "Missing Terraform environment tfvars: $TFVARS_FILE"
 
   log "Selecting Terraform environment: $ENVIRONMENT"
+  SCENARIO="$(awk -F= '/^[[:space:]]*scenario[[:space:]]*=/{gsub(/[ "]/, "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
+  DEPLOY_APPS="$(awk -F= '/^[[:space:]]*deploy_apps[[:space:]]*=/{gsub(/[ "]/, "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
+  DEPLOY_APPS="${DEPLOY_APPS:-true}"
+  [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
+  log "Detected runtime scope: $( [[ "$DEPLOY_APPS" == "true" ]] && echo "Container Apps" || echo "AKS" )"
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
+}
+
+configure_catalog_scope() {
+  if [[ -z "$ENVIRONMENT" ]]; then
+    log "No environment selected; applying full recipe extras catalog."
+    return 0
+  fi
+
+  case "$DEPLOY_APPS" in
+    true|false) ;;
+    *) die "Unsupported deploy_apps value '$DEPLOY_APPS' in $TFVARS_FILE. Expected true or false." ;;
+  esac
+
+  case "$SCENARIO" in
+    ""|s2|s3|s4) ;;
+    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s2, s3, s4." ;;
+  esac
+
+  SUBAGENT_NAMES=(
+    incident-orchestrator
+    alert-investigator
+  )
+  RESPONSE_PLAN_NAMES=(
+    azmon-sev01
+  )
+
+  if [[ "$DEPLOY_APPS" == "true" ]]; then
+    log "Including Container Apps incident catalog from deploy_apps=true."
+    SUBAGENT_NAMES+=(
+      triage-agent
+    )
+    RESPONSE_PLAN_NAMES+=(
+      orders-api-health-response
+      orders-api-errors
+      orders-api-latency
+      container-apps-alerts
+    )
+  else
+    log "Including AKS incident catalog from deploy_apps=false."
+    SUBAGENT_NAMES+=(
+      aks-remediator
+    )
+    RESPONSE_PLAN_NAMES+=(
+      aks-critical-errors
+    )
+  fi
+
+  case "$SCENARIO" in
+    s4)
+      log "Including S4 enterprise issue-triage catalog from tags.scenario=s4."
+      SUBAGENT_NAMES+=(
+        issue-triager
+      )
+      ;;
+    "")
+      log "No scenario-specific extras requested."
+      ;;
+  esac
 }
 
 load_context_from_terraform() {
@@ -127,6 +203,36 @@ auth() {
 put_json_file() {
   local path="$1" file="$2"
   api PUT "$path" -H "Content-Type: application/json" --data-binary @"$file"
+}
+
+delete_resource() {
+  local path="$1" name="$2"
+  local code
+  code="$(api DELETE "$path")"
+  case "$code" in
+    200|202|204|404) ok "  Out-of-scope removed or absent: $name" ;;
+    *) warn "  Could not remove out-of-scope $name; HTTP $code: $(response_summary)" ;;
+  esac
+}
+
+contains() {
+  local needle="$1"; shift
+  local item
+  for item in "$@"; do
+    [[ "$item" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+subagent_path() {
+  case "$1" in
+    alert-investigator) echo "recipes/azmon-lawappinsights/agents/alert-investigator.yaml" ;;
+    aks-remediator) echo "recipes/azmon-lawappinsights/agents/aks-remediator.yaml" ;;
+    incident-orchestrator) echo "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml" ;;
+    issue-triager) echo "recipes/azmon-lawappinsights/agents/issue-triager.yaml" ;;
+    triage-agent) echo "recipes/azmon-lawappinsights/agents/triage-agent.yaml" ;;
+    *) die "Unknown subagent catalog entry: $1" ;;
+  esac
 }
 
 register_subagent() {
@@ -212,12 +318,21 @@ upload_skills() {
 
 register_subagents() {
   log "Step 3/4: Registering subagents..."
-  local item yaml_path name
+  local name
 
-  for item in "${SUBAGENTS[@]}"; do
-    yaml_path="${item%%:*}"
-    name="${item##*:}"
-    register_subagent "$yaml_path" "$name"
+  for name in "${SUBAGENT_NAMES[@]}"; do
+    register_subagent "$(subagent_path "$name")" "$name"
+  done
+  echo
+}
+
+cleanup_out_of_scope_subagents() {
+  log "Cleaning up out-of-scope subagents..."
+  local name
+
+  for name in "${ALL_SUBAGENT_NAMES[@]}"; do
+    contains "$name" "${SUBAGENT_NAMES[@]}" && continue
+    delete_resource "/api/v2/extendedAgent/agents/${name}" "Subagent: $name"
   done
   echo
 }
@@ -226,8 +341,19 @@ create_response_plans() {
   log "Step 4/4: Creating response plans..."
   local plan
 
-  for plan in "${RESPONSE_PLANS[@]}"; do
+  for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
     register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/azure-monitor/incident-filters/${plan}.yaml"
+  done
+  echo
+}
+
+cleanup_out_of_scope_response_plans() {
+  log "Cleaning up out-of-scope response plans..."
+  local plan
+
+  for plan in "${ALL_RESPONSE_PLAN_NAMES[@]}"; do
+    contains "$plan" "${RESPONSE_PLAN_NAMES[@]}" && continue
+    delete_resource "/api/v2/extendedAgent/incidentFilters/${plan}" "Response plan: $plan"
   done
   echo
 }
@@ -236,6 +362,7 @@ main() {
   parse_args "$@"
   require_tools
   configure_environment
+  configure_catalog_scope
   load_context_from_terraform
 
   ok "Agent: $AGENT_ENDPOINT"
@@ -243,8 +370,10 @@ main() {
   upload_knowledge_base
   upload_skills
   register_subagents
+  cleanup_out_of_scope_subagents
   configure_incident_platform
   create_response_plans
+  cleanup_out_of_scope_response_plans
   ok "Recipe extras applied"
 }
 
