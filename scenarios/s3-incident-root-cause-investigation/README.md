@@ -116,9 +116,9 @@ Agent gathers evidence, restarts pods, drains nodes if needed, and either stabil
 Use an AKS-only tfvars file for the demo path:
 
 ```bash
-terraform -chdir=infra init
-terraform -chdir=infra apply -auto-approve -var-file=<your-tfvars-file>
-bash scripts/post-provision.sh
+terraform -chdir=infra/terraform init -reconfigure -backend-config=backend/<environment>.backend.tfvars
+terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/<environment>.tfvars
+bash scripts/apply-extras.sh <environment>
 ```
 
 ## Validation
