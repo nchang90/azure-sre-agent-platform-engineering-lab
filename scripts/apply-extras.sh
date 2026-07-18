@@ -62,7 +62,7 @@ The selected tfvars file scopes the catalog:
   all scenarios      -> one shared incident response plan
   deploy_apps = true -> Container Apps subagents
   deploy_apps = false -> AKS subagents
-  tags.scenario = s4   -> enterprise issue-triage extras
+  tags.scenario = s4   -> alert response issue-triage extras
   tags.scenario = s5   -> PIM elevation audit extras
 
 Examples:
@@ -142,7 +142,7 @@ configure_catalog_scope() {
 
   case "$SCENARIO" in
     s4)
-      log "Including S4 enterprise issue-triage catalog from tags.scenario=s4."
+      log "Including S4 alert response issue-triage catalog from tags.scenario=s4."
       SUBAGENT_NAMES+=(
         issue-triager
       )
