@@ -45,10 +45,16 @@ resource "azurerm_role_assignment" "uami_admin" {
   principal_type     = "ServicePrincipal"
 }
 
+resource "azurerm_role_assignment" "reader_principals" {
+  for_each           = var.deploy_sre_agent ? toset(var.reader_principal_ids) : toset([])
+  scope              = azapi_resource.sre_agent[0].id
+  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.sre_agent_reader_role_id}"
+  principal_id       = each.value
+}
+
 resource "azurerm_role_assignment" "admin_principals" {
   for_each           = var.deploy_sre_agent ? toset(var.admin_principal_ids) : toset([])
   scope              = azapi_resource.sre_agent[0].id
   role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.sre_agent_admin_role_id}"
   principal_id       = each.value
 }
-

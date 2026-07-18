@@ -313,6 +313,12 @@ variable "admin_principal_ids" {
   default     = []
 }
 
+variable "reader_principal_ids" {
+  description = "Additional principal IDs granted SRE Agent Reader access."
+  type        = list(string)
+  default     = []
+}
+
 variable "severity_threshold" {
   description = "Severity for the Application Insights smart detector alert."
   type        = string
