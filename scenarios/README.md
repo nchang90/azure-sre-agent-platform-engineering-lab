@@ -11,8 +11,10 @@
 Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a new custom tfvars file you create, as long as it enables the scenario's required toggles. A matching backend file must exist at `infra/terraform/backend/<environment>.backend.tfvars`, then run `bash scripts/apply-extras.sh <environment>`.
 
 `apply-extras.sh` reads the selected tfvars file and registers the matching recipe catalog:
-- All environments upload every `.github/skills/*/SKILL.md` skill and every `knowledge-base/*.md` document.
+- All environments upload every `.github/skills/*/SKILL.md` skill.
+- Knowledge-base uploads are scoped by scenario; S2 uploads only the 5xx remediation, orders architecture, and incident report documents.
 - Every scenario uses the shared `all-incidents` response plan.
+- The `demo` Terraform environment enables Azure SRE Agent workspace egress through a delegated VNet subnet.
 - `deploy_apps = true` registers Container Apps subagents.
 - `deploy_apps = false` registers AKS subagents.
 - `tags.scenario = "s4"` adds the incident monitoring and GitHub issue-triage workflow.

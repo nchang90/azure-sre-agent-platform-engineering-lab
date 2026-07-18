@@ -18,6 +18,16 @@ output "managed_identity_id" {
   value       = local.effective_identity_id
 }
 
+output "agent_vnet_id" {
+  description = "Resource ID of the virtual network used by Azure SRE Agent workspace egress."
+  value       = local.create_vnet ? azurerm_virtual_network.agent[0].id : ""
+}
+
+output "agent_subnet_id" {
+  description = "Resource ID of the delegated subnet used by Azure SRE Agent workspace egress."
+  value       = local.vnet_enabled ? local.effective_subnet_id : ""
+}
+
 output "law_id" {
   description = "Resource ID of the Log Analytics workspace."
   value       = azurerm_log_analytics_workspace.law.id

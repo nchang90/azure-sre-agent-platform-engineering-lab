@@ -28,6 +28,10 @@ reader_principal_ids = [
 ]
 
 deploy_sre_agent = true
+
+# Bind the Azure SRE Agent workspace egress to a delegated VNet subnet.
+enable_vnet = true
+
 # AKS-only deployment: skip the optional Container Apps stack.
 deploy_apps = false
 
