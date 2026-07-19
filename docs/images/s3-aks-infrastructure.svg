@@ -15,8 +15,6 @@
   </defs>
   <rect width="1200" height="760" fill="#fff"/>
   <rect x="40" y="50" width="1040" height="650" rx="18" fill="#dbe4ff" stroke="#4a9eed" opacity=".45"/>
-  <text x="70" y="85" class="label" fill="#4a9eed">Azure Resource Group: rg-sre-lab-demo</text>
-
   <rect class="box" x="70" y="170" width="170" height="80" fill="#a5d8ff" stroke="#4a9eed"/>
   <text x="155" y="202" text-anchor="middle" class="label">GitHub repo</text>
   <text x="155" y="224" text-anchor="middle" class="label">+ deploy workflow</text>
