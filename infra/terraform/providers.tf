@@ -15,13 +15,6 @@ terraform {
       version = ">= 4.0"
     }
   }
-
-  backend "azurerm" {
-    resource_group_name  = "terraform-tfstate"
-    storage_account_name = "terraformstatesboxprd"
-    container_name       = "tfstate"
-    key                  = "azuresre.tfstate"
-  }
 }
 
 provider "azapi" {}
