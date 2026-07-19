@@ -57,12 +57,12 @@
   <text x="793" y="297" class="small">routes</text>
   <path class="line" d="M665 382 H600"/>
   <text x="635" y="370" text-anchor="middle" class="small">queries</text>
-  <path class="line" d="M665 405 H625 V470 H345 V390"/>
+  <path class="line" d="M665 405 H625 V470 H360 V390 H345"/>
   <text x="485" y="462" text-anchor="middle" class="small">checks approved CR</text>
   <path class="line" d="M665 420 H635 V565 H610"/>
   <text x="638" y="525" class="small">acts</text>
-  <path class="line" d="M390 565 H320 V285 H500 V260"/>
-  <text x="337" y="488" class="small">restores</text>
+  <path class="line" d="M500 520 V470 H630 V285 H500 V260"/>
+  <text x="560" y="458" class="small">restores</text>
   <path class="line" d="M787 435 V540"/>
   <text x="805" y="492" class="small">records</text>
 </svg>
