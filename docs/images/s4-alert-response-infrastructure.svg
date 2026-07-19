@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">S4 Alert Response Infrastructure</title>
+  <desc id="desc">Infrastructure diagram for alert response and incident operations.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1e1e1e"/></marker>
+    <style>text{font-family:Inter,Arial,sans-serif;fill:#1e1e1e}.title{font-size:30px;font-weight:700}.label{font-size:16px;font-weight:600}.small{font-size:14px;fill:#555}.box{stroke-width:2;rx:14;ry:14}.line{stroke:#1e1e1e;stroke-width:2;fill:none;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1200" height="760" fill="#fff"/>
+  <text x="360" y="45" class="title">S4 Alert Response Infrastructure</text>
+  <rect x="40" y="80" width="1040" height="600" rx="18" fill="#dbe4ff" stroke="#4a9eed" opacity=".45"/>
+  <text x="70" y="115" class="label" fill="#4a9eed">Azure Resource Group + monitoring response path</text>
+  <rect class="box" x="80" y="180" width="190" height="80" fill="#ffd8a8" stroke="#f59e0b"/>
+  <text x="175" y="212" text-anchor="middle" class="label">Orders API</text><text x="175" y="234" text-anchor="middle" class="label">health endpoint</text>
+  <rect class="box" x="360" y="160" width="190" height="80" fill="#eebefa" stroke="#ec4899"/>
+  <text x="455" y="192" text-anchor="middle" class="label">Application Insights</text><text x="455" y="214" text-anchor="middle" class="label">requests + failures</text>
+  <rect class="box" x="360" y="300" width="190" height="80" fill="#eebefa" stroke="#ec4899"/>
+  <text x="455" y="332" text-anchor="middle" class="label">Log Analytics</text><text x="455" y="354" text-anchor="middle" class="label">logs + traces</text>
+  <rect class="box" x="640" y="220" width="190" height="90" fill="#ffc9c9" stroke="#ef4444"/>
+  <text x="735" y="252" text-anchor="middle" class="label">Azure Monitor</text><text x="735" y="274" text-anchor="middle" class="label">health / failed request</text><text x="735" y="296" text-anchor="middle" class="label">alert</text>
+  <rect class="box" x="900" y="225" width="160" height="80" fill="#fff3bf" stroke="#f59e0b"/>
+  <text x="980" y="257" text-anchor="middle" class="label">Action group</text><text x="980" y="279" text-anchor="middle" class="label">response route</text>
+  <rect class="box" x="650" y="450" width="210" height="90" fill="#d0bfff" stroke="#8b5cf6"/>
+  <text x="755" y="485" text-anchor="middle" class="label">Azure SRE Agent</text><text x="755" y="508" text-anchor="middle" class="label">incident thread</text>
+  <rect class="box" x="360" y="560" width="220" height="80" fill="#b2f2bb" stroke="#22c55e"/>
+  <text x="470" y="592" text-anchor="middle" class="label">Incident summary</text><text x="470" y="614" text-anchor="middle" class="label">impact + next action</text>
+  <rect class="box" x="80" y="560" width="190" height="80" fill="#a5d8ff" stroke="#4a9eed"/>
+  <text x="175" y="592" text-anchor="middle" class="label">GitHub issue</text><text x="175" y="614" text-anchor="middle" class="label">or ticket follow-up</text>
+  <path class="line" d="M270 215 L360 200"/><text x="315" y="202" text-anchor="middle" class="small">telemetry</text>
+  <path class="line" d="M270 235 L360 340"/><text x="315" y="302" text-anchor="middle" class="small">logs</text>
+  <path class="line" d="M550 200 L640 245"/><path class="line" d="M550 340 L640 295"/>
+  <path class="line" d="M830 265 H900"/>
+  <path class="line" d="M980 305 C910 395 830 430 760 450"/><text x="900" y="390" class="small">alert context</text>
+  <path class="line" d="M650 485 C570 455 525 420 490 380"/><text x="548" y="450" class="small">query evidence</text>
+  <path class="line" d="M650 520 L580 575"/>
+  <path class="line" d="M360 600 H270"/>
+</svg>

@@ -7,6 +7,8 @@ Persona: Security/Compliance Ops  •  Time: ~15 minutes  •  Entry point: Opti
 ## Story
 A user elevates to a privileged role with a brief justification. The agent runs daily, discovers PIM activations, builds each activation window, correlates actual Azure Activity performed during elevation, and classifies whether actions align with the stated justification. A JSON report and an email summary are produced; misalignment is flagged for review.
 
+<img src="../../docs/images/s5-pim-elevation-audit.svg" alt="S5 PIM elevation audit workflow diagram" width="700" />
+
 ---
 
 ## How the Agent Handles It
