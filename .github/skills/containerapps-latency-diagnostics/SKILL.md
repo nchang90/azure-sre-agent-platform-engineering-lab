@@ -72,10 +72,14 @@ requests
 
 ### Replica CPU/memory pressure (Log Analytics)
 ```kql
-ContainerAppConsoleLogs_CL
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", AppName = ContainerAppName_s, RevisionName = RevisionName_s, Message = Log_s),
+    (AppTraces
+    | project TimeGenerated, Source = "AppTraces", AppName = AppRoleName, RevisionName = "", Message)
 | where TimeGenerated > ago(1h)
-| where Log_s contains "timeout" or Log_s contains "slow" or Log_s contains "connection pool"
-| project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
+| where Message contains "timeout" or Message contains "slow" or Message contains "connection pool"
+| project TimeGenerated, Source, AppName, RevisionName, Message
 | order by TimeGenerated desc
 ```
 

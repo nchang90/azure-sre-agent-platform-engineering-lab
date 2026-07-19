@@ -93,6 +93,21 @@ resource "azurerm_container_app" "orders_api" {
         name  = "ACTIVE_CR"
         value = ""
       }
+
+      env {
+        name  = "Logging__LogLevel__Default"
+        value = "Information"
+      }
+
+      env {
+        name  = "Logging__LogLevel__Microsoft.AspNetCore"
+        value = "Information"
+      }
+
+      env {
+        name  = "Logging__Console__FormatterName"
+        value = "simple"
+      }
     }
   }
 
