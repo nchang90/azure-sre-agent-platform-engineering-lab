@@ -153,11 +153,15 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
 
   criteria {
     query = <<-KQL
-      KubePodInventory
+      let Pods = union isfuzzy=true
+        (KubePodInventory
+          | project TimeGenerated, ClusterName = tostring(ClusterName), Name = tostring(Name), ContainerStatusReason = tostring(ContainerStatusReason)),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, ContainerStatusReason:string)[]);
+      Pods
       | where TimeGenerated > ago(5m)
       | where ClusterName startswith "aks-"
       | where ContainerStatusReason in ("CrashLoopBackOff", "Error", "ContainerCannotRun", "ImagePullBackOff", "ErrImagePull")
-      | summarize AffectedPods = dcount(Name) by bin(TimeGenerated, 1m)
+      | summarize AffectedPods = dcount(Name)
     KQL
 
     operator                = "GreaterThan"
@@ -194,11 +198,15 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
 
   criteria {
     query = <<-KQL
-      KubePodInventory
+      let Pods = union isfuzzy=true
+        (KubePodInventory
+          | project TimeGenerated, ClusterName = tostring(ClusterName), Name = tostring(Name), PodStatus = tostring(PodStatus), ContainerReady = tostring(ContainerReady)),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, PodStatus:string, ContainerReady:string)[]);
+      Pods
       | where TimeGenerated > ago(5m)
       | where ClusterName startswith "aks-"
-      | where PodStatus !in ("Running", "Succeeded") or ContainerReady == false
-      | summarize AffectedPods = dcount(Name) by bin(TimeGenerated, 1m)
+      | where PodStatus !in ("Running", "Succeeded") or tolower(ContainerReady) == "false"
+      | summarize AffectedPods = dcount(Name)
     KQL
 
     operator                = "GreaterThan"
@@ -235,11 +243,16 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_node_cpu_pressure
 
   criteria {
     query = <<-KQL
-      InsightsMetrics
+      let Metrics = union isfuzzy=true
+        (InsightsMetrics
+          | project TimeGenerated, Namespace = tostring(Namespace), Name = tostring(Name), Val = todouble(Val)),
+        (datatable(TimeGenerated:datetime, Namespace:string, Name:string, Val:real)[]);
+      Metrics
       | where TimeGenerated > ago(5m)
       | where Namespace == "container.azm.ms/insights"
       | where Name == "cpuUsagePercentage"
-      | summarize MaxCpu = max(Val) by bin(TimeGenerated, 1m), Computer
+      | summarize MaxCpu = max(Val)
+      | extend MaxCpu = coalesce(MaxCpu, 0.0)
     KQL
 
     operator                = "GreaterThan"
