@@ -226,7 +226,7 @@ variable "enable_azure_monitor_connector" {
 }
 
 variable "enable_service_now_connector" {
-  description = "Enable a ServiceNow connector for incident platform integration."
+  description = "Configure ServiceNow as the incident platform during recipe extras."
   type        = bool
   default     = false
 }
@@ -238,14 +238,14 @@ variable "service_now_instance" {
 }
 
 variable "service_now_username" {
-  description = "ServiceNow username used by the connector."
+  description = "ServiceNow username used by the incident platform integration."
   type        = string
   default     = ""
   sensitive   = true
 }
 
 variable "service_now_password" {
-  description = "ServiceNow password used by the connector."
+  description = "ServiceNow password used by the incident platform integration."
   type        = string
   default     = ""
   sensitive   = true

@@ -21,56 +21,16 @@ ENVIRONMENT=""
 SCENARIO=""
 DEPLOY_APPS="true"
 ENABLE_SERVICE_NOW_CONNECTOR="false"
+SERVICE_NOW_INSTANCE=""
+SERVICE_NOW_USERNAME=""
+SERVICE_NOW_PASSWORD=""
 TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
 TOKEN=""
 CUSTOM_INSTRUCTIONS_FILE=""
 
-ALL_SUBAGENT_NAMES=(
-  aks-remediator
-  alert-investigator
-  incident-orchestrator
-  issue-triager
-  pim-elevation
-  triage-agent
-)
-
-ALL_RESPONSE_PLAN_NAMES=(
-  aks-critical-errors
-  all-incidents
-  azmon-sev01
-  container-apps-alerts
-  orders-api-health-response
-  orders-api-errors
-  orders-api-latency
-  snow-all-incidents
-)
-
-ALL_KB_NAMES=(
-  github-issue-triage.md
-  http-500-errors.md
-  incident-report.md
-  on-call-handoff.md
-  orders-architecture.md
-)
-
-ALL_SKILL_NAMES=(
-  aks-change-triage-rollback
-  containerapps-500-diagnostics
-  containerapps-latency-diagnostics
-  incident-orchestrator-coordination
-  investigate-azure-alerts
-  triage-app-errors
-)
-
-KB_NAMES=("${ALL_KB_NAMES[@]}")
-SKILL_NAMES=("${ALL_SKILL_NAMES[@]}")
-SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
-RESPONSE_PLAN_NAMES=(
-  all-incidents
-)
-CUSTOM_INSTRUCTIONS_FILE="recipes/azmon-lawappinsights/custom-instructions/default.txt"
+source "$SCRIPT_DIR/catalog.sh"
 
 usage() {
   cat <<'EOF'
@@ -106,21 +66,29 @@ parse_args() {
   esac
 }
 
-knowledge_base_path() {
-  local name="$1"
-  [[ -f "knowledge-base/$name" ]] || die "Missing knowledge-base catalog entry: $name"
-  echo "knowledge-base/$name"
-}
-
-skill_path() {
-  local name="$1"
-  [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
-  echo ".github/skills/$name/SKILL.md"
-}
-
 require_tools() {
   command -v jq >/dev/null || die "jq not found"
   command -v "$PYTHON" >/dev/null || die "Python not found: $PYTHON"
+}
+
+tfvar() {
+  local key="$1"
+  awk -F= -v key="$key" '
+    $1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
+      value = $2
+      sub(/[[:space:]]*#.*/, "", value)
+      gsub(/^[[:space:]\"]+|[[:space:]\"]+$/, "", value)
+      print value
+      exit
+    }
+  ' "$TFVARS_FILE"
+}
+
+tfvar_bool() {
+  local key="$1" default_value="$2" value
+  value="$(tfvar "$key")"
+  value="${value:-$default_value}"
+  echo "${value,,}"
 }
 
 configure_environment() {
@@ -142,96 +110,15 @@ configure_environment() {
       exit
     }
   ' "$TFVARS_FILE")"
-  DEPLOY_APPS="$(awk -F= '/^[[:space:]]*deploy_apps[[:space:]]*=/{gsub(/[ "]/, "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
-  DEPLOY_APPS="${DEPLOY_APPS:-true}"
-  ENABLE_SERVICE_NOW_CONNECTOR="$(awk -F= '/^[[:space:]]*enable_service_now_connector[[:space:]]*=/{gsub(/[ "]/ , "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
-  ENABLE_SERVICE_NOW_CONNECTOR="${ENABLE_SERVICE_NOW_CONNECTOR:-false}"
+  DEPLOY_APPS="$(tfvar_bool deploy_apps true)"
+  ENABLE_SERVICE_NOW_CONNECTOR="$(tfvar_bool enable_service_now_connector false)"
+  SERVICE_NOW_INSTANCE="$(tfvar service_now_instance)"
+  SERVICE_NOW_USERNAME="$(tfvar service_now_username)"
+  SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-${SERVICENOW_PASSWORD:-}}"
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
   log "Detected runtime scope: $( [[ "$DEPLOY_APPS" == "true" ]] && echo "Container Apps" || echo "AKS" )"
   log "Detected incident platform: $( [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]] && echo "ServiceNow" || echo "AzMonitor" )"
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
-}
-
-configure_catalog_scope() {
-  if [[ -z "$ENVIRONMENT" ]]; then
-    log "No environment selected; applying full recipe extras catalog."
-    return 0
-  fi
-
-  case "$DEPLOY_APPS" in
-    true|false) ;;
-    *) die "Unsupported deploy_apps value '$DEPLOY_APPS' in $TFVARS_FILE. Expected true or false." ;;
-  esac
-
-  case "$ENABLE_SERVICE_NOW_CONNECTOR" in
-    true|false) ;;
-    *) die "Unsupported enable_service_now_connector value '$ENABLE_SERVICE_NOW_CONNECTOR' in $TFVARS_FILE. Expected true or false." ;;
-  esac
-
-  case "$SCENARIO" in
-    ""|s1|s2|s3|s4|s5) ;;
-    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s1, s2, s3, s4, s5." ;;
-  esac
-
-  SUBAGENT_NAMES=(
-    incident-orchestrator
-    alert-investigator
-  )
-  RESPONSE_PLAN_NAMES=(
-    all-incidents
-  )
-
-  if [[ "$DEPLOY_APPS" == "true" ]]; then
-    log "Including Container Apps incident catalog from deploy_apps=true."
-    SUBAGENT_NAMES+=(
-      triage-agent
-    )
-  else
-    log "Including AKS incident catalog from deploy_apps=false."
-    SUBAGENT_NAMES+=(
-      aks-remediator
-    )
-  fi
-
-  case "$SCENARIO" in
-    s2)
-      log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
-      KB_NAMES=(
-        http-500-errors.md
-        orders-architecture.md
-        incident-report.md
-      )
-      SKILL_NAMES=(
-        incident-orchestrator-coordination
-        investigate-azure-alerts
-        containerapps-500-diagnostics
-        containerapps-latency-diagnostics
-      )
-      ;;
-    s4)
-      log "Including S4 alert response issue-triage catalog from tags.scenario=s4."
-      SUBAGENT_NAMES+=(
-        issue-triager
-      )
-      ;;
-    s5)
-      log "Including S5 PIM elevation audit catalog from tags.scenario=s5."
-      SUBAGENT_NAMES+=(
-        pim-elevation
-      )
-      ;;
-    "")
-      log "No scenario-specific extras requested."
-      ;;
-  esac
-
-  local scenario_instructions="recipes/azmon-lawappinsights/custom-instructions/${SCENARIO}.txt"
-  if [[ -n "$SCENARIO" && -f "$scenario_instructions" ]]; then
-    CUSTOM_INSTRUCTIONS_FILE="$scenario_instructions"
-    log "Including scenario custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
-  else
-    log "Including default custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
-  fi
 }
 
 load_context_from_terraform() {
@@ -293,6 +180,19 @@ delete_resource() {
   esac
 }
 
+cleanup_out_of_scope() {
+  local label="$1" path_prefix="$2" all_var="$3" selected_var="$4" name
+  local -n all_items="$all_var"
+  local -n selected_items="$selected_var"
+
+  log "Cleaning up out-of-scope ${label}s..."
+  for name in "${all_items[@]}"; do
+    contains "$name" "${selected_items[@]}" && continue
+    delete_resource "${path_prefix}/${name}" "${label}: $name"
+  done
+  echo
+}
+
 contains() {
   local needle="$1"; shift
   local item
@@ -300,18 +200,6 @@ contains() {
     [[ "$item" == "$needle" ]] && return 0
   done
   return 1
-}
-
-subagent_path() {
-  case "$1" in
-    alert-investigator) echo "recipes/azmon-lawappinsights/agents/alert-investigator.yaml" ;;
-    aks-remediator) echo "recipes/azmon-lawappinsights/agents/aks-remediator.yaml" ;;
-    incident-orchestrator) echo "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml" ;;
-    issue-triager) echo "recipes/azmon-lawappinsights/agents/issue-triager.yaml" ;;
-    pim-elevation) echo "recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml" ;;
-    triage-agent) echo "recipes/azmon-lawappinsights/agents/triage-agent.yaml" ;;
-    *) die "Unknown subagent catalog entry: $1" ;;
-  esac
 }
 
 register_subagent() {
@@ -360,11 +248,26 @@ configure_incident_platform() {
   if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
     platform_type="ServiceNow"
     connection_name="servicenow"
+
+    [[ -n "$SERVICE_NOW_INSTANCE" ]] || die "service_now_instance is required when enable_service_now_connector=true"
+    [[ -n "$SERVICE_NOW_USERNAME" ]] || die "service_now_username is required when enable_service_now_connector=true"
+    [[ -n "$SERVICE_NOW_PASSWORD" ]] || die "TF_VAR_service_now_password or SERVICENOW_PASSWORD is required when enable_service_now_connector=true"
   fi
 
   log "Configuring incident platform: $platform_type"
-  jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
-    '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
+  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+    jq -n \
+      --arg type "$platform_type" \
+      --arg connectionName "$connection_name" \
+      --arg connectionUrl "$SERVICE_NOW_INSTANCE" \
+      --arg endpoint "$SERVICE_NOW_INSTANCE" \
+      --arg username "$SERVICE_NOW_USERNAME" \
+      --arg password "$SERVICE_NOW_PASSWORD" \
+      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName, connectionUrl:$connectionUrl, connectionKey:({endpoint:$endpoint, username:$username, password:$password} | tojson)}}}' >"$patch_file"
+  else
+    jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
+      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
+  fi
 
   if az rest --method PATCH \
     --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
@@ -408,34 +311,12 @@ upload_skills() {
   echo
 }
 
-cleanup_out_of_scope_skills() {
-  log "Cleaning up out-of-scope skills..."
-  local name
-
-  for name in "${ALL_SKILL_NAMES[@]}"; do
-    contains "$name" "${SKILL_NAMES[@]}" && continue
-    delete_resource "/api/v2/extendedAgent/skills/${name}" "Skill: $name"
-  done
-  echo
-}
-
 register_subagents() {
   log "Step 3/4: Registering subagents..."
   local name
 
   for name in "${SUBAGENT_NAMES[@]}"; do
     register_subagent "$(subagent_path "$name")" "$name"
-  done
-  echo
-}
-
-cleanup_out_of_scope_subagents() {
-  log "Cleaning up out-of-scope subagents..."
-  local name
-
-  for name in "${ALL_SUBAGENT_NAMES[@]}"; do
-    contains "$name" "${SUBAGENT_NAMES[@]}" && continue
-    delete_resource "/api/v2/extendedAgent/agents/${name}" "Subagent: $name"
   done
   echo
 }
@@ -454,17 +335,6 @@ create_response_plans() {
   echo
 }
 
-cleanup_out_of_scope_response_plans() {
-  log "Cleaning up out-of-scope response plans..."
-  local plan
-
-  for plan in "${ALL_RESPONSE_PLAN_NAMES[@]}"; do
-    contains "$plan" "${RESPONSE_PLAN_NAMES[@]}" && continue
-    delete_resource "/api/v2/extendedAgent/incidentFilters/${plan}" "Response plan: $plan"
-  done
-  echo
-}
-
 main() {
   parse_args "$@"
   require_tools
@@ -476,12 +346,12 @@ main() {
   auth
   upload_knowledge_base
   upload_skills
-  cleanup_out_of_scope_skills
+  cleanup_out_of_scope "Skill" "/api/v2/extendedAgent/skills" ALL_SKILL_NAMES SKILL_NAMES
   register_subagents
-  cleanup_out_of_scope_subagents
+  cleanup_out_of_scope "Subagent" "/api/v2/extendedAgent/agents" ALL_SUBAGENT_NAMES SUBAGENT_NAMES
   configure_incident_platform
   create_response_plans
-  cleanup_out_of_scope_response_plans
+  cleanup_out_of_scope "Response plan" "/api/v2/extendedAgent/incidentFilters" ALL_RESPONSE_PLAN_NAMES RESPONSE_PLAN_NAMES
   ok "Recipe extras applied"
 }
 
