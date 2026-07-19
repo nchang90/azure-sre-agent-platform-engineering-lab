@@ -29,8 +29,8 @@ reader_principal_ids = [
 
 deploy_sre_agent = true
 
-# Bind the Azure SRE Agent workspace egress to a delegated VNet subnet.
-enable_vnet = true
+# S3 does not require agent VNet egress; the 2025-05-01-preview agent API rejects networkConfiguration.
+enable_vnet = false
 
 # S3 AKS incident investigation: skip the optional Container Apps stack.
 deploy_apps = false
