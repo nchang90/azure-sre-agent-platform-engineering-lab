@@ -25,12 +25,12 @@
   <text x="985" y="638" text-anchor="middle" class="label">Email summary</text><text x="985" y="660" text-anchor="middle" class="label">review findings</text>
   <rect class="box" x="900" y="390" width="170" height="80" fill="#ffc9c9" stroke="#ef4444"/>
   <text x="985" y="422" text-anchor="middle" class="label">NotAligned</text><text x="985" y="444" text-anchor="middle" class="label">security review</text>
-  <path class="line" d="M270 220 L360 215"/>
-  <path class="line" d="M175 260 C215 355 280 375 360 375"/>
-  <path class="line" d="M550 215 L660 270"/><text x="600" y="235" class="small">query</text>
-  <path class="line" d="M550 375 L660 320"/><text x="592" y="365" class="small">correlate</text>
+  <path class="line" d="M270 220 H360"/>
+  <path class="line" d="M175 260 V455 H455 V420"/>
+  <path class="line" d="M550 215 H610 V270 H660"/><text x="590" y="205" text-anchor="middle" class="small">query</text>
+  <path class="line" d="M550 375 H610 V320 H660"/><text x="590" y="395" text-anchor="middle" class="small">correlate</text>
   <path class="line" d="M770 340 V460"/>
-  <path class="line" d="M720 560 C640 590 600 600 540 610"/>
-  <path class="line" d="M830 560 C900 590 940 600 985 610"/>
-  <path class="line" d="M850 500 L930 440"/><text x="885" y="470" class="small">flag</text>
+  <path class="line" d="M720 560 H640 V645 H610"/>
+  <path class="line" d="M830 560 H860 V645 H900"/>
+  <path class="line" d="M860 520 H940 V470"/><text x="900" y="508" text-anchor="middle" class="small">flag</text>
 </svg>
