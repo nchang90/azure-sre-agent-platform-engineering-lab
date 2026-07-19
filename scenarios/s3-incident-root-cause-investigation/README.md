@@ -4,54 +4,63 @@ Persona: Platform SRE / On-call
 
 ## Story
 
-A new deployment hits AKS and 5xx/latency spike. Some pods crashloop, nodes show pressure. Azure Monitor fires; the Azure SRE Agent triages evidence, restarts pods, drains bad nodes if needed, scales where appropriate, and rolls back to a known-good revision (or reverts the last GitOps commit). Incident is auto-created with timeline and evidence.
+A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods fail readiness, crash loop, or nodes show pressure. Azure Monitor detects the AKS symptoms from Log Analytics, ServiceNow owns the S3 incident lifecycle, and the Azure SRE Agent triages evidence, restarts pods, drains bad nodes if needed, scales where appropriate, and rolls back to a known-good revision or GitOps commit. The ServiceNow incident is updated with timeline and evidence.
 
 ## Architecture (high level)
 
 <img src="../../docs/images/s3-aks-infrastructure.svg" alt="S3 AKS infrastructure diagram" width="700" />
 - AKS workload: `orders-api` or a similar demo service
 - Observability: Azure Monitor, Log Analytics, Application Insights
-- Trigger path: GitHub repo change → deployment → Azure Monitor alert → Action Group → agent HTTP trigger
-- Event path: GitHub repo/deployment events plus Azure Monitor Action Group webhook receiver → agent HTTP trigger
+- Workload manifest: `infra/k8s/orders-api.yaml`
+- Trigger path: GitHub repo change → deployment → AKS telemetry → Azure Monitor alert → incident platform
+- ServiceNow path: ServiceNow incident platform → `snow-aks-incidents` response plan → `aks-remediator`
+- HTTP trigger path: optional test bridge for direct Azure Monitor webhook ingestion
 - Decision loop: gather evidence → detect regression → remediate safely → record incident
 - Optional GitOps path: Flux or Argo rollback instead of direct `kubectl` undo
 
 ## Trigger
 
 New deployment → within 2–5 minutes: 5xx↑, latency↑, CrashLoopBackOff, node CPU↑.
-Azure Monitor alert → Action Group → Agent HTTP trigger.
+Azure Monitor alert → ServiceNow incident platform → Azure SRE Agent response plan. The HTTP trigger bridge is only for direct testing.
 
-## HTTP trigger and event sources
+## Incident Flow and Event Sources
 
-S3 should showcase an HTTP trigger because this is the external entrypoint for production events. GitHub is the source of truth for changes, deployment evidence, and engineering follow-up, while Azure Monitor provides the production alert event.
+S3 uses AKS telemetry as the production signal and ServiceNow as the incident platform. Azure Monitor alerts on pod and node health, ServiceNow owns the incident lifecycle, and GitHub is only supporting context if the investigation needs to correlate the outage with a recent deployment. ServiceNow is still opt-in at the environment level so other scenarios do not have to use it.
 
 | Event source | Purpose | Configuration |
 |---|---|---|
-| GitHub PR / merge event | Shows which repo change or deployment likely introduced the regression | Link the deployment, commit SHA, PR, and workflow run in the incident context |
-| GitHub deployment event | Carries the environment and revision that reached AKS | Use the repo's deployment workflow or deployment event as change evidence |
-| Azure Monitor action group | Fires when the AKS regression alert triggers | Created by Terraform with the S3 alert resources |
-| Webhook receiver | Sends the common alert payload to the SRE Agent ingestion path | Set `webhook_bridge_trigger_url` to an existing bridge URL |
-| Agent HTTP trigger | Lets the SRE Agent receive the event payload and route to `incident-orchestrator` | Enabled by `EnableHttpTriggers = true` on the agent resource |
-| GitHub issue follow-up | Keeps remediation work visible in the repo after the incident | Create or link an issue with the incident ID, PR, deployment, and rollback evidence |
+| AKS pod crash loop alert | Fires when pods enter CrashLoopBackOff, image pull failure, or container error states | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
+| AKS pods not ready alert | Fires when pods are not running, not succeeded, or containers are not ready | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
+| AKS node pressure alert | Fires when node CPU pressure crosses the S3 alert threshold | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
+| ServiceNow incident platform | Owns the S3 incident lifecycle and routes AKS incidents to `aks-remediator` | Configure ServiceNow values in the environment tfvars and provide `SERVICENOW_PASSWORD` as a GitHub secret |
+| Agent HTTP trigger | Optional direct test path for common alert payloads | Enabled by `EnableHttpTriggers = true`; use only when an event bridge is intentionally configured |
+| GitHub deployment context | Optional evidence for identifying whether a recent change caused the AKS outage | Link commit SHA, PR, or workflow run in the incident notes only when relevant |
+| GitHub issue follow-up | Keeps remediation work visible in the repo after the incident | Create or link an issue with the incident ID, alert evidence, and remediation actions |
 
-For environments that need an explicit event bridge, set:
+For ServiceNow-enabled environments, set non-secret values in the environment tfvars and provide the password through `TF_VAR_service_now_password` or the `SERVICENOW_PASSWORD` GitHub secret:
+
+```hcl
+enable_service_now_connector = true
+service_now_instance         = "https://<instance>.service-now.com"
+service_now_username         = "<username>"
+```
+
+For environments that intentionally use an explicit HTTP event bridge, set:
 
 ```hcl
 enable_webhook_bridge      = true
 webhook_bridge_trigger_url = "<logic-app-or-bridge-trigger-url>"
 ```
 
-If `webhook_bridge_trigger_url` is set, Terraform adds it to the S3 Azure Monitor action group as a webhook receiver using the common alert schema. Keep GitHub links in the incident payload or agent notes so the investigation can trace from alert → deployment → PR → follow-up issue.
+Keep GitHub links in the incident payload or agent notes so the investigation can trace from alert → deployment → PR → follow-up issue.
 
 ## Response plan (YAML sketch)
 
 ```yaml
 name: shared-incident-response
 triggers:
-  - type: azureMonitor
+  - type: serviceNow
     filter: aks-regression
-  - type: github
-    filter: deployment-or-merge
 steps:
   - gatherEvidence: [kql, aksEvents, podLogs, githubDeployment]
   - routeTo: aks-remediator
@@ -87,6 +96,7 @@ Use the Terraform module under `infra/`:
 - Connectors: `connectors.tf`
 - RBAC least-privilege + admin role: `rbac.tf`
 - Outputs: `output.tf` (agent endpoint, MI id)
+- AKS workload: `infra/k8s/orders-api.yaml`
 
 ## Inputs to set per environment
 
@@ -100,8 +110,8 @@ variable "action_mode" { default = "Review" } # use "Automatic" after confidence
 
 ## Run
 
-Merge or deploy a bad GitHub repo change (e.g., raise error rate).
-Azure Monitor alert fires → Action Group event reaches the HTTP trigger → agent plan runs.
+Merge or deploy a bad GitHub repo change, or introduce an AKS workload failure such as a bad image or crash loop.
+Azure Monitor alert fires → ServiceNow incident is created → `snow-aks-incidents` routes to `aks-remediator`.
 Agent gathers evidence, restarts pods, drains nodes if needed, and either stabilizes or rolls back.
 
 Use an AKS-only tfvars file for the demo path:
@@ -109,8 +119,12 @@ Use an AKS-only tfvars file for the demo path:
 ```bash
 terraform -chdir=infra/terraform init -reconfigure -backend-config=backend/<environment>.backend.tfvars
 terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/<environment>.tfvars
+az aks get-credentials --resource-group <rg> --name <aks-name> --admin --overwrite-existing
+kubectl apply -f infra/k8s/orders-api.yaml
 bash scripts/apply-extras.sh <environment>
 ```
+
+The GitHub Actions deploy workflow applies the AKS workload automatically when the Terraform output includes `aks_name`.
 
 ## Validation
 
@@ -123,5 +137,5 @@ bash scripts/apply-extras.sh <environment>
 
 - [http-500-errors.md](../../knowledge-base/http-500-errors.md)
 - [on-call-handoff.md](../../knowledge-base/on-call-handoff.md)
-- [incident-report-template.md](../../knowledge-base/incident-report-template.md)
+- [incident-report.md](../../knowledge-base/incident-report.md)
 - [orders-architecture.md](../../knowledge-base/orders-architecture.md)

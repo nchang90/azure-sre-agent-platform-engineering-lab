@@ -49,6 +49,9 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
       - name: Install Python dependencies
         run: pip install pyyaml
 
@@ -63,6 +66,32 @@ jobs:
 
       - name: Terraform apply
         run: terraform -chdir=infra/terraform apply -auto-approve tfplan
+
+      - name: Deploy AKS workload
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
+          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
+
+          AKS_NAME="$(read_tf aks_name)"
+          if [[ -z "$AKS_NAME" ]]; then
+            echo "AKS stack is disabled for this environment; skipping AKS workload deployment."
+            exit 0
+          fi
+
+          AGENT_ID="$(read_tf agent_id)"
+          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
+
+          az aks get-credentials \
+            --resource-group "$RG" \
+            --name "$AKS_NAME" \
+            --admin \
+            --overwrite-existing
+
+          kubectl apply -f infra/k8s/orders-api.yaml
+          kubectl rollout status deployment/orders-api --namespace default --timeout=180s
 
       - name: Build and update Container Apps
         shell: bash

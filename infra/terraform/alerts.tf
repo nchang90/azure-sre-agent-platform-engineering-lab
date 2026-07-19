@@ -130,6 +130,129 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   }
 }
 
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-pod-crashloop"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: pods are crash looping or backing off."
+  display_name            = "AKS pod crash loop detected"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT1M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    query = <<-KQL
+      KubePodInventory
+      | where TimeGenerated > ago(5m)
+      | where ClusterName startswith "aks-"
+      | where ContainerStatusReason in ("CrashLoopBackOff", "Error", "ContainerCannotRun", "ImagePullBackOff", "ErrImagePull")
+      | summarize AffectedPods = dcount(Name) by bin(TimeGenerated, 1m)
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "AffectedPods"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-pods-not-ready"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: one or more pods are not ready."
+  display_name            = "AKS pods not ready"
+  severity                = 2
+  enabled                 = true
+  evaluation_frequency    = "PT1M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    query = <<-KQL
+      KubePodInventory
+      | where TimeGenerated > ago(5m)
+      | where ClusterName startswith "aks-"
+      | where PodStatus !in ("Running", "Succeeded") or ContainerReady == false
+      | summarize AffectedPods = dcount(Name) by bin(TimeGenerated, 1m)
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "AffectedPods"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_node_cpu_pressure" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-node-cpu-pressure"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: node CPU usage is above 85%."
+  display_name            = "AKS node CPU pressure"
+  severity                = 2
+  enabled                 = true
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    query = <<-KQL
+      InsightsMetrics
+      | where TimeGenerated > ago(5m)
+      | where Namespace == "container.azm.ms/insights"
+      | where Name == "cpuUsagePercentage"
+      | summarize MaxCpu = max(Val) by bin(TimeGenerated, 1m), Computer
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 85
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "MaxCpu"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
 
 resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
   count               = local.create_app_insights ? 1 : 0

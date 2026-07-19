@@ -8,6 +8,7 @@ ALL_SUBAGENT_NAMES=(
 )
 
 ALL_RESPONSE_PLAN_NAMES=(
+  aks-incidents
   aks-critical-errors
   all-incidents
   azmon-sev01
@@ -109,6 +110,24 @@ configure_catalog_scope() {
   fi
 
   case "$SCENARIO" in
+    s3)
+      log "Including S3 AKS ServiceNow incident catalog from tags.scenario=s3."
+      if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+        RESPONSE_PLAN_NAMES=(
+          aks-incidents
+        )
+      fi
+      KB_NAMES=(
+        incident-report.md
+        on-call-handoff.md
+        orders-architecture.md
+      )
+      SKILL_NAMES=(
+        aks-change-triage-rollback
+        incident-orchestrator-coordination
+        investigate-azure-alerts
+      )
+      ;;
     s2)
       log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
       KB_NAMES=(
