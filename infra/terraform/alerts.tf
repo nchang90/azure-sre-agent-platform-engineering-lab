@@ -155,7 +155,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
     query = <<-KQL
       let Pods = union isfuzzy=true
         (KubePodInventory
-          | project TimeGenerated, ClusterName = tostring(ClusterName), Name = tostring(Name), ContainerStatusReason = tostring(ContainerStatusReason)),
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Name = tostring(column_ifexists("Name", "")), ContainerStatusReason = tostring(column_ifexists("ContainerStatusReason", ""))),
         (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, ContainerStatusReason:string)[]);
       Pods
       | where TimeGenerated > ago(5m)
@@ -200,7 +200,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
     query = <<-KQL
       let Pods = union isfuzzy=true
         (KubePodInventory
-          | project TimeGenerated, ClusterName = tostring(ClusterName), Name = tostring(Name), PodStatus = tostring(PodStatus), ContainerReady = tostring(ContainerReady)),
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Name = tostring(column_ifexists("Name", "")), PodStatus = tostring(column_ifexists("PodStatus", "")), ContainerReady = tostring(column_ifexists("ContainerReady", ""))),
         (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, PodStatus:string, ContainerReady:string)[]);
       Pods
       | where TimeGenerated > ago(5m)
@@ -245,7 +245,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_node_cpu_pressure
     query = <<-KQL
       let Metrics = union isfuzzy=true
         (InsightsMetrics
-          | project TimeGenerated, Namespace = tostring(Namespace), Name = tostring(Name), Val = todouble(Val)),
+          | project TimeGenerated, Namespace = tostring(column_ifexists("Namespace", "")), Name = tostring(column_ifexists("Name", "")), Val = todouble(column_ifexists("Val", 0.0))),
         (datatable(TimeGenerated:datetime, Namespace:string, Name:string, Val:real)[]);
       Metrics
       | where TimeGenerated > ago(5m)
