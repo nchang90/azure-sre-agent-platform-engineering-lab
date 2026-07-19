@@ -27,7 +27,6 @@ concurrency:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
       - name: Validate confirmation input
@@ -44,7 +43,9 @@ jobs:
       - name: Azure CLI login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
