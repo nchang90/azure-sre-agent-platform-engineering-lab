@@ -21,31 +21,50 @@ A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods 
 ## Trigger
 
 New deployment → within 2–5 minutes: 5xx↑, latency↑, CrashLoopBackOff, node CPU↑.
-Azure Monitor alert → ServiceNow incident platform → Azure SRE Agent response plan. The HTTP trigger bridge is only for direct testing.
+ServiceNow incident already exists → Azure SRE Agent indexes the incident → `snow-aks-incidents` response plan investigates. The HTTP trigger bridge is only for direct testing.
 
 ## Incident Flow and Event Sources
 
 S3 uses AKS telemetry as the production signal and ServiceNow as the incident platform. Azure Monitor alerts on pod and node health, ServiceNow owns the incident lifecycle, and GitHub is only supporting context if the investigation needs to correlate the outage with a recent deployment. ServiceNow is still opt-in at the environment level so other scenarios do not have to use it.
 
-ServiceNow incident-platform configuration means the Azure SRE Agent can process ServiceNow incidents and apply the `snow-aks-incidents` response plan. It does not, by itself, make Azure Monitor create ServiceNow incidents. An alert-to-ServiceNow bridge is still required for production alert ingestion. In this lab, the deploy workflow creates a ServiceNow incident when the AKS `orders-api` rollout fails; Azure Monitor alert ingestion can be added through a ServiceNow Azure Monitor integration, ITSM connector, or webhook bridge.
+ServiceNow incident-platform configuration enables ServiceNow incident indexing in Azure SRE Agent: the agent scans ServiceNow, indexes matching incidents, and applies the `snow-aks-incidents` response plan. S3 follows the documented SRE Agent indexing flow:
+
+```text
+ServiceNow incident already exists
+-> SRE Agent connects to ServiceNow
+-> SRE Agent indexes/scans incidents
+-> matching response plan investigates
+```
+
+This setup does not create ServiceNow incidents from Azure Monitor alerts. If you want production alerts to open incidents automatically, add a separate Azure Monitor-to-ServiceNow bridge such as the ServiceNow Azure Monitor/Event Management integration, ITSM connector, or webhook bridge.
 
 | Event source | Purpose | Configuration |
 |---|---|---|
-| AKS pod crash loop alert | Fires when pods enter CrashLoopBackOff, image pull failure, or container error states | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
-| AKS pods not ready alert | Fires when pods are not running, not succeeded, or containers are not ready | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
-| AKS node pressure alert | Fires when node CPU pressure crosses the S3 alert threshold | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
-| ServiceNow incident platform | Owns the S3 incident lifecycle and routes AKS incidents to `aks-remediator` | Configure ServiceNow values in the environment tfvars and provide `SERVICENOW_PASSWORD` as a GitHub secret |
+| Existing ServiceNow incident | Starting point for the documented SRE Agent indexing flow | Create manually for lab validation, or use an external alert-to-ServiceNow integration |
+| ServiceNow incident platform | Lets SRE Agent scan/index incidents and route AKS incidents to `aks-remediator` | Configure ServiceNow values in the environment tfvars and provide `SERVICENOW_PASSWORD` as a GitHub secret |
+| AKS pod crash loop alert | Optional production signal when pods enter CrashLoopBackOff, image pull failure, or container error states | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf`; requires a separate bridge if it should create ServiceNow incidents |
+| AKS pods not ready alert | Optional production signal when pods are not running, not succeeded, or containers are not ready | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf`; requires a separate bridge if it should create ServiceNow incidents |
+| AKS node pressure alert | Optional production signal when node CPU pressure crosses the S3 alert threshold | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf`; requires a separate bridge if it should create ServiceNow incidents |
 | Agent HTTP trigger | Optional direct test path for common alert payloads | Enabled by `EnableHttpTriggers = true`; use only when an event bridge is intentionally configured |
 | GitHub deployment context | Optional evidence for identifying whether a recent change caused the AKS outage | Link commit SHA, PR, or workflow run in the incident notes only when relevant |
 | GitHub issue follow-up | Keeps remediation work visible in the repo after the incident | Create or link an issue with the incident ID, alert evidence, and remediation actions |
 
-For ServiceNow-enabled environments, set non-secret values in the environment tfvars and provide the password through `TF_VAR_service_now_password` or the `SERVICENOW_PASSWORD` GitHub secret:
+For ServiceNow-enabled environments, set non-secret values in the environment tfvars and provide the password through `TF_VAR_service_now_password` locally or the `SERVICENOW_PASSWORD` GitHub secret in Actions:
 
 ```hcl
 enable_service_now_connector = true
 service_now_instance         = "https://<instance>.service-now.com"
 service_now_username         = "<username>"
 ```
+
+Then run the recipe extras to configure the SRE Agent incident platform and response plan:
+
+```bash
+export TF_VAR_service_now_password="<password>"
+bash scripts/apply-extras.sh demo
+```
+
+This configures the agent to index ServiceNow incidents and registers `snow-aks-incidents`, which routes priority 1-3 incidents where the title contains `AKS` to `aks-remediator`.
 
 For environments that intentionally use an explicit HTTP event bridge, set:
 
@@ -112,11 +131,11 @@ variable "action_mode" { default = "Review" } # use "Automatic" after confidence
 
 ## Run
 
-Merge or deploy a bad GitHub repo change, or introduce an AKS workload failure such as a bad image or crash loop.
-Azure Monitor alert fires → ServiceNow incident is created → `snow-aks-incidents` routes to `aks-remediator`.
-Agent gathers evidence, restarts pods, drains nodes if needed, and either stabilizes or rolls back.
+Create or use an existing ServiceNow incident that describes an AKS workload failure such as a bad image or crash loop. Use a priority 1-3 incident with `AKS` in the title so it matches `snow-aks-incidents`.
 
-For the explicit ServiceNow-to-SRE-Agent lab path, run the `Deploy SRE Agent Lab` workflow with:
+SRE Agent indexes the ServiceNow incident → `snow-aks-incidents` routes to `aks-remediator` → agent gathers evidence, restarts pods, drains nodes if needed, and either stabilizes or rolls back.
+
+For the AKS regression lab path, run the `Deploy SRE Agent Lab` workflow with:
 
 - `environment`: `demo`
 - `apply`: `true`
@@ -127,15 +146,13 @@ The workflow performs this sequence:
 ```text
 Terraform apply
 -> apply SRE Agent recipe extras
--> configure ServiceNow as the incident platform
+-> configure ServiceNow incident indexing on the SRE Agent
 -> register snow-aks-incidents response plan
 -> deploy healthy orders-api to AKS
 -> apply infra/k8s/orders-api-broken.yaml
--> create a priority 2 ServiceNow incident titled "AKS orders-api broken pod in demo"
--> Azure SRE Agent reads the ServiceNow incident
--> snow-aks-incidents matches title contains AKS and priority 2
--> aks-remediator investigates and writes updates/work notes back to ServiceNow
--> incident appears in the Azure SRE Agent incidents page
+-> create or use an existing ServiceNow incident with AKS in the title and priority 1-3
+-> SRE Agent indexes the ServiceNow incident
+-> aks-remediator investigates and records the remediation timeline
 ```
 
 Use an AKS-only tfvars file for the demo path:

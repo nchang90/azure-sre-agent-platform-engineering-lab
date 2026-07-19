@@ -8,7 +8,8 @@ spec:
   - "1"
   - "2"
   - "3"
-  titleContains: AKS
+  titleContainsAny:
+  - AKS
   handlingAgent: aks-remediator
   agentMode: autonomous
   deepInvestigationEnabled: true

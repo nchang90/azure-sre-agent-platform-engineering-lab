@@ -165,13 +165,17 @@ def build_incident_filter(path):
         agent_mode = agent_mode.lower()
 
     max_attempts = spec.get("maxAttempts") or spec.get("maxAutomatedInvestigationAttempts") or 3
+    title_contains = spec.get("titleContains") or ""
+    title_contains_any = spec.get("titleContainsAny") or ([] if not title_contains else [title_contains])
     result = {
         "id": filter_id,
         "name": spec.get("name") or filter_id,
         "incidentPlatform": spec.get("incidentPlatform") or spec.get("incident_platform") or "",
         "isEnabled": spec.get("isEnabled", True),
         "priorities": spec.get("priorities") or [],
-        "titleContains": spec.get("titleContains") or "",
+        "titleContainsAny": title_contains_any,
+        "titleContainsAll": spec.get("titleContainsAll") or [],
+        "titleNotContains": spec.get("titleNotContains") or [],
         "handlingAgent": spec.get("handlingAgent") or "default",
         "agentMode": agent_mode,
         "deepInvestigationEnabled": spec.get("deepInvestigationEnabled", False),
