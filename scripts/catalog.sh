@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 ALL_SUBAGENT_NAMES=(
   aks-remediator
   alert-investigator
@@ -7,6 +8,7 @@ ALL_SUBAGENT_NAMES=(
   triage-agent
 )
 
+# shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
 ALL_RESPONSE_PLAN_NAMES=(
   aks-incidents
   aks-critical-errors
@@ -113,6 +115,7 @@ configure_catalog_scope() {
     s3)
       log "Including S3 AKS ServiceNow incident catalog from tags.scenario=s3."
       if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+        # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
         RESPONSE_PLAN_NAMES=(
           aks-incidents
         )
@@ -130,11 +133,13 @@ configure_catalog_scope() {
       ;;
     s2)
       log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       KB_NAMES=(
         http-500-errors.md
         orders-architecture.md
         incident-report.md
       )
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       SKILL_NAMES=(
         incident-orchestrator-coordination
         investigate-azure-alerts
