@@ -91,7 +91,12 @@ jobs:
             --overwrite-existing
 
           kubectl apply -f infra/k8s/orders-api.yaml
-          kubectl rollout status deployment/orders-api --namespace default --timeout=180s
+          if ! kubectl rollout status deployment/orders-api --namespace default --timeout=180s; then
+            kubectl get pods --namespace default -l app=orders-api -o wide
+            kubectl describe deployment/orders-api --namespace default
+            kubectl describe pods --namespace default -l app=orders-api
+            exit 1
+          fi
 
       - name: Build and update Container Apps
         shell: bash
