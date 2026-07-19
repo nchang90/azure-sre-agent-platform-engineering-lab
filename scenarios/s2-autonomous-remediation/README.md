@@ -16,7 +16,7 @@ No `terraform.tfvars` edits. No `azd up`. No connector wiring. It's a pure
 **runtime** scenario against the already-deployed `orders-api`: you inject a
 failure at runtime and observe the agent end to end.
 
-<img src="../../docs/images/story2.png" alt="autonomous remediation" width="600" />
+<img src="../../docs/images/s2-autonomous-remediation.svg" alt="S2 autonomous remediation runtime diagram" width="700" />
 
 ---
 

@@ -7,7 +7,6 @@
     </marker>
     <style>
       text { font-family: Inter, Arial, sans-serif; fill: #1e1e1e; }
-      .title { font-size: 30px; font-weight: 700; }
       .label { font-size: 16px; font-weight: 600; }
       .small { font-size: 14px; fill: #555; }
       .box { stroke-width: 2; rx: 14; ry: 14; }
@@ -15,10 +14,7 @@
     </style>
   </defs>
   <rect width="1200" height="760" fill="#fff"/>
-  <text x="410" y="45" class="title">S3 AKS Infrastructure</text>
-  <rect x="40" y="80" width="1040" height="620" rx="18" fill="#dbe4ff" stroke="#4a9eed" opacity=".45"/>
-  <text x="70" y="115" class="label" fill="#4a9eed">Azure Resource Group: rg-sre-lab-demo</text>
-
+  <rect x="40" y="50" width="1040" height="650" rx="18" fill="#dbe4ff" stroke="#4a9eed" opacity=".45"/>
   <rect class="box" x="70" y="170" width="170" height="80" fill="#a5d8ff" stroke="#4a9eed"/>
   <text x="155" y="202" text-anchor="middle" class="label">GitHub repo</text>
   <text x="155" y="224" text-anchor="middle" class="label">+ deploy workflow</text>
@@ -72,15 +68,15 @@
   <text x="595" y="193" text-anchor="middle" class="small">emits</text>
   <path class="line" d="M745 240 V330"/>
   <text x="785" y="287" class="small">connector</text>
-  <path class="line" d="M965 240 C925 290 880 315 815 330"/>
-  <text x="930" y="290" class="small">telemetry</text>
+  <path class="line" d="M965 240 V285 H815 V330"/>
+  <text x="890" y="277" class="small">telemetry</text>
   <path class="line" d="M760 425 V470"/>
   <path class="line" d="M870 380 H900"/>
   <path class="line" d="M570 545 H610 V425 H650"/>
   <text x="585" y="530" class="small">registers</text>
-  <path class="line" d="M650 220 H600 V405 H170 V430"/>
-  <text x="505" y="425" text-anchor="middle" class="small">triggers alert</text>
-  <path class="line" d="M260 470 H610 V378 H650"/>
-  <text x="435" y="458" text-anchor="middle" class="small">HTTP event</text>
+  <path class="line" d="M260 470 H610 V395 H650"/>
+  <text x="430" y="492" text-anchor="middle" class="small">alert trigger</text>
+  <path class="line" d="M240 225 H285 V405 H650"/>
+  <text x="470" y="398" text-anchor="middle" class="small">HTTP event</text>
   <path class="line" d="M760 550 V610"/>
 </svg>
