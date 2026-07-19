@@ -109,16 +109,6 @@ variable "aks_node_vm_size" {
   default     = "Standard_B2s"
 }
 
-variable "aks_node_count" {
-  description = "Initial node count for the AKS system node pool."
-  type        = number
-}
-
-variable "aks_min_count" {
-  description = "Minimum node count for the AKS system node pool autoscaler."
-  type        = number
-}
-
 variable "aks_max_count" {
   description = "Maximum node count for the AKS system node pool autoscaler."
   type        = number
