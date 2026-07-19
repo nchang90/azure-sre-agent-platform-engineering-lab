@@ -76,11 +76,11 @@
   <text x="930" y="290" class="small">telemetry</text>
   <path class="line" d="M760 425 V470"/>
   <path class="line" d="M870 380 H900"/>
-  <path class="line" d="M570 545 C610 485 625 455 650 425"/>
-  <text x="600" y="488" class="small">registers</text>
-  <path class="line" d="M540 250 C420 360 360 420 260 430"/>
-  <text x="395" y="354" class="small">triggers</text>
-  <path class="line" d="M260 470 C450 470 520 430 650 400"/>
-  <text x="445" y="455" class="small">HTTP event</text>
+  <path class="line" d="M570 545 H610 V425 H650"/>
+  <text x="585" y="530" class="small">registers</text>
+  <path class="line" d="M650 220 H600 V405 H170 V430"/>
+  <text x="505" y="425" text-anchor="middle" class="small">triggers alert</text>
+  <path class="line" d="M260 470 H610 V378 H650"/>
+  <text x="435" y="458" text-anchor="middle" class="small">HTTP event</text>
   <path class="line" d="M760 550 V610"/>
 </svg>
