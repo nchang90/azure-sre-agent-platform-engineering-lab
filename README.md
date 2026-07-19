@@ -20,10 +20,11 @@ See [docs/quickstart.md](docs/quickstart.md) for step-by-step provisioning instr
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 - Trigger: daily schedule and manual run.
 - Inputs: `environment` (`demo`/`sbox`), `plan`, `apply`.
-- Secret required: `AZURE_CREDENTIALS`.
+- OIDC secrets required: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
 
 Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.yml)
 - Trigger: daily schedule and manual run.
+- Uses the same OIDC secrets as deploy.
 
 ## Scenarios
 
