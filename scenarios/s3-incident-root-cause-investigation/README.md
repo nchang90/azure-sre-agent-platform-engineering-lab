@@ -6,26 +6,9 @@ Persona: Platform SRE / On-call
 
 A new deployment hits AKS and 5xx/latency spike. Some pods crashloop, nodes show pressure. Azure Monitor fires; the Azure SRE Agent triages evidence, restarts pods, drains bad nodes if needed, scales where appropriate, and rolls back to a known-good revision (or reverts the last GitOps commit). Incident is auto-created with timeline and evidence.
 
-```mermaid
-flowchart LR
-  pr[GitHub PR / merge] --> deploy[Deployment workflow]
-  deploy --> aks[AKS orders-api]
-  aks --> alert[Azure Monitor alert]
-  alert --> actionGroup[Action Group]
-  actionGroup --> httpTrigger[SRE Agent HTTP trigger]
-  httpTrigger --> orchestrator[incident-orchestrator]
-  orchestrator --> remediator[aks-remediator]
-  remediator --> evidence[Collect KQL, pod logs, events, rollout history]
-  evidence --> decision{Regression confirmed?}
-  decision -- no --> record[Record incident summary]
-  decision -- yes --> fix[Restart, drain, scale, or rollback]
-  fix --> verify[Verify service health]
-  verify --> issue[Link GitHub PR / workflow / follow-up issue]
-  issue --> record
-```
-
 ## Architecture (high level)
 
+<img src="../../docs/images/s3-aks-infrastructure.svg" alt="S3 AKS infrastructure diagram" width="700" />
 - AKS workload: `orders-api` or a similar demo service
 - Observability: Azure Monitor, Log Analytics, Application Insights
 - Trigger path: GitHub repo change → deployment → Azure Monitor alert → Action Group → agent HTTP trigger
