@@ -149,8 +149,6 @@ variable "aks_subnet_cidr" {
   default     = "10.50.1.0/24"
 }
 
-# ── Identity ──
-
 variable "existing_managed_identity_id" {
   description = "Resource ID of an existing UAMI. If provided, skips creating a new one."
   type        = string
