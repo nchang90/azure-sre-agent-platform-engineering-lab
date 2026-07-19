@@ -10,6 +10,8 @@ The outcome is a repeatable incident monitoring pattern: health checks detect se
 
 <img src="../../docs/images/s4-alert-response-infrastructure.svg" alt="S4 alert response infrastructure diagram" width="700" />
 
+<img src="../../docs/images/s4-alert-response-infrastructure.svg" alt="S4 alert response infrastructure diagram" width="700" />
+
 ## Azure SRE Agent Concepts
 
 | Concept | What you see in this scenario |
