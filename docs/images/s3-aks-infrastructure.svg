@@ -70,8 +70,8 @@
   <text x="595" y="193" text-anchor="middle" class="small">emits</text>
   <path class="line" d="M745 240 V330"/>
   <text x="785" y="287" class="small">connector</text>
-  <path class="line" d="M965 240 C925 290 880 315 815 330"/>
-  <text x="930" y="290" class="small">telemetry</text>
+  <path class="line" d="M965 240 V285 H815 V330"/>
+  <text x="890" y="277" class="small">telemetry</text>
   <path class="line" d="M760 425 V470"/>
   <path class="line" d="M870 380 H900"/>
   <path class="line" d="M570 545 H610 V425 H650"/>
