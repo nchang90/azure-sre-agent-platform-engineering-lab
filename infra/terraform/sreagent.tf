@@ -15,39 +15,36 @@ resource "azapi_resource" "sre_agent" {
   }
 
   body = {
-    properties = merge(
-      {
-        knowledgeGraphConfiguration = {
-          identity         = local.effective_identity_id
-          managedResources = [for rg in var.target_resource_groups : "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${rg}"]
+    properties = {
+      knowledgeGraphConfiguration = {
+        identity         = local.effective_identity_id
+        managedResources = [for rg in var.target_resource_groups : "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${rg}"]
+      }
+      actionConfiguration = {
+        accessLevel = var.access_level
+        identity    = local.effective_identity_id
+        mode        = var.action_mode
+      }
+      logConfiguration = {
+        applicationInsightsConfiguration = {
+          appId            = local.effective_ai_app_id
+          connectionString = local.effective_ai_conn_str
         }
-        actionConfiguration = {
-          accessLevel = var.access_level
-          identity    = local.effective_identity_id
-          mode        = var.action_mode
-        }
-        logConfiguration = {
-          applicationInsightsConfiguration = {
-            appId            = local.effective_ai_app_id
-            connectionString = local.effective_ai_conn_str
-          }
-        }
-        upgradeChannel        = var.upgrade_channel
-        monthlyAgentUnitLimit = var.monthly_agent_unit_limit
-        defaultModel = {
-          provider = var.default_model_provider
-          name     = var.default_model_name
-        }
-        experimentalSettings = {
-          EnableWorkspaceTools = true
-          EnableHttpTriggers   = true
-          EnableV2AgentLoop    = true
-          EnableDevOpsTools    = true
-          EnablePythonTools    = true
-        }
-      },
-      local.network_config
-    )
+      }
+      upgradeChannel        = var.upgrade_channel
+      monthlyAgentUnitLimit = var.monthly_agent_unit_limit
+      defaultModel = {
+        provider = var.default_model_provider
+        name     = var.default_model_name
+      }
+      experimentalSettings = {
+        EnableWorkspaceTools = true
+        EnableHttpTriggers   = true
+        EnableV2AgentLoop    = true
+        EnableDevOpsTools    = true
+        EnablePythonTools    = true
+      }
+    }
   }
 
   # self_smi_reader / self_smi_log_reader are intentionally NOT listed here:
