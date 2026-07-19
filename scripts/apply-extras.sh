@@ -30,6 +30,7 @@ AGENT_ENDPOINT=""
 TOKEN=""
 CUSTOM_INSTRUCTIONS_FILE=""
 
+# shellcheck source=scripts/catalog.sh
 source "$SCRIPT_DIR/catalog.sh"
 
 usage() {
