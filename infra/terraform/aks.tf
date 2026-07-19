@@ -26,6 +26,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
     identity_ids = [azurerm_user_assigned_identity.aks[0].id]
   }
 
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+  }
+
   default_node_pool {
     name                         = "sys"
     vm_size                      = var.aks_node_vm_size
