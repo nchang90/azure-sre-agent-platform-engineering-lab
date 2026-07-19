@@ -33,10 +33,26 @@ locals {
     }
   }
 
+  service_now_connector = {
+    name = "servicenow"
+    properties = {
+      dataConnectorType = "ServiceNow"
+      dataSource        = "servicenow"
+      connectionUrl     = var.service_now_instance
+      connectionKey = jsonencode({
+        endpoint = var.service_now_instance
+        username = var.service_now_username
+        password = var.service_now_password
+      })
+      identity = "system"
+    }
+  }
+
   toggle_connectors = [
     for connector in [
       var.enable_app_insights_connector ? local.app_insights_connector : null,
       var.enable_log_analytics_connector ? local.log_analytics_connector : null,
+      var.enable_service_now_connector ? local.service_now_connector : null,
     ] : connector if connector != null
   ]
 
