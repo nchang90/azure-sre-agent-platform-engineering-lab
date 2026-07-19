@@ -27,6 +27,8 @@ Azure Monitor alert → ServiceNow incident platform → Azure SRE Agent respons
 
 S3 uses AKS telemetry as the production signal and ServiceNow as the incident platform. Azure Monitor alerts on pod and node health, ServiceNow owns the incident lifecycle, and GitHub is only supporting context if the investigation needs to correlate the outage with a recent deployment. ServiceNow is still opt-in at the environment level so other scenarios do not have to use it.
 
+ServiceNow incident-platform configuration means the Azure SRE Agent can process ServiceNow incidents and apply the `snow-aks-incidents` response plan. It does not, by itself, make Azure Monitor create ServiceNow incidents. An alert-to-ServiceNow bridge is still required for production alert ingestion. In this lab, the deploy workflow creates a ServiceNow incident when the AKS `orders-api` rollout fails; Azure Monitor alert ingestion can be added through a ServiceNow Azure Monitor integration, ITSM connector, or webhook bridge.
+
 | Event source | Purpose | Configuration |
 |---|---|---|
 | AKS pod crash loop alert | Fires when pods enter CrashLoopBackOff, image pull failure, or container error states | Created by Terraform with S3 alert resources in `infra/terraform/alerts.tf` |
