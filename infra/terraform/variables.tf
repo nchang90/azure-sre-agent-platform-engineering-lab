@@ -101,8 +101,6 @@ variable "acr_sku" {
   default     = "Basic"
 }
 
-# ── AKS ──
-
 variable "aks_node_vm_size" {
   description = "VM size for the AKS system node pool."
   type        = string
@@ -227,6 +225,32 @@ variable "enable_azure_monitor_connector" {
   description = "Enable an Azure Monitor connector (subscription-scoped alerts)."
   type        = bool
   default     = false
+}
+
+variable "enable_service_now_connector" {
+  description = "Enable a ServiceNow connector for incident platform integration."
+  type        = bool
+  default     = false
+}
+
+variable "service_now_instance" {
+  description = "ServiceNow instance URL, for example https://example.service-now.com."
+  type        = string
+  default     = ""
+}
+
+variable "service_now_username" {
+  description = "ServiceNow username used by the connector."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "service_now_password" {
+  description = "ServiceNow password used by the connector."
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 
 variable "azure_monitor_lookback_days" {

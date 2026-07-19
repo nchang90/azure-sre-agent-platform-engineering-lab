@@ -27,6 +27,8 @@ concurrency:
 jobs:
   destroy:
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
 
     steps:
       - name: Validate confirmation input

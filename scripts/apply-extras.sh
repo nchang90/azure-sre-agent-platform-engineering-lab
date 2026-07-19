@@ -20,6 +20,7 @@ PYTHON="${PYTHON:-python3}"
 ENVIRONMENT=""
 SCENARIO=""
 DEPLOY_APPS="true"
+ENABLE_SERVICE_NOW_CONNECTOR="false"
 TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
@@ -43,6 +44,7 @@ ALL_RESPONSE_PLAN_NAMES=(
   orders-api-health-response
   orders-api-errors
   orders-api-latency
+  snow-all-incidents
 )
 
 ALL_KB_NAMES=(
@@ -86,6 +88,7 @@ The selected tfvars file scopes the catalog:
   tags.scenario = s2   -> autonomous remediation extras
   tags.scenario = s4   -> alert response issue-triage extras
   tags.scenario = s5   -> PIM elevation audit extras
+  enable_service_now_connector = true -> ServiceNow incident platform
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -141,8 +144,11 @@ configure_environment() {
   ' "$TFVARS_FILE")"
   DEPLOY_APPS="$(awk -F= '/^[[:space:]]*deploy_apps[[:space:]]*=/{gsub(/[ "]/, "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
   DEPLOY_APPS="${DEPLOY_APPS:-true}"
+  ENABLE_SERVICE_NOW_CONNECTOR="$(awk -F= '/^[[:space:]]*enable_service_now_connector[[:space:]]*=/{gsub(/[ "]/ , "", $2); print tolower($2); exit}' "$TFVARS_FILE")"
+  ENABLE_SERVICE_NOW_CONNECTOR="${ENABLE_SERVICE_NOW_CONNECTOR:-false}"
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
   log "Detected runtime scope: $( [[ "$DEPLOY_APPS" == "true" ]] && echo "Container Apps" || echo "AKS" )"
+  log "Detected incident platform: $( [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]] && echo "ServiceNow" || echo "AzMonitor" )"
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
 }
 
@@ -155,6 +161,11 @@ configure_catalog_scope() {
   case "$DEPLOY_APPS" in
     true|false) ;;
     *) die "Unsupported deploy_apps value '$DEPLOY_APPS' in $TFVARS_FILE. Expected true or false." ;;
+  esac
+
+  case "$ENABLE_SERVICE_NOW_CONNECTOR" in
+    true|false) ;;
+    *) die "Unsupported enable_service_now_connector value '$ENABLE_SERVICE_NOW_CONNECTOR' in $TFVARS_FILE. Expected true or false." ;;
   esac
 
   case "$SCENARIO" in
@@ -343,19 +354,27 @@ register_response_plan_file() {
 
 configure_incident_platform() {
   local patch_file="$TMP_DIR/incident-platform.json"
+  local platform_type="AzMonitor"
+  local connection_name="azmonitor"
 
-  log "Configuring incident platform: AzMonitor"
-  jq -n '{properties:{incidentManagementConfiguration:{type:"AzMonitor", connectionName:"azmonitor"}}}' >"$patch_file"
+  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+    platform_type="ServiceNow"
+    connection_name="servicenow"
+  fi
+
+  log "Configuring incident platform: $platform_type"
+  jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
+    '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
 
   if az rest --method PATCH \
     --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
     --headers "Content-Type=application/json" \
     --body @"$patch_file" \
     --output none 2>/dev/null; then
-    ok "  Incident platform: AzMonitor"
+    ok "  Incident platform: $platform_type"
     sleep 30
   else
-    warn "  Could not configure incident platform: AzMonitor"
+    warn "  Could not configure incident platform: $platform_type"
   fi
 }
 
@@ -423,10 +442,14 @@ cleanup_out_of_scope_subagents() {
 
 create_response_plans() {
   log "Step 4/4: Creating response plans..."
-  local plan
+  local plan incident_platform_dir="azure-monitor"
+
+  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+    incident_platform_dir="servicenow"
+  fi
 
   for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
-    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/azure-monitor/incident-filters/${plan}.yaml"
+    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/${incident_platform_dir}/incident-filters/${plan}.yaml"
   done
   echo
 }

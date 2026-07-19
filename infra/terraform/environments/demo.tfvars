@@ -33,15 +33,16 @@ aks_max_count = 3
 
 deploy_sre_agent = true
 
-# S3 does not require agent VNet egress; the 2025-05-01-preview agent API rejects networkConfiguration.
 enable_vnet = false
 
-# S3 AKS incident investigation: skip the optional Container Apps stack.
 deploy_apps = false
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
 
-# Recipe automations (azmon-lawappinsights) enabled for the demo environment.
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true
+
+enable_service_now_connector = true
+service_now_instance         = "https://dev411761.service-now.com"
+service_now_username         = "admin"

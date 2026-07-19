@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
+      TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
 
     steps:
       - name: Checkout repository
