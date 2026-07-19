@@ -145,7 +145,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
   display_name            = "AKS pod crash loop detected"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
@@ -190,7 +190,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
   display_name            = "AKS pods not ready"
   severity                = 2
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
