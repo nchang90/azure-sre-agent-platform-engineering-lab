@@ -60,3 +60,16 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   tags = var.tags
 }
+
+resource "azurerm_kubernetes_cluster_node_pool" "user" {
+  count                 = local.aks_enabled ? 1 : 0
+  name                  = "user"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks[0].id
+  vm_size               = var.aks_user_node_vm_size
+  mode                  = "User"
+  auto_scaling_enabled  = true
+  min_count             = var.aks_user_min_count
+  max_count             = var.aks_user_max_count
+  vnet_subnet_id        = azurerm_subnet.aks[0].id
+  tags                  = var.tags
+}

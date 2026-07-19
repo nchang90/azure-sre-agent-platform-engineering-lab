@@ -14,10 +14,8 @@ spec:
       labels:
         app: orders-api
     spec:
-      tolerations:
-        - key: CriticalAddonsOnly
-          operator: Exists
-          effect: NoSchedule
+      nodeSelector:
+        kubernetes.azure.com/mode: user
       containers:
         - name: orders-api
           image: mcr.microsoft.com/azuredocs/aks-helloworld:v1
