@@ -80,7 +80,7 @@ steps:
 
 - Kubernetes Ops: rollout restart/undo, get events, node drain
 - Azure CLI Ops: AKS nodepool scale
-- Observability: KQL against Log Analytics + App Insights for error/latency
+- Observability: KQL against Log Analytics + App Insights for error/latency. For AKS, prefer `KubePodInventory`, `KubeEvents`, `InsightsMetrics`, and `ContainerLogV2`; fall back to legacy `ContainerLog` when `ContainerLogV2` is not enabled.
 - GitOps (optional): Flux/Argo rollback or commit revert
 - GitHub repo context: PR, commit SHA, workflow run, deployment event, and follow-up issue link
 

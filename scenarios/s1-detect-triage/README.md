@@ -34,7 +34,7 @@ A developer ships a release straight to production with no change request and no
 |---------|-------------------------------|
 | **Incident Response Plan** | Routes the `Orders API 5xx` alert to `orchestrator-agent` automatically |
 | **Subagents** | `orchestrator-agent` normalizes the alert into an `IncidentContext` and delegates to `triage-agent` |
-| **Log Analytics connector** | `triage-agent` queries `ContainerAppConsoleLogs_CL` via `QueryLogAnalyticsByWorkspaceId` |
+| **Log Analytics connector** | `triage-agent` queries `ContainerAppConsoleLogs_CL` when present, plus `AppTraces` and `ContainerAppSystemLogs_CL`, via `QueryLogAnalyticsByWorkspaceId` |
 | **Azure Monitor metrics** | Agent correlates 5xx spike with CPU, memory, latency, and deployment timeline |
 | **Knowledge base** | Agent searches uploaded runbooks and matches the _Unauthorized Change_ guidance |
 | **Source code search** | Agent identifies the offending file and line number and proposes a targeted fix |
