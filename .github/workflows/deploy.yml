@@ -95,6 +95,10 @@ jobs:
             kubectl get pods --namespace default -l app=orders-api -o wide
             kubectl describe deployment/orders-api --namespace default
             kubectl describe pods --namespace default -l app=orders-api
+            bash scripts/create-servicenow-incident.sh \
+              "${ENVIRONMENT}" \
+              "AKS orders-api rollout failed in ${ENVIRONMENT}" \
+              "The GitHub Actions deployment connected to AKS cluster ${AKS_NAME} in resource group ${RG}, applied infra/k8s/orders-api.yaml, and deployment/orders-api did not become available within 180 seconds. Review the workflow pod describe output for scheduling, image pull, quota, or readiness details."
             exit 1
           fi
 
