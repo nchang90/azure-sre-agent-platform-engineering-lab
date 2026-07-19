@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">S3 AKS Infrastructure</title>
+  <desc id="desc">Infrastructure diagram for the S3 AKS incident root cause investigation scenario.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e1e1e"/>
+    </marker>
+    <style>
+      text { font-family: Inter, Arial, sans-serif; fill: #1e1e1e; }
+      .title { font-size: 30px; font-weight: 700; }
+      .label { font-size: 16px; font-weight: 600; }
+      .small { font-size: 14px; fill: #555; }
+      .box { stroke-width: 2; rx: 14; ry: 14; }
+      .line { stroke: #1e1e1e; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="760" fill="#fff"/>
+  <text x="410" y="45" class="title">S3 AKS Infrastructure</text>
+  <rect x="40" y="80" width="1040" height="620" rx="18" fill="#dbe4ff" stroke="#4a9eed" opacity=".45"/>
+  <text x="70" y="115" class="label" fill="#4a9eed">Azure Resource Group: rg-sre-lab-demo</text>
+
+  <rect class="box" x="70" y="170" width="170" height="80" fill="#a5d8ff" stroke="#4a9eed"/>
+  <text x="155" y="202" text-anchor="middle" class="label">GitHub repo</text>
+  <text x="155" y="224" text-anchor="middle" class="label">+ deploy workflow</text>
+
+  <rect class="box" x="330" y="170" width="210" height="90" fill="#ffd8a8" stroke="#f59e0b"/>
+  <text x="435" y="205" text-anchor="middle" class="label">AKS cluster</text>
+  <text x="435" y="228" text-anchor="middle" class="label">orders-api workload</text>
+
+  <rect class="box" x="310" y="300" width="250" height="90" fill="#c3fae8" stroke="#06b6d4"/>
+  <text x="435" y="335" text-anchor="middle" class="label">AKS VNet + subnet</text>
+  <text x="435" y="358" text-anchor="middle" class="label">UAMI Network Contributor</text>
+
+  <rect class="box" x="650" y="160" width="190" height="80" fill="#eebefa" stroke="#ec4899"/>
+  <text x="745" y="192" text-anchor="middle" class="label">Log Analytics</text>
+  <text x="745" y="214" text-anchor="middle" class="label">AKS logs + metrics</text>
+
+  <rect class="box" x="880" y="160" width="170" height="80" fill="#eebefa" stroke="#ec4899"/>
+  <text x="965" y="192" text-anchor="middle" class="label">App Insights</text>
+  <text x="965" y="214" text-anchor="middle" class="label">agent telemetry</text>
+
+  <rect class="box" x="650" y="330" width="220" height="95" fill="#d0bfff" stroke="#8b5cf6"/>
+  <text x="760" y="368" text-anchor="middle" class="label">Azure SRE Agent</text>
+  <text x="760" y="391" text-anchor="middle" class="label">HTTP triggers + tools</text>
+
+  <rect class="box" x="650" y="470" width="220" height="80" fill="#c3fae8" stroke="#06b6d4"/>
+  <text x="760" y="502" text-anchor="middle" class="label">Agent delegated VNet</text>
+  <text x="760" y="524" text-anchor="middle" class="label">Azure service egress</text>
+
+  <rect class="box" x="900" y="340" width="160" height="80" fill="#fff3bf" stroke="#f59e0b"/>
+  <text x="980" y="365" text-anchor="middle" class="label">RBAC</text>
+  <text x="980" y="386" text-anchor="middle" class="small">Reader + Log Reader</text>
+  <text x="980" y="405" text-anchor="middle" class="small">Admin grants</text>
+
+  <rect class="box" x="380" y="500" width="190" height="90" fill="#d0bfff" stroke="#8b5cf6"/>
+  <text x="475" y="526" text-anchor="middle" class="label">apply-extras.sh</text>
+  <text x="475" y="548" text-anchor="middle" class="label">S3 skills +</text>
+  <text x="475" y="570" text-anchor="middle" class="label">aks-remediator</text>
+
+  <rect class="box" x="80" y="430" width="180" height="80" fill="#ffc9c9" stroke="#ef4444"/>
+  <text x="170" y="462" text-anchor="middle" class="label">Azure Monitor alert</text>
+  <text x="170" y="484" text-anchor="middle" class="label">AKS regression</text>
+
+  <rect class="box" x="620" y="610" width="300" height="65" fill="#b2f2bb" stroke="#22c55e"/>
+  <text x="770" y="636" text-anchor="middle" class="label">Incident RCA: evidence, remediation</text>
+  <text x="770" y="658" text-anchor="middle" class="label">decision, GitHub follow-up</text>
+
+  <path class="line" d="M240 210 H330"/>
+  <text x="280" y="198" text-anchor="middle" class="small">deploys</text>
+  <path class="line" d="M435 260 V300"/>
+  <path class="line" d="M540 205 H650"/>
+  <text x="595" y="193" text-anchor="middle" class="small">emits</text>
+  <path class="line" d="M745 240 V330"/>
+  <text x="785" y="287" class="small">connector</text>
+  <path class="line" d="M965 240 C925 290 880 315 815 330"/>
+  <text x="930" y="290" class="small">telemetry</text>
+  <path class="line" d="M760 425 V470"/>
+  <path class="line" d="M870 380 H900"/>
+  <path class="line" d="M570 545 C610 485 625 455 650 425"/>
+  <text x="600" y="488" class="small">registers</text>
+  <path class="line" d="M540 250 C420 360 360 420 260 430"/>
+  <text x="395" y="354" class="small">triggers</text>
+  <path class="line" d="M260 470 C450 470 520 430 650 400"/>
+  <text x="445" y="455" class="small">HTTP event</text>
+  <path class="line" d="M760 550 V610"/>
+</svg>
