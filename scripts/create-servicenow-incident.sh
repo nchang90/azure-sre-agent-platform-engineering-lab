@@ -51,9 +51,11 @@ body="$(jq -n \
   '{
     short_description: $short_description,
     description: $description,
+    work_notes: $description,
     category: "inquiry",
     subcategory: "monitoring",
     contact_type: "monitoring",
+    priority: "2",
     impact: "2",
     urgency: "2"
   }')"
@@ -72,6 +74,7 @@ sys_id="$(jq -r '.result.sys_id // empty' <<<"$response")"
 
 if [[ -n "$number" ]]; then
   log "Created ServiceNow incident: $number ($sys_id)"
+  log "ServiceNow incident URL: ${instance%/}/nav_to.do?uri=incident.do?sys_id=${sys_id}"
 else
   warn "ServiceNow incident response did not include an incident number."
 fi

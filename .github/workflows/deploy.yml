@@ -18,6 +18,10 @@ on:
         description: "Run Terraform apply"
         type: boolean
         default: true
+      simulate_aks_incident:
+        description: "Deploy a broken AKS pod and create a ServiceNow incident"
+        type: boolean
+        default: false
 
   schedule:
     - cron: "0 10 * * *"
@@ -67,6 +71,10 @@ jobs:
       - name: Terraform apply
         run: terraform -chdir=infra/terraform apply -auto-approve tfplan
 
+      - name: Apply recipe extras
+        shell: bash
+        run: bash scripts/apply-extras.sh "${ENVIRONMENT}"
+
       - name: Deploy AKS workload
         shell: bash
         run: |
@@ -100,6 +108,25 @@ jobs:
               "AKS orders-api rollout failed in ${ENVIRONMENT}" \
               "The GitHub Actions deployment connected to AKS cluster ${AKS_NAME} in resource group ${RG}, applied infra/k8s/orders-api.yaml, and deployment/orders-api did not become available within 180 seconds. Review the workflow pod describe output for scheduling, image pull, quota, or readiness details."
             exit 1
+          fi
+
+          if [[ "${{ inputs.simulate_aks_incident || false }}" == "true" ]]; then
+            echo "Simulating AKS incident with broken orders-api image..."
+            kubectl apply -f infra/k8s/orders-api-broken.yaml
+
+            if kubectl rollout status deployment/orders-api --namespace default --timeout=120s; then
+              echo "Broken AKS incident simulation unexpectedly rolled out successfully."
+              exit 1
+            fi
+
+            kubectl get pods --namespace default -l app=orders-api -o wide
+            kubectl describe deployment/orders-api --namespace default
+            kubectl describe pods --namespace default -l app=orders-api
+
+            bash scripts/create-servicenow-incident.sh \
+              "${ENVIRONMENT}" \
+              "AKS orders-api broken pod in ${ENVIRONMENT}" \
+              "The GitHub Actions deployment intentionally applied infra/k8s/orders-api-broken.yaml to AKS cluster ${AKS_NAME} in resource group ${RG}. The orders-api deployment did not roll out because the pod image is intentionally broken. This incident has priority 2 and title contains AKS, so it should match the snow-aks-incidents response plan and appear on the Azure SRE Agent incidents page after ServiceNow ingestion."
           fi
 
       - name: Build and update Container Apps
@@ -141,7 +168,3 @@ jobs:
             --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
             --output none
 
-      - name: Apply recipe extras
-        shell: bash
-        run: bash scripts/apply-extras.sh "${ENVIRONMENT}"
-        continue-on-error: true

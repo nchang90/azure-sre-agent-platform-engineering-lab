@@ -116,6 +116,28 @@ Merge or deploy a bad GitHub repo change, or introduce an AKS workload failure s
 Azure Monitor alert fires → ServiceNow incident is created → `snow-aks-incidents` routes to `aks-remediator`.
 Agent gathers evidence, restarts pods, drains nodes if needed, and either stabilizes or rolls back.
 
+For the explicit ServiceNow-to-SRE-Agent lab path, run the `Deploy SRE Agent Lab` workflow with:
+
+- `environment`: `demo`
+- `apply`: `true`
+- `simulate_aks_incident`: `true`
+
+The workflow performs this sequence:
+
+```text
+Terraform apply
+-> apply SRE Agent recipe extras
+-> configure ServiceNow as the incident platform
+-> register snow-aks-incidents response plan
+-> deploy healthy orders-api to AKS
+-> apply infra/k8s/orders-api-broken.yaml
+-> create a priority 2 ServiceNow incident titled "AKS orders-api broken pod in demo"
+-> Azure SRE Agent reads the ServiceNow incident
+-> snow-aks-incidents matches title contains AKS and priority 2
+-> aks-remediator investigates and writes updates/work notes back to ServiceNow
+-> incident appears in the Azure SRE Agent incidents page
+```
+
 Use an AKS-only tfvars file for the demo path:
 
 ```bash
