@@ -72,14 +72,19 @@ az monitor metrics list --resource "/subscriptions/<subId>/resourceGroups/rg-sre
 
 ### 1.5 Memory Pressure Indicators
 ```kql
-ContainerAppConsoleLogs_CL
-| where TimeGenerated > ago(1h)
-| where Log_s contains "OutOfMemory" 
-    or Log_s contains "OOM" 
-    or Log_s contains "memory pressure"
-    or Log_s contains "GC"
-    or Log_s contains "heap"
-| project TimeGenerated, Log_s, ContainerName_s
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", Message = Log_s, AppName = ContainerAppName_s),
+    (AppTraces
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "AppTraces", Message, AppName = AppRoleName)
+| where Message contains "OutOfMemory"
+    or Message contains "OOM"
+    or Message contains "memory pressure"
+    or Message contains "GC"
+    or Message contains "heap"
+| project TimeGenerated, Source, AppName, Message
 | order by TimeGenerated desc
 ```
 
@@ -132,10 +137,15 @@ az containerapp logs show -g rg-sre-lab -n orders-api --revision orders-api--000
 
 ### 2.3 Quick Error Count (KQL)
 ```kql
-ContainerAppConsoleLogs_CL
-| where TimeGenerated > ago(1h)
-| where Log_s contains "error" or Log_s contains "exception" or Log_s contains "500"
-| summarize ErrorCount = count() by bin(TimeGenerated, 5m)
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", Message = Log_s),
+    (AppTraces
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "AppTraces", Message)
+| where Message contains "error" or Message contains "exception" or Message contains "500"
+| summarize ErrorCount = count() by Source, bin(TimeGenerated, 5m)
 | order by TimeGenerated desc
 ```
 
@@ -145,14 +155,19 @@ ContainerAppConsoleLogs_CL
 
 ### 3.1 Top Errors by Message
 ```kql
-ContainerAppConsoleLogs_CL
-| where TimeGenerated > ago(1h)
-| where Log_s contains "error" or Log_s contains "exception"
-| extend ErrorMessage = extract("(Exception|Error|Failed|Fault).*", 0, Log_s)
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", Message = Log_s),
+    (AppTraces
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "AppTraces", Message)
+| where Message contains "error" or Message contains "exception"
+| extend ErrorMessage = extract("(Exception|Error|Failed|Fault).*", 0, Message)
 | summarize Count = count(), 
     FirstSeen = min(TimeGenerated), 
     LastSeen = max(TimeGenerated)
-by ErrorMessage
+by Source, ErrorMessage
 | order by Count desc
 | take 10
 ```
@@ -276,10 +291,15 @@ ContainerAppSystemLogs_CL
 
 ### 6.2 Resource Exhaustion (OOM)
 ```kql
-ContainerAppConsoleLogs_CL
-| where TimeGenerated > ago(1h)
-| where Log_s contains "OutOfMemory" or Log_s contains "OOM" or Log_s contains "memory"
-| project TimeGenerated, Log_s, ContainerName_s
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", Message = Log_s, AppName = ContainerAppName_s),
+    (AppTraces
+    | where TimeGenerated > ago(1h)
+    | project TimeGenerated, Source = "AppTraces", Message, AppName = AppRoleName)
+| where Message contains "OutOfMemory" or Message contains "OOM" or Message contains "memory"
+| project TimeGenerated, Source, AppName, Message
 | order by TimeGenerated desc
 ```
 
@@ -304,10 +324,15 @@ ContainerAppSystemLogs_CL
 ### 7.2 Errors After Deployment (Timeline)
 ```kql
 let deployTime = datetime(2025-12-19T10:00:00Z);  // Replace with actual deploy time
-ContainerAppConsoleLogs_CL
-| where TimeGenerated between (deployTime .. (deployTime + 2h))
-| where Log_s contains "error" or Log_s contains "exception"
-| summarize ErrorCount = count() by bin(TimeGenerated, 5m)
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | where TimeGenerated between (deployTime .. (deployTime + 2h))
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", Message = Log_s),
+    (AppTraces
+    | where TimeGenerated between (deployTime .. (deployTime + 2h))
+    | project TimeGenerated, Source = "AppTraces", Message)
+| where Message contains "error" or Message contains "exception"
+| summarize ErrorCount = count() by Source, bin(TimeGenerated, 5m)
 | order by TimeGenerated asc
 ```
 

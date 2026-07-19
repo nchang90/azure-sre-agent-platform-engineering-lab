@@ -24,7 +24,7 @@ new revision is allowed to ship.
 | **change-lookup** | Azure Container Apps | Platform team | ServiceNow CR proxy used by the SRE Agent |
 | **Container Environment** | Container Apps Environment | Platform team | Shared by all product apps |
 | **Registry** | Azure Container Registry | Platform team | All images for the platform |
-| **Logs** | Log Analytics Workspace | Platform team | `ContainerAppConsoleLogs_CL` |
+| **Logs** | Log Analytics Workspace | Platform team | Container Apps console logs when `ContainerAppConsoleLogs_CL` is enabled, `AppTraces` for app traces, and `ContainerAppSystemLogs_CL` for platform events |
 | **Telemetry** | Application Insights | Platform team | Shared APM endpoint |
 | **Identity** | User-Assigned Managed Identity | Platform team | Reader + Monitoring Reader + Log Analytics Reader on the platform RG |
 | **Alerts** | Azure Monitor | Platform team | Wired to the SRE Agent's Alert Handlers |
@@ -118,11 +118,15 @@ curl -X POST "$APP_URL/api/simulate/clear-cr"
 ### Log Analytics query
 
 ```kql
-ContainerAppConsoleLogs_CL
+union isfuzzy=true
+    (ContainerAppConsoleLogs_CL
+    | project TimeGenerated, Source = "ContainerAppConsoleLogs_CL", AppName = ContainerAppName_s, Message = Log_s),
+    (AppTraces
+    | project TimeGenerated, Source = "AppTraces", AppName = AppRoleName, Message)
 | where TimeGenerated > ago(1h)
-| where ContainerAppName_s == "orders-api"
-| where Log_s contains "error" or Log_s contains "500" or Log_s contains "failed"
-| summarize ErrorCount = count() by bin(TimeGenerated, 5m)
+| where AppName == "orders-api"
+| where Message contains "error" or Message contains "500" or Message contains "failed"
+| summarize ErrorCount = count() by Source, bin(TimeGenerated, 5m)
 | order by TimeGenerated desc
 ```
 
@@ -145,6 +149,6 @@ When either alert fires, the SRE Agent should:
 
 1. Check health: `curl https://<app-url>/health` — note `activeChangeRequest`
 2. Check simulated failure mode: POST `/api/simulate/failure-rate/{percent}`
-3. Query `ContainerAppConsoleLogs_CL` for orders errors
+3. Query `ContainerAppConsoleLogs_CL` when present, `AppTraces` for orders app errors, and `ContainerAppSystemLogs_CL` for platform events
 4. Check the active CR: `curl https://<change-lookup-url>/changes/active/now`
 5. Roll back revision: `az containerapp update -g <rg> -n orders-api --revision-suffix prev`
