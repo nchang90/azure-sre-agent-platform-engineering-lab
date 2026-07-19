@@ -1,23 +1,33 @@
 # Deployment Plan
 
-**Status:** Ready for Validation
+**Status:** Validated
 
 ## 1. Change
 
-Update `infra/terraform/alerts.tf` so the `orders-api` health, error, and latency alerts use a 1-minute window.
+Enable richer `orders-api` runtime logging for the S1/S2 Container Apps scenarios:
+
+- Emit explicit Information-level console logs from `src/orders-api/Program.cs` for requests, health checks, order operations, forced failures, and simulation state changes.
+- Add Terraform Container App environment variables so deployed `orders-api` keeps default/simple console logging at `Information`.
+- Keep runbook and skill KQL resilient by querying `ContainerAppConsoleLogs_CL` when present and `AppTraces` as fallback.
+- Add AKS/S3-specific table guidance so AKS scenarios use Kubernetes log tables instead of Container Apps tables.
 
 ## 2. Validation
 
-- Run `terraform validate`
-- Run `terraform plan` for the demo backend
-- Confirm the alert rule definitions match the 1-minute window
+- Build `orders-api`.
+- Validate Terraform.
+- Plan Terraform against the `sbox` environment and confirm the intended `orders-api` update.
+- Avoid applying unrelated SRE Agent/RBAC drift shown by the full plan.
 
 ## 3. Deployment
 
-- Apply the Terraform changes to the demo environment
+- Apply only the targeted `azurerm_container_app.orders_api[0]` Terraform change for `sbox`.
+- Build the updated `orders-api:latest` image in ACR.
+- Update the live `orders-api` Container App to the rebuilt image.
+- Generate health/failure traffic and query logs to confirm runtime telemetry.
 
-## 4. Proof
+## 4. Validation Proof
 
-- `terraform -chdir=infra/terraform validate -no-color` — success
-- `terraform -chdir=infra/terraform plan -var-file=environments/demo.tfvars -no-color -detailed-exitcode` — success; confirmed 1 alert-window update plus unrelated role assignment replacement
-- `terraform -chdir=infra/terraform apply -var-file=environments/demo.tfvars -auto-approve -no-color -target=azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_health -target=azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors -target=azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_latency` — success; no changes needed for the alert resources
+- `dotnet build src/orders-api/OrdersApi.csproj --nologo` — success; 0 warnings, 0 errors.
+- `terraform -chdir=infra/terraform validate -no-color` — success.
+- `terraform -chdir=infra/terraform plan -var-file=environments/sbox.tfvars -no-color -detailed-exitcode` — exit code 2; expected changes detected. Intended change: in-place update to `azurerm_container_app.orders_api[0]` adding `Logging__LogLevel__Default=Information`, `Logging__LogLevel__Microsoft.AspNetCore=Information`, and `Logging__Console__FormatterName=simple`. Unrelated drift also appeared on `azapi_resource.sre_agent[0]` and `azurerm_role_assignment.deployer_admin[0]`; deployment will target only `orders-api`.
+- Azure subscription confirmed by user: `MCT Subscirption` (`1c885bf5-48ba-47ee-9957-bd1c94bcbf61`).
