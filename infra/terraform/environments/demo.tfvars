@@ -27,6 +27,12 @@ reader_principal_ids = [
   "3a168e0b-7a73-4dd0-a4f8-80045502775b"
 ]
 
+aks_min_count = 2
+
+aks_max_count = 3
+
+aks_node_count = 2
+
 deploy_sre_agent = true
 
 # S3 does not require agent VNet egress; the 2025-05-01-preview agent API rejects networkConfiguration.
