@@ -78,9 +78,9 @@
   <path class="line" d="M870 380 H900"/>
   <path class="line" d="M570 545 H610 V425 H650"/>
   <text x="585" y="530" class="small">registers</text>
-  <path class="line" d="M650 220 H600 V405 H170 V430"/>
-  <text x="505" y="425" text-anchor="middle" class="small">triggers alert</text>
+  <path class="line" d="M650 220 H590 V470 H260"/>
+  <text x="430" y="492" text-anchor="middle" class="small">triggers alert</text>
   <path class="line" d="M260 470 H610 V378 H650"/>
-  <text x="435" y="458" text-anchor="middle" class="small">HTTP event</text>
+  <text x="435" y="455" text-anchor="middle" class="small">HTTP event</text>
   <path class="line" d="M760 550 V610"/>
 </svg>
