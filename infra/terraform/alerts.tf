@@ -26,12 +26,12 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "Orders API: /health endpoint unhealthy or missing in the last 1 minute."
+  description             = "Orders API: /health endpoint unhealthy or missing in the last 5 minutes."
   display_name            = "Orders API health check failing"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
-  window_duration         = "PT1M"
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
   scopes                  = [azurerm_log_analytics_workspace.law.id]
@@ -47,7 +47,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
               Log = tostring(column_ifexists("Log_s", ""))),
         (datatable(TimeGenerated:datetime, ContainerAppName:string, Reason:string, Log:string)[]);
       SystemLogs
-      | where TimeGenerated > ago(1m)
+      | where TimeGenerated > ago(5m)
       | where ContainerAppName == "orders-api"
       | where Reason == "ReplicaUnhealthy" or Log has "probe failed"
       | summarize ProbeFailures = count()
@@ -75,12 +75,12 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "Orders API: container errors / back-off (crash loop) detected in the last 1 minute."
+  description             = "Orders API: container errors / back-off (crash loop) detected in the last 5 minutes."
   display_name            = "Orders API container errors"
   severity                = 2
   enabled                 = true
-  evaluation_frequency    = "PT1M"
-  window_duration         = "PT1M"
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
   scopes                  = [azurerm_log_analytics_workspace.law.id]
@@ -96,7 +96,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
               Log = tostring(column_ifexists("Log_s", ""))),
         (datatable(TimeGenerated:datetime, ContainerAppName:string, Reason:string, Log:string)[]);
       SystemLogs
-      | where TimeGenerated > ago(1m)
+      | where TimeGenerated > ago(5m)
       | where ContainerAppName == "orders-api"
       | where Reason in ("ContainerBackOff", "Completed", "BackOff") or Log has_any ("back-off", "crash", "error", "terminated")
       | summarize FailedEvents = count()
