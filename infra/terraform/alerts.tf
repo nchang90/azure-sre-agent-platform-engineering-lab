@@ -38,15 +38,26 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
 
   criteria {
     query = <<-KQL
-      ContainerAppSystemLogs_CL
-      | where ContainerAppName_s == "orders-api"
-      | where Reason_s == "ReplicaUnhealthy" or Log_s has "probe failed"
+      let SystemLogs = union isfuzzy=true
+        (ContainerAppSystemLogs_CL
+          | project
+              TimeGenerated,
+              ContainerAppName = tostring(column_ifexists("ContainerAppName_s", "")),
+              Reason = tostring(column_ifexists("Reason_s", "")),
+              Log = tostring(column_ifexists("Log_s", ""))),
+        (datatable(TimeGenerated:datetime, ContainerAppName:string, Reason:string, Log:string)[]);
+      SystemLogs
+      | where TimeGenerated > ago(1m)
+      | where ContainerAppName == "orders-api"
+      | where Reason == "ReplicaUnhealthy" or Log has "probe failed"
       | summarize ProbeFailures = count()
+      | extend ProbeFailures = coalesce(ProbeFailures, 0)
     KQL
 
     operator                = "GreaterThan"
     threshold               = 0
-    time_aggregation_method = "Count"
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "ProbeFailures"
   }
 
   action {
@@ -76,15 +87,26 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
 
   criteria {
     query = <<-KQL
-      ContainerAppSystemLogs_CL
-      | where ContainerAppName_s == "orders-api"
-      | where Reason_s in ("ContainerBackOff", "Completed", "BackOff") or Log_s has_any ("back-off", "crash", "error", "terminated")
+      let SystemLogs = union isfuzzy=true
+        (ContainerAppSystemLogs_CL
+          | project
+              TimeGenerated,
+              ContainerAppName = tostring(column_ifexists("ContainerAppName_s", "")),
+              Reason = tostring(column_ifexists("Reason_s", "")),
+              Log = tostring(column_ifexists("Log_s", ""))),
+        (datatable(TimeGenerated:datetime, ContainerAppName:string, Reason:string, Log:string)[]);
+      SystemLogs
+      | where TimeGenerated > ago(1m)
+      | where ContainerAppName == "orders-api"
+      | where Reason in ("ContainerBackOff", "Completed", "BackOff") or Log has_any ("back-off", "crash", "error", "terminated")
       | summarize FailedEvents = count()
+      | extend FailedEvents = coalesce(FailedEvents, 0)
     KQL
 
     operator                = "GreaterThan"
     threshold               = 0
-    time_aggregation_method = "Count"
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "FailedEvents"
   }
 
   action {
