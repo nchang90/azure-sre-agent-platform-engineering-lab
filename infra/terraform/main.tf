@@ -20,8 +20,8 @@ locals {
 
   sre_agent_reader_role_id = "a4b156ac-253f-4a1a-9851-96d62b71b047"
   sre_agent_admin_role_id  = "e79298df-d852-4c6d-84f9-5d13249d1e55"
-  apps_enabled             = var.deploy_apps
-  aks_enabled              = !var.deploy_apps
+  apps_enabled             = true
+  aks_enabled              = var.deploy_aks
 }
 
 resource "azurerm_resource_group" "agent" {

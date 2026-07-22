@@ -76,9 +76,9 @@ configure_catalog_scope() {
     return 0
   fi
 
-  case "$DEPLOY_APPS" in
+  case "$DEPLOY_AKS" in
     true|false) ;;
-    *) die "Unsupported deploy_apps value '$DEPLOY_APPS' in $TFVARS_FILE. Expected true or false." ;;
+    *) die "Unsupported deploy_aks value '$DEPLOY_AKS' in $TFVARS_FILE. Expected true or false." ;;
   esac
 
   case "$ENABLE_SERVICE_NOW_CONNECTOR" in
@@ -99,13 +99,13 @@ configure_catalog_scope() {
     all-incidents
   )
 
-  if [[ "$DEPLOY_APPS" == "true" ]]; then
-    log "Including Container Apps incident catalog from deploy_apps=true."
-    SUBAGENT_NAMES+=(
-      triage-agent
-    )
-  else
-    log "Including AKS incident catalog from deploy_apps=false."
+  log "Including Container Apps incident catalog."
+  SUBAGENT_NAMES+=(
+    triage-agent
+  )
+
+  if [[ "$DEPLOY_AKS" == "true" ]]; then
+    log "Including AKS incident catalog from deploy_aks=true."
     SUBAGENT_NAMES+=(
       aks-remediator
     )

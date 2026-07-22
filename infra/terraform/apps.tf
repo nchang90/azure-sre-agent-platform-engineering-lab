@@ -1,5 +1,4 @@
 # Legacy Container Apps stack moved from the root infra directory.
-# This stays gated behind deploy_apps so the SRE-agent-only demo can disable it.
 
 locals {
   acr_name          = "acr${replace(local.suffix, "-", "")}"

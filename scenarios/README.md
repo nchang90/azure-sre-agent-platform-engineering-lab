@@ -15,8 +15,8 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 - Knowledge-base uploads are scoped by scenario; S2 uploads only the 5xx remediation, orders architecture, and incident report documents.
 - Every scenario uses the shared `all-incidents` response plan.
 - The `demo` Terraform environment enables Azure SRE Agent workspace egress through a delegated VNet subnet.
-- `deploy_apps = true` registers Container Apps subagents.
-- `deploy_apps = false` registers AKS subagents.
+- Container Apps subagents are always registered.
+- `deploy_aks = true` registers AKS subagents.
 - `tags.scenario = "s4"` adds the incident monitoring and GitHub issue-triage workflow.
 - `tags.scenario = "s5"` adds the PIM elevation audit subagent.
 
@@ -24,8 +24,8 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 |---|---|---|---|
 | S1 Detect and triage | N/A (uses `azd`/Bicep) | `azd env new s1-demo` then `azd provision` | `azd env get-values` |
 | S2 Autonomous remediation | `environments/sbox.tfvars` | `bash scripts/apply-extras.sh sbox` | Configure GitHub in Azure SRE Agent portal (only if needed) |
-| S3 AKS incident remediation and HTTP trigger | Any tfvars with `deploy_apps = false` | `bash scripts/apply-extras.sh <environment>` | Set `webhook_bridge_trigger_url` to show the Action Group to HTTP trigger path |
+| S3 AKS incident remediation and HTTP trigger | Any tfvars with `deploy_aks = true` | `bash scripts/apply-extras.sh <environment>` | Set `webhook_bridge_trigger_url` to show the Action Group to HTTP trigger path |
 | S4 Alert response and incident operations | `environments/demo.tfvars` | `bash scripts/apply-extras.sh demo` | Configure GitHub or ITSM connectors when creating follow-up records |
 | S5 PIM elevation audit | Any tfvars with `tags.scenario = "s5"` | `bash scripts/apply-extras.sh <environment>` | Configure Entra audit data access |
 
-For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `deploy_apps = true`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, and `enable_sev01_incident_filter = true`.
+For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `deploy_aks = false`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, and `enable_sev01_incident_filter = true`.

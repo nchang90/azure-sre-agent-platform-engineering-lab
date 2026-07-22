@@ -24,8 +24,8 @@ admin_principal_ids = [
 
 deploy_sre_agent = true
 
-# S2 runtime scenario uses the optional Container Apps stack without AKS.
-deploy_apps = true
+# S2 runtime scenario uses the Container Apps stack without AKS.
+deploy_aks = false
 
 # S2 needs the agent to see app telemetry and route Azure Monitor incidents.
 enable_app_insights_connector  = true
