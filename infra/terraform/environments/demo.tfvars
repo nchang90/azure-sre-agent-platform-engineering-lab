@@ -35,7 +35,7 @@ deploy_sre_agent = true
 
 enable_vnet = false
 
-deploy_apps = false
+deploy_aks = true
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true

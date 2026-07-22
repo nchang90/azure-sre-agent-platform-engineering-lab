@@ -89,10 +89,10 @@ variable "tags" {
 
 # ── Apps ──
 
-variable "deploy_apps" {
-  description = "Deploy the orders-api and change-lookup Container Apps."
+variable "deploy_aks" {
+  description = "Deploy the optional AKS stack for AKS incident scenarios."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "acr_sku" {
@@ -110,11 +110,13 @@ variable "aks_node_vm_size" {
 variable "aks_min_count" {
   description = "Minimum node count for the AKS system node pool autoscaler."
   type        = number
+  default     = 2
 }
 
 variable "aks_max_count" {
   description = "Maximum node count for the AKS system node pool autoscaler."
   type        = number
+  default     = 3
 }
 
 variable "aks_user_node_vm_size" {
