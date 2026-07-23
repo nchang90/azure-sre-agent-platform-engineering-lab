@@ -161,9 +161,17 @@ report_result() {
   esac
 }
 
+is_success_http() {
+  case "$1" in
+    200|201|202|204|409) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 auth() {
   TOKEN="$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv 2>/dev/null)" \
     || die "Failed to get access token — run 'az login' first"
+  [[ -n "$TOKEN" ]] || die "Received empty Azure access token for https://azuresre.dev"
 }
 
 put_json_file() {
@@ -225,20 +233,24 @@ register_response_plan_file() {
   local yaml_path="$1"
   local code plan_body plan_id handling_agent props body="$TMP_DIR/incident-filter.json"
 
-  [[ -f "$yaml_path" ]] || { warn "  Missing response plan YAML: $yaml_path"; return; }
+  [[ -f "$yaml_path" ]] || die "Missing response plan YAML: $yaml_path"
 
   plan_body="$("$PYTHON" "$SCRIPT_DIR/build-api.py" incident-filter "$yaml_path" 2>"$TMP_DIR/err")" \
-    || { warn "  Could not parse response plan YAML ($yaml_path): $(cat "$TMP_DIR/err")"; return; }
+    || die "Could not parse response plan YAML ($yaml_path): $(cat "$TMP_DIR/err")"
 
   plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
   handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
-  [[ -n "$plan_id" ]] || { warn "  Response plan YAML missing id: $yaml_path"; return; }
+  [[ -n "$plan_id" ]] || die "Response plan YAML missing id: $yaml_path"
   props="$(jq -c 'del(.id, .name)' <<<"$plan_body")"
   jq -nc --arg name "$plan_id" --argjson props "$props" \
     '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
 
   code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
-  report_result "$code" "Response plan -> ${handling_agent} (${plan_id})" "$plan_id"
+  if is_success_http "$code"; then
+    ok "  Response plan -> ${handling_agent} (${plan_id})"
+  else
+    die "Response plan '${plan_id}' registration failed with HTTP $code: $(response_summary)"
+  fi
 }
 
 configure_incident_platform() {
