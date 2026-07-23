@@ -179,6 +179,15 @@ put_json_file() {
   api PUT "$path" -H "Content-Type: application/json" --data-binary @"$file"
 }
 
+arm_put_json_file() {
+  local url="$1" file="$2"
+  az rest --method PUT \
+    --url "$url" \
+    --headers "Content-Type=application/json" \
+    --body @"$file" \
+    --output none
+}
+
 delete_resource() {
   local path="$1" name="$2"
   local code
@@ -231,7 +240,7 @@ register_subagent() {
 
 register_response_plan_file() {
   local yaml_path="$1"
-  local code plan_body plan_id handling_agent props body="$TMP_DIR/incident-filter.json"
+  local plan_body plan_id handling_agent props encoded body="$TMP_DIR/incident-filter.json" err="$TMP_DIR/incident-filter.err"
 
   [[ -f "$yaml_path" ]] || die "Missing response plan YAML: $yaml_path"
 
@@ -242,14 +251,15 @@ register_response_plan_file() {
   handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
   [[ -n "$plan_id" ]] || die "Response plan YAML missing id: $yaml_path"
   props="$(jq -c 'del(.id, .name)' <<<"$plan_body")"
-  jq -nc --arg name "$plan_id" --argjson props "$props" \
-    '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
+  encoded="$(printf '%s' "$props" | base64 | tr -d '\n')"
+  jq -nc --arg value "$encoded" \
+    '{properties:{value:$value}}' >"$body"
 
-  code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
-  if is_success_http "$code"; then
+  if arm_put_json_file "${AGENT_ID}/incidentFilters/${plan_id}?api-version=2025-05-01-preview" "$body" \
+    >/dev/null 2>"$err"; then
     ok "  Response plan -> ${handling_agent} (${plan_id})"
   else
-    die "Response plan '${plan_id}' registration failed with HTTP $code: $(response_summary)"
+    die "Response plan '${plan_id}' registration failed: $(tr '\n' ' ' <"$err")"
   fi
 }
 
