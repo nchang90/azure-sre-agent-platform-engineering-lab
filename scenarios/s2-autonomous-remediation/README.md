@@ -59,7 +59,7 @@ S2 is **runtime only** after the `sbox` environment is provisioned — it change
 
 ## Setup
 
-Deploy and register the S2 environment, then grab the running app's URL. For another environment such as `prod`, use matching files at `environments/prod.tfvars` and `backend/prod.backend.tfvars`, keep the S2-required toggles enabled, and replace `sbox` with `prod` in the commands:
+Deploy and register the S2 environment, then grab the running app's URL. For another environment such as `prod`, use matching files at `environments/prod.tfvars` and `backend/prod.backend.tfvars`, keep the S2-required App Insights, Log Analytics, Azure Monitor, and Sev0/Sev1 incident-filter toggles enabled, and replace `sbox` with `prod` in the commands:
 
 ```bash
 terraform -chdir=infra/terraform init -reconfigure -backend-config=backend/sbox.backend.tfvars

@@ -30,5 +30,6 @@ deploy_aks = false
 # S2 needs the agent to see app telemetry and route Azure Monitor incidents.
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
+enable_azure_monitor_connector = true
 enable_sev01_incident_filter   = true
 enable_daily_health_check      = false
