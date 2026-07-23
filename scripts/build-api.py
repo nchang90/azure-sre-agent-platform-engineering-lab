@@ -174,6 +174,7 @@ def build_incident_filter(path):
         "titleContains": spec.get("titleContains") or "",
         "handlingAgent": spec.get("handlingAgent") or "default",
         "agentMode": agent_mode,
+        "maxAttempts": max_attempts,
         "maxAutomatedInvestigationAttempts": max_attempts,
     }
     json.dump(result, sys.stdout)

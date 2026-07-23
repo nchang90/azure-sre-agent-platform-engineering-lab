@@ -78,7 +78,7 @@ tfvar() {
     $1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
       value = $2
       sub(/[[:space:]]*#.*/, "", value)
-      gsub(/^[[:space:]\"]+|[[:space:]\"]+$/, "", value)
+      gsub(/^[[:space:]"]+|[[:space:]"]+$/, "", value)
       print value
       exit
     }
@@ -89,7 +89,7 @@ tfvar_bool() {
   local key="$1" default_value="$2" value
   value="$(tfvar "$key")"
   value="${value:-$default_value}"
-  echo "${value,,}"
+  printf '%s\n' "$value" | tr '[:upper:]' '[:lower:]'
 }
 
 configure_environment() {
