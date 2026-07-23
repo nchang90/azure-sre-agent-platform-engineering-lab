@@ -259,6 +259,11 @@ register_response_plan_file() {
     >/dev/null 2>"$err"; then
     ok "  Response plan -> ${handling_agent} (${plan_id})"
   else
+    if grep -qi 'Agent Extensions are not available for this tenant' "$err"; then
+      warn "  Skipping response plan ${plan_id}: Agent Extensions are unavailable for this tenant"
+      return 0
+    fi
+
     die "Response plan '${plan_id}' registration failed: $(tr '\n' ' ' <"$err")"
   fi
 }
