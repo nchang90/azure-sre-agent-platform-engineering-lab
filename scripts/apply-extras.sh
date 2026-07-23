@@ -231,7 +231,7 @@ register_subagent() {
 
 register_response_plan_file() {
   local yaml_path="$1"
-  local code plan_body plan_id handling_agent props body="$TMP_DIR/incident-filter.json"
+  local code plan_body plan_id handling_agent request body="$TMP_DIR/incident-filter.json"
 
   [[ -f "$yaml_path" ]] || die "Missing response plan YAML: $yaml_path"
 
@@ -241,9 +241,8 @@ register_response_plan_file() {
   plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
   handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
   [[ -n "$plan_id" ]] || die "Response plan YAML missing id: $yaml_path"
-  props="$(jq -c 'del(.id, .name)' <<<"$plan_body")"
-  jq -nc --arg name "$plan_id" --argjson props "$props" \
-    '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
+  request="$(jq -c 'del(.id)' <<<"$plan_body")"
+  jq -nc --argjson request "$request" '{request:$request}' >"$body"
 
   code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
   if is_success_http "$code"; then
