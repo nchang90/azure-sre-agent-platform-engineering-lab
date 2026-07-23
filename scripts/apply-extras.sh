@@ -241,7 +241,7 @@ register_response_plan_file() {
   plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
   handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
   [[ -n "$plan_id" ]] || die "Response plan YAML missing id: $yaml_path"
-  request="$(jq -c 'del(.id)' <<<"$plan_body")"
+  request="$(jq -c --arg name "$plan_id" 'del(.id) | .name = $name' <<<"$plan_body")"
   jq -nc --argjson request "$request" '{request:$request}' >"$body"
 
   code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
