@@ -110,11 +110,13 @@ variable "aks_node_vm_size" {
 variable "aks_min_count" {
   description = "Minimum node count for the AKS system node pool autoscaler."
   type        = number
+  default     = 1
 }
 
 variable "aks_max_count" {
   description = "Maximum node count for the AKS system node pool autoscaler."
   type        = number
+  default     = 2
 }
 
 variable "aks_user_node_vm_size" {
