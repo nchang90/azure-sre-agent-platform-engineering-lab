@@ -28,4 +28,4 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 | S4 Alert response and incident operations | `environments/demo.tfvars` | `bash scripts/apply-extras.sh demo` | Configure GitHub or ITSM connectors when creating follow-up records |
 | S5 PIM elevation audit | Any tfvars with `tags.scenario = "s5"` | `bash scripts/apply-extras.sh <environment>` | Configure Entra audit data access |
 
-For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `deploy_aks = false`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, `enable_azure_monitor_connector = true`, and `enable_sev01_incident_filter = true`.
+For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `deploy_aks = false`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, and `enable_sev01_incident_filter = true`.

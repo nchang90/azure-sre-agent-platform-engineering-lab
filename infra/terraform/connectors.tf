@@ -33,24 +33,10 @@ locals {
     }
   }
 
-  azure_monitor_connector = {
-    name = "azure-monitor"
-    properties = {
-      dataConnectorType = "AzureMonitor"
-      dataSource        = "/subscriptions/${data.azurerm_subscription.current.subscription_id}"
-      extendedProperties = {
-        subscriptionId = data.azurerm_subscription.current.subscription_id
-        lookbackDays   = var.azure_monitor_lookback_days
-      }
-      identity = "system"
-    }
-  }
-
   toggle_connectors = [
     for connector in [
       var.enable_app_insights_connector ? local.app_insights_connector : null,
       var.enable_log_analytics_connector ? local.log_analytics_connector : null,
-      var.enable_azure_monitor_connector ? local.azure_monitor_connector : null,
     ] : connector if connector != null
   ]
 
@@ -60,7 +46,6 @@ locals {
     for name, enabled in {
       app-insights  = var.enable_app_insights_connector
       log-analytics = var.enable_log_analytics_connector
-      azure-monitor = var.enable_azure_monitor_connector
     } : name if enabled
   ]
 

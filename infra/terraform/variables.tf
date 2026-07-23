@@ -239,12 +239,6 @@ variable "law_resource_id" {
   default     = ""
 }
 
-variable "enable_azure_monitor_connector" {
-  description = "Enable an Azure Monitor connector (subscription-scoped alerts)."
-  type        = bool
-  default     = false
-}
-
 variable "enable_service_now_connector" {
   description = "Configure ServiceNow as the incident platform during recipe extras."
   type        = bool
@@ -269,12 +263,6 @@ variable "service_now_password" {
   type        = string
   default     = ""
   sensitive   = true
-}
-
-variable "azure_monitor_lookback_days" {
-  description = "Lookback window in days for the Azure Monitor connector."
-  type        = number
-  default     = 7
 }
 
 variable "enable_sev01_incident_filter" {

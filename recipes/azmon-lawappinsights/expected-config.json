@@ -6,9 +6,7 @@
     "upgradeChannel": "Preview",
     "incidentPlatform": "AzMonitor"
   },
-  "connectors": [
-    { "name": "azure-monitor", "type": "AzureMonitor" }
-  ],
+  "connectors": [],
   "skills": [
     "investigate-azure-alerts",
     "triage-app-errors"
