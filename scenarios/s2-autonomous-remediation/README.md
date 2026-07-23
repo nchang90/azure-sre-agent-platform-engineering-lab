@@ -40,6 +40,7 @@ S2 is **runtime only** after the `sbox` environment is provisioned — it change
 | **Runtime failure injection** | `POST /api/simulate/failure-rate/{percent}` makes `orders-api` return 5xx without redeploying anything |
 | **Unauthorized change signal** | Clearing the active CR (`/api/simulate/clear-cr`) makes the failure look like a rogue, un-reviewed change |
 | **ServiceNow CR check (`change-lookup`)** | The agent queries [`change-lookup`](../../src/change-lookup/README.md) — the lab's ServiceNow `change_request` proxy — and finds the failing revision maps to **no approved CR**, confirming it's unauthorized |
+| **S2 incident response plan** | `s2-orders-api-runtime` matches `Orders API` incidents from Azure Monitor or ServiceNow and routes them to `triage-agent` |
 | **Detect → investigate → propose** | The agent picks up the Azure Monitor alert, queries logs/metrics, and pinpoints the root cause |
 | **Optional autonomous fix** | In **Review** mode you approve the proposed remediation in the portal; if the agent was provisioned **High + Automatic** (S3/S4) it executes the rollback itself |
 | **Post-action summary** | After remediation the agent re-checks `/health` and metrics to confirm recovery |
@@ -73,6 +74,8 @@ APP_URL="$(cd infra/terraform && terraform output -raw orders_api_url)"
 curl -s "$APP_URL/health" | jq .   # confirm it's healthy first
 ```
 
+`apply-extras.sh` detects `tags.scenario = "s2"` and registers the `s2-orders-api-runtime` response plan for the selected incident platform. For Azure Monitor, it handles `Orders API` alert incidents with Sev1-Sev3 priority. For ServiceNow, it handles `Orders API` incidents with priority 1-3. Both variants send the incident directly to `triage-agent` for autonomous investigation.
+
 ---
 
 ## Run
@@ -104,7 +107,7 @@ curl -X POST "$APP_URL/api/simulate/clear-cr"   # leave CR state clean
 
 | Phase | What happens |
 |-------|--------------|
-| **Detect** | Azure Monitor alert fires; the Incident Response Plan routes it to the agent — no human trigger |
+| **Detect** | Azure Monitor alert fires, or a ServiceNow incident is created; `s2-orders-api-runtime` routes the incident to `triage-agent` — no human trigger |
 | **Triage** | Agent classifies severity, identifies `orders-api`, plans the investigation |
 | **Investigate** | Queries Log Analytics for the 5xx pattern, correlates with metrics and deployment history, checks `/health`, and calls `change-lookup` (the ServiceNow CR proxy) to see if an approved change covers the failing revision |
 | **Root cause** | Matches the _Unauthorized Change_ runbook — 5xx spike with **no approved ServiceNow CR** in `change-lookup` |

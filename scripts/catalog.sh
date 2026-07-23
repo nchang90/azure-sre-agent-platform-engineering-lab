@@ -18,6 +18,7 @@ ALL_RESPONSE_PLAN_NAMES=(
   orders-api-health-response
   orders-api-errors
   orders-api-latency
+  s2-orders-api-runtime
   snow-all-incidents
 )
 
@@ -133,6 +134,10 @@ configure_catalog_scope() {
       ;;
     s2)
       log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      RESPONSE_PLAN_NAMES=(
+        s2-orders-api-runtime
+      )
       # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       KB_NAMES=(
         http-500-errors.md
