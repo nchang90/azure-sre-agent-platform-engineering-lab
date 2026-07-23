@@ -78,7 +78,7 @@ tfvar() {
     $1 ~ "^[[:space:]]*" key "[[:space:]]*$" {
       value = $2
       sub(/[[:space:]]*#.*/, "", value)
-      gsub(/^[[:space:]\"]+|[[:space:]\"]+$/, "", value)
+      gsub(/^[[:space:]"]+|[[:space:]"]+$/, "", value)
       print value
       exit
     }
@@ -89,7 +89,7 @@ tfvar_bool() {
   local key="$1" default_value="$2" value
   value="$(tfvar "$key")"
   value="${value:-$default_value}"
-  echo "${value,,}"
+  printf '%s\n' "$value" | tr '[:upper:]' '[:lower:]'
 }
 
 configure_environment() {
@@ -241,9 +241,8 @@ register_response_plan_file() {
   plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
   handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
   [[ -n "$plan_id" ]] || die "Response plan YAML missing id: $yaml_path"
-  props="$(jq -c 'del(.id, .name)' <<<"$plan_body")"
-  jq -nc --arg name "$plan_id" --argjson props "$props" \
-    '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
+  props="$(jq -c 'del(.id)' <<<"$plan_body")"
+  jq -nc --argjson request "$props" '{request:$request}' >"$body"
 
   code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
   if is_success_http "$code"; then
