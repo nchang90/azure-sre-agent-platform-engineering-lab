@@ -74,7 +74,7 @@ APP_URL="$(cd infra/terraform && terraform output -raw orders_api_url)"
 curl -s "$APP_URL/health" | jq .   # confirm it's healthy first
 ```
 
-`apply-extras.sh` detects `tags.scenario = "s2"` and registers the `s2-orders-api-runtime` response plan for the selected incident platform. For Azure Monitor, it handles `Orders API` alert incidents with Sev1-Sev3 priority. For ServiceNow, it handles `Orders API` incidents with priority 1-3. Both variants send the incident directly to `triage-agent` for autonomous investigation.
+`apply-extras.sh` detects `tags.scenario = "s2"` and registers the `s2-orders-api-runtime` response plan for the selected incident platform when the tenant supports incident-filter extensions. For Azure Monitor, it handles `Orders API` alert incidents with Sev1-Sev3 priority. For ServiceNow, it handles `Orders API` incidents with priority 1-3. Both variants send the incident directly to `triage-agent` for autonomous investigation.
 
 ---
 
