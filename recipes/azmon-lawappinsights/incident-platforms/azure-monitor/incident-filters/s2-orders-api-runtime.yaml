@@ -1,0 +1,15 @@
+metadata:
+  name: s2-orders-api-runtime
+spec:
+  name: S2 Orders API Runtime Remediation
+  incidentPlatform: AzMonitor
+  isEnabled: true
+  priorities:
+  - Sev1
+  - Sev2
+  - Sev3
+  titleContains: Orders API
+  handlingAgent: triage-agent
+  agentMode: autonomous
+  deepInvestigationEnabled: true
+  maxAutomatedInvestigationAttempts: 3
