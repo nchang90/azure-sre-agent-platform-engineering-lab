@@ -164,7 +164,6 @@ def build_incident_filter(path):
     if isinstance(agent_mode, str):
         agent_mode = agent_mode.lower()
 
-    max_attempts = spec.get("maxAttempts") or spec.get("maxAutomatedInvestigationAttempts") or 3
     result = {
         "id": filter_id,
         "name": spec.get("name") or filter_id,
@@ -174,8 +173,9 @@ def build_incident_filter(path):
         "titleContains": spec.get("titleContains") or "",
         "handlingAgent": spec.get("handlingAgent") or "default",
         "agentMode": agent_mode,
-        "maxAttempts": max_attempts,
-        "maxAutomatedInvestigationAttempts": max_attempts,
+        "maxAutomatedInvestigationAttempts": spec.get("maxAutomatedInvestigationAttempts")
+        or spec.get("maxAttempts")
+        or 3,
     }
     json.dump(result, sys.stdout)
 
