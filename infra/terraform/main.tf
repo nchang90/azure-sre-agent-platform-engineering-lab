@@ -54,6 +54,14 @@ resource "azurerm_log_analytics_workspace" "law" {
   tags                = var.tags
 }
 
+# Azure requires a propagation delay after LAW creation before Scheduled Query
+# Rules can reference it as a scope. Without this delay the API returns
+# "BadRequest: The workspace could not be found".
+resource "time_sleep" "law_propagation" {
+  depends_on      = [azurerm_log_analytics_workspace.law]
+  create_duration = "120s"
+}
+
 resource "azurerm_application_insights" "ai" {
   count               = local.create_app_insights ? 1 : 0
   name                = "ai-${local.suffix}"
