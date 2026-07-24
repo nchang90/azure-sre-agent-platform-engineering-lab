@@ -23,7 +23,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
   depends_on = [
-    azurerm_log_analytics_workspace.law,
+    time_sleep.law_propagation,
   ]
 
   description             = "Orders API: /health endpoint unhealthy or missing in the last 1 minute."
@@ -61,7 +61,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
   depends_on = [
-    azurerm_log_analytics_workspace.law,
+    time_sleep.law_propagation,
   ]
 
   description             = "Orders API: container errors / back-off (crash loop) detected in the last 1 minute."
@@ -99,7 +99,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
   depends_on = [
-    azurerm_log_analytics_workspace.law,
+    time_sleep.law_propagation,
   ]
 
   description             = "Orders API: P99 request latency exceeded the 2s SLO over the last 1 minute."
@@ -138,7 +138,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
   tags                = var.tags
   depends_on = [
     azurerm_kubernetes_cluster.aks,
-    azurerm_log_analytics_workspace.law,
+    time_sleep.law_propagation,
   ]
 
   description             = "AKS: pods are crash looping or backing off."
@@ -183,7 +183,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
   tags                = var.tags
   depends_on = [
     azurerm_kubernetes_cluster.aks,
-    azurerm_log_analytics_workspace.law,
+    time_sleep.law_propagation,
   ]
 
   description             = "AKS: one or more pods are not ready."
@@ -228,7 +228,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_node_cpu_pressure
   tags                = var.tags
   depends_on = [
     azurerm_kubernetes_cluster.aks,
-    azurerm_log_analytics_workspace.law,
+    time_sleep.law_propagation,
   ]
 
   description             = "AKS: node CPU usage is above 85%."
