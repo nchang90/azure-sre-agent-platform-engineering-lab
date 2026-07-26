@@ -2,6 +2,7 @@ agent_name               = "sre-agent-platform"
 resource_group_name      = "rg-sre-lab-demo"
 location                 = "uksouth"
 target_resource_groups   = []
+scenario                 = "s3"
 access_level             = "High"
 action_mode              = "Review"
 upgrade_channel          = "Preview"
@@ -34,8 +35,6 @@ aks_max_count = 3
 deploy_sre_agent = true
 
 enable_vnet = false
-
-deploy_apps = false
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true

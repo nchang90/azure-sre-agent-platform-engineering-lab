@@ -19,7 +19,6 @@ PYTHON="${PYTHON:-python3}"
 
 ENVIRONMENT=""
 SCENARIO=""
-DEPLOY_APPS="true"
 ENABLE_SERVICE_NOW_CONNECTOR="false"
 SERVICE_NOW_INSTANCE=""
 SERVICE_NOW_USERNAME=""
@@ -44,11 +43,8 @@ ENVIRONMENT selects matching Terraform files:
 The selected tfvars file scopes the catalog:
   all environments   -> all skills and scenario-scoped knowledge-base docs
   all scenarios      -> one shared incident response plan
-  deploy_apps = true -> Container Apps subagents
-  deploy_apps = false -> AKS subagents
-  tags.scenario = s2   -> autonomous remediation extras
-  tags.scenario = s4   -> alert response issue-triage extras
-  tags.scenario = s5   -> PIM elevation audit extras
+  scenario = s1|s2|s3|s4|s5 -> primary scenario selector
+  runtime scope is derived from scenario: s1/s2=containerapps, s3=aks, s4=webapp, s5=none
   enable_service_now_connector = true -> ServiceNow incident platform
 
 Examples:
@@ -92,6 +88,27 @@ tfvar_bool() {
   printf '%s\n' "$value" | tr '[:upper:]' '[:lower:]'
 }
 
+resolve_runtime_stack() {
+  local scenario="$1"
+  case "$scenario" in
+    s1|s2)
+      printf 'containerapps\n'
+      ;;
+    s3)
+      printf 'aks\n'
+      ;;
+    s4)
+      printf 'webapp\n'
+      ;;
+    s5)
+      printf 'none\n'
+      ;;
+    *)
+      die "Unsupported scenario '$scenario' in $TFVARS_FILE. Expected s1, s2, s3, s4, or s5."
+      ;;
+  esac
+}
+
 configure_environment() {
   [[ -n "$ENVIRONMENT" ]] || return 0
 
@@ -102,22 +119,19 @@ configure_environment() {
   [[ -f "$TFVARS_FILE" ]] || die "Missing Terraform environment tfvars: $TFVARS_FILE"
 
   log "Selecting Terraform environment: $ENVIRONMENT"
-  SCENARIO="$(awk -F= '
-    /^[[:space:]]*tags[[:space:]]*=/ { in_tags = 1; next }
-    in_tags && /^[[:space:]]*}/ { in_tags = 0; next }
-    in_tags && /^[[:space:]]*scenario[[:space:]]*=/ {
-      gsub(/[ ",]/, "", $2)
-      print tolower($2)
-      exit
-    }
-  ' "$TFVARS_FILE")"
-  DEPLOY_APPS="$(tfvar_bool deploy_apps true)"
+  SCENARIO="$(tfvar scenario | tr '[:upper:]' '[:lower:]')"
+  [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, or s5)."
+  RUNTIME_STACK="$(resolve_runtime_stack "$SCENARIO")"
   ENABLE_SERVICE_NOW_CONNECTOR="$(tfvar_bool enable_service_now_connector false)"
   SERVICE_NOW_INSTANCE="$(tfvar service_now_instance)"
   SERVICE_NOW_USERNAME="$(tfvar service_now_username)"
   SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-${SERVICENOW_PASSWORD:-}}"
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
-  log "Detected runtime scope: $( [[ "$DEPLOY_APPS" == "true" ]] && echo "Container Apps" || echo "AKS" )"
+  case "$RUNTIME_STACK" in
+    none) log "Detected runtime scope: none (monitoring-only mode)" ;;
+    containerapps) log "Detected runtime scope: Container Apps" ;;
+    aks) log "Detected runtime scope: AKS" ;;
+  esac
   log "Detected incident platform: $( [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]] && echo "ServiceNow" || echo "AzMonitor" )"
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
 }

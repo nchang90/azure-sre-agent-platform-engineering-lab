@@ -95,20 +95,20 @@ output "container_app_environment_id" {
 
 output "orders_api_name" {
   description = "Name of the orders-api Container App."
-  value       = local.apps_enabled ? azurerm_container_app.orders_api[0].name : ""
+  value       = local.apps_enabled ? azurerm_container_app.orders_api[0].name : (local.webapps_enabled ? azurerm_linux_web_app.orders_api[0].name : "")
 }
 
 output "orders_api_url" {
   description = "Public URL of orders-api."
-  value       = local.apps_enabled ? "https://${azurerm_container_app.orders_api[0].latest_revision_fqdn}" : ""
+  value       = local.apps_enabled ? "https://${azurerm_container_app.orders_api[0].latest_revision_fqdn}" : (local.webapps_enabled ? "https://${azurerm_linux_web_app.orders_api[0].default_hostname}" : "")
 }
 
 output "change_lookup_name" {
   description = "Name of the change-lookup Container App."
-  value       = local.apps_enabled ? azurerm_container_app.change_lookup[0].name : ""
+  value       = local.apps_enabled ? azurerm_container_app.change_lookup[0].name : (local.webapps_enabled ? azurerm_linux_web_app.change_lookup[0].name : "")
 }
 
 output "change_lookup_url" {
   description = "Public URL of change-lookup."
-  value       = local.apps_enabled ? "https://${azurerm_container_app.change_lookup[0].latest_revision_fqdn}" : ""
+  value       = local.apps_enabled ? "https://${azurerm_container_app.change_lookup[0].latest_revision_fqdn}" : (local.webapps_enabled ? "https://${azurerm_linux_web_app.change_lookup[0].default_hostname}" : "")
 }

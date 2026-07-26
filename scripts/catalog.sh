@@ -77,9 +77,9 @@ configure_catalog_scope() {
     return 0
   fi
 
-  case "$DEPLOY_APPS" in
-    true|false) ;;
-    *) die "Unsupported deploy_apps value '$DEPLOY_APPS' in $TFVARS_FILE. Expected true or false." ;;
+  case "$RUNTIME_STACK" in
+    containerapps|aks|webapp|none) ;;
+    *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
   esac
 
   case "$ENABLE_SERVICE_NOW_CONNECTOR" in
@@ -100,21 +100,30 @@ configure_catalog_scope() {
     all-incidents
   )
 
-  if [[ "$DEPLOY_APPS" == "true" ]]; then
-    log "Including Container Apps incident catalog from deploy_apps=true."
-    SUBAGENT_NAMES+=(
-      triage-agent
-    )
-  else
-    log "Including AKS incident catalog from deploy_apps=false."
-    SUBAGENT_NAMES+=(
-      aks-remediator
-    )
-  fi
+  case "$RUNTIME_STACK" in
+    none)
+      log "Skipping runtime subagents for runtime_stack=none."
+      ;;
+    webapp)
+      log "Skipping runtime subagents for runtime_stack=webapp."
+      ;;
+    containerapps)
+      log "Including Container Apps incident catalog from runtime_stack=containerapps."
+      SUBAGENT_NAMES+=(
+        triage-agent
+      )
+      ;;
+    aks)
+      log "Including AKS incident catalog from runtime_stack=aks."
+      SUBAGENT_NAMES+=(
+        aks-remediator
+      )
+      ;;
+  esac
 
   case "$SCENARIO" in
     s3)
-      log "Including S3 AKS ServiceNow incident catalog from tags.scenario=s3."
+      log "Including S3 AKS ServiceNow incident catalog from scenario=s3."
       if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
         # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
         RESPONSE_PLAN_NAMES=(
@@ -133,7 +142,7 @@ configure_catalog_scope() {
       )
       ;;
     s2)
-      log "Including S2 autonomous remediation knowledge base from tags.scenario=s2."
+      log "Including S2 autonomous remediation knowledge base from scenario=s2."
       # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       RESPONSE_PLAN_NAMES=(
         s2-orders-api-runtime
@@ -153,13 +162,13 @@ configure_catalog_scope() {
       )
       ;;
     s4)
-      log "Including S4 alert response issue-triage catalog from tags.scenario=s4."
+      log "Including S4 alert response issue-triage catalog from scenario=s4."
       SUBAGENT_NAMES+=(
         issue-triager
       )
       ;;
     s5)
-      log "Including S5 PIM elevation audit catalog from tags.scenario=s5."
+      log "Including S5 PIM elevation audit catalog from scenario=s5."
       SUBAGENT_NAMES+=(
         pim-elevation
       )
