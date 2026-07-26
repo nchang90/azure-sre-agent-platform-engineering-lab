@@ -2,6 +2,7 @@ agent_name               = "sre-agent-sbox"
 resource_group_name      = "rg-sre-lab-sbox"
 location                 = "uksouth"
 target_resource_groups   = []
+scenario                 = "s2"
 access_level             = "High"
 action_mode              = "Review"
 upgrade_channel          = "Preview"
@@ -23,9 +24,6 @@ admin_principal_ids = [
 ]
 
 deploy_sre_agent = true
-
-# S2 runtime scenario uses the optional Container Apps stack without AKS.
-deploy_apps = true
 
 # S2 needs the agent to see app telemetry and route Azure Monitor incidents.
 enable_app_insights_connector  = true

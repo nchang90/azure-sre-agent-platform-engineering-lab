@@ -50,7 +50,6 @@ service_now_username         = "<username>"
 For environments that intentionally use an explicit HTTP event bridge, set:
 
 ```hcl
-enable_webhook_bridge      = true
 webhook_bridge_trigger_url = "<logic-app-or-bridge-trigger-url>"
 ```
 

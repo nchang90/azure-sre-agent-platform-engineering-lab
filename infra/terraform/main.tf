@@ -8,20 +8,22 @@ locals {
     13,
   )
 
-  # Identity selection: create new UAMI unless caller provides one.
   create_identity        = var.existing_managed_identity_id == ""
   effective_identity_id  = local.create_identity ? azurerm_user_assigned_identity.agent[0].id : var.existing_managed_identity_id
   effective_principal_id = local.create_identity ? azurerm_user_assigned_identity.agent[0].principal_id : data.azurerm_user_assigned_identity.existing[0].principal_id
 
-  # App Insights selection: create new unless caller provides one.
   create_app_insights   = var.existing_agent_app_insights_id == ""
   effective_ai_app_id   = local.create_app_insights ? azurerm_application_insights.ai[0].app_id : data.azurerm_application_insights.existing_ai[0].app_id
   effective_ai_conn_str = local.create_app_insights ? azurerm_application_insights.ai[0].connection_string : data.azurerm_application_insights.existing_ai[0].connection_string
 
   sre_agent_reader_role_id = "a4b156ac-253f-4a1a-9851-96d62b71b047"
   sre_agent_admin_role_id  = "e79298df-d852-4c6d-84f9-5d13249d1e55"
-  apps_enabled             = var.deploy_apps
-  aks_enabled              = !var.deploy_apps
+
+  scenario_value = lower(trimspace(var.scenario))
+
+  apps_enabled = local.scenario_value == "s1" || local.scenario_value == "s2"
+  webapps_enabled = local.scenario_value == "s4"
+  aks_enabled  = local.scenario_value == "s3"
 }
 
 resource "azurerm_resource_group" "agent" {
@@ -70,4 +72,3 @@ data "azurerm_application_insights" "existing_ai" {
   resource_group_name = regex("/resourceGroups/([^/]+)/", var.existing_agent_app_insights_id)[0]
 }
 
-# Role assignments live in rbac.tf.

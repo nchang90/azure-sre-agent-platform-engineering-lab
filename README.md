@@ -50,4 +50,3 @@ The upstream `azmon-lawappinsights` recipe is integrated into this lab.
 
 - Core platform: resource group, managed identity, and SRE Agent resource.
 - Observability: Log Analytics, Application Insights, and alert rules.
-- Runtime: AKS-only when `deploy_apps = false`; app-only Container Apps deployment when `deploy_apps = true`.

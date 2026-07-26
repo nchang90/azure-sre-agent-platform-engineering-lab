@@ -1,6 +1,6 @@
 # S1 — Incident Detection & Triage
 
-**Persona:** On-call / IT Ops
+**Persona:** Platform Engineering / On-call
 **Time to complete:** ~15 minutes
 **Entry point:** This is the starting scenario — run it first.
 
@@ -8,7 +8,7 @@
 
 ## Story
 
-A developer ships a release straight to production with no change request and no peer review. The image is live and broken. The Azure Monitor alert fires automatically — the agent picks it up, triages the severity, queries Log Analytics for 5xx error patterns, correlates with Azure Monitor metrics and deployment history, pinpoints the root cause at the source file level, submits a fix PR, and resolves the alert — all before on-call wakes up. The session is saved so the next similar incident is handled faster.
+A platform engineer ships a change to a shared production workload without the usual guardrails — no change request, no peer review, and no rollout validation. The service is live and broken. The Azure Monitor alert fires automatically — the agent picks it up, triages the severity, queries Log Analytics for 5xx error patterns, correlates with Azure Monitor metrics and deployment history, pinpoints the root cause at the source file level, submits a fix PR, and resolves the alert — all before on-call wakes up. The session is saved so the next similar platform incident is handled faster.
 
 <img src="../../docs/images/story1.png" alt="detect and triage" width="600" />
 
@@ -19,10 +19,10 @@ A developer ships a release straight to production with no change request and no
 | Step | What happens |
 |------|-------------|
 | **Alert fires** | Agent picks up the Azure Monitor alert automatically via Incident Response Plan — no human trigger needed |
-| **Triage** | Classifies severity, identifies affected service, plans investigation |
+| **Triage** | Classifies severity, identifies the affected platform workload, plans investigation |
 | **Log Analytics** | Runs KQL queries — 5xx counts, error patterns, spike timing |
-| **Azure Monitor** | Correlates with metrics, traces, and deployment history |
-| **Source search** | Finds the root cause at `file:line` level in the repository |
+| **Azure Monitor** | Correlates with platform metrics, traces, and deployment history |
+| **Source search** | Finds the root cause at `file:line` level in the platform repo |
 | **Fix PR + alert resolve** | Submits PR with proposed code change, resolves the incident |
 | **Session insights** | Findings saved — next similar incident skips re-discovery |
 
@@ -32,15 +32,15 @@ A developer ships a release straight to production with no change request and no
 
 | Concept | What you see in this scenario |
 |---------|-------------------------------|
-| **Incident Response Plan** | Routes the `Orders API 5xx` alert to `orchestrator-agent` automatically |
-| **Subagents** | `orchestrator-agent` normalizes the alert into an `IncidentContext` and delegates to `triage-agent` |
-| **Log Analytics connector** | `triage-agent` queries `ContainerAppConsoleLogs_CL` when present, plus `AppTraces` and `ContainerAppSystemLogs_CL`, via `QueryLogAnalyticsByWorkspaceId` |
-| **Azure Monitor metrics** | Agent correlates 5xx spike with CPU, memory, latency, and deployment timeline |
-| **Knowledge base** | Agent searches uploaded runbooks and matches the _Unauthorized Change_ guidance |
-| **Source code search** | Agent identifies the offending file and line number and proposes a targeted fix |
-| **PR creation** | Agent submits a fix PR for human review |
-| **Alert resolution** | Agent resolves the Azure Monitor alert once the fix PR is submitted |
-| **Session insights** | Findings saved so future incidents skip re-discovery steps |
+| **Incident Response Plan** | Routes the `Orders API 5xx spike` alert to `orchestrator-agent` |
+| **Subagents** | `orchestrator-agent` delegates the investigation to `triage-agent` |
+| **Log Analytics connector** | `triage-agent` queries app logs and traces for the spike |
+| **Azure Monitor metrics** | Agent correlates the spike with CPU, latency, and rollout timing |
+| **Knowledge base** | Agent matches the _Unauthorized Change_ guidance |
+| **Source code search** | Agent finds the root cause at file level |
+| **PR creation** | Agent submits a fix PR for review |
+| **Alert resolution** | Agent resolves the alert after the fix is proposed |
+| **Session insights** | Findings are saved for next time |
 
 ---
 
@@ -78,20 +78,21 @@ az containerapp update -g <rg> -n orders-api --image <working-image>
 ## Step by Step
 
 1. The `break-app.sh` script is no longer available (chaos monkey support has been removed).
-5. The `Orders API 5xx` Azure Monitor alert evaluates on a 5 minute window and typically appears within a few minutes.
-6. The Incident Response Plan routes the alert to `orchestrator-agent`.
-7. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.
-8. `orchestrator-agent` delegates to `triage-agent` for technical investigation.
-9. `triage-agent` queries Log Analytics / Application Insights request data for the `5xx` spike and error patterns.
-10. `triage-agent` queries Azure Monitor metrics — CPU, memory, latency, and deployment history — and correlates timing with the rogue revision or simulated change window.
-11. If the app is reachable, `triage-agent` calls `GET /health` on orders-api and inspects `activeChangeRequest`.
-12. `triage-agent` queries `change-lookup /changes/active/now` and confirms whether there was an active CR.
-13. `triage-agent` searches the knowledge base and matches the Unauthorized Change runbook.
-14. `triage-agent` runs `az containerapp revision list` and identifies the rogue revision.
-15. `triage-agent` searches the source repository and identifies the root cause at `file:line` level.
-16. `orchestrator-agent` submits a fix PR with the proposed code change.
-17. `orchestrator-agent` resolves the Azure Monitor alert and posts a structured incident summary.
-18. Session insights are saved — the root cause, KQL queries, and fix pattern are stored for future incidents.
+2. A platform change introduces a regression in the production workload.
+3. The `Orders API 5xx spike` Azure Monitor alert evaluates on a 5 minute window and typically appears within a few minutes.
+4. The Incident Response Plan routes the alert to `orchestrator-agent`.
+5. `orchestrator-agent` normalizes the alert into an `IncidentContext` (service, symptom, time window, environment) and classifies severity.
+6. `orchestrator-agent` delegates to `triage-agent` for technical investigation.
+7. `triage-agent` queries Log Analytics / Application Insights request data for the `5xx` spike and error patterns.
+8. `triage-agent` queries Azure Monitor metrics — CPU, memory, latency, and deployment history — and correlates timing with the rogue revision or simulated change window.
+9. If the app is reachable, `triage-agent` calls `GET /health` on orders-api and inspects `activeChangeRequest`.
+10. `triage-agent` checks the available change record source and confirms whether there was an active CR.
+11. `triage-agent` searches the knowledge base and matches the Unauthorized Change runbook.
+12. `triage-agent` runs `az containerapp revision list` and identifies the rogue revision.
+13. `triage-agent` searches the source repository and identifies the root cause at `file:line` level.
+14. `orchestrator-agent` submits a fix PR with the proposed code change.
+15. `orchestrator-agent` resolves the Azure Monitor alert and posts a structured incident summary.
+16. Session insights are saved — the root cause, KQL queries, and fix pattern are stored for future incidents.
 
 ---
 
@@ -122,7 +123,7 @@ After the agent posts its findings, continue the thread to go deeper:
 After the alert window completes, the portal incident thread includes:
 
 - The offending rogue revision name
-- Evidence of missing CR (`change-lookup` returned no active CR)
+- Evidence of missing CR (no active change record was found)
 - The KQL error trace and Azure Monitor metrics correlation
 - The root cause file and line number in the repository
 - A submitted fix PR link
