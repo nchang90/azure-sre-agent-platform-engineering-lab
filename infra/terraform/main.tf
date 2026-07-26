@@ -21,9 +21,9 @@ locals {
 
   scenario_value = lower(trimspace(var.scenario))
 
-  apps_enabled = local.scenario_value == "s1" || local.scenario_value == "s2"
+  apps_enabled    = local.scenario_value == "s1" || local.scenario_value == "s2"
   webapps_enabled = local.scenario_value == "s4"
-  aks_enabled  = local.scenario_value == "s3"
+  aks_enabled     = local.scenario_value == "s3"
 }
 
 resource "azurerm_resource_group" "agent" {
