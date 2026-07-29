@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Agentic AI Insights — a quarterly, community-driven initiative sharing knowledge about Agentic AI through blog posts, videos, demos, and open-source projects." />
+  <meta property="og:title" content="Agentic AI Insights" />
+  <meta property="og:description" content="Quarterly community knowledge sharing about Agentic AI." />
+  <meta property="og:type" content="website" />
+  <title>Agentic AI Insights</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230078D4'/><text y='.9em' font-size='70' x='15'>🤖</text></svg>" />
+</head>
+<body>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<nav id="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a class="nav-logo" href="#" data-section="home" aria-label="Agentic AI Insights home">
+      <div class="nav-logo-icon" aria-hidden="true">🤖</div>
+      <div class="nav-logo-text">Agentic <span>AI Insights</span></div>
+    </a>
+
+    <ul class="nav-links" role="list">
+      <li><button class="nav-link active" data-section="home">Home</button></li>
+      <li><button class="nav-link" data-section="about">About</button></li>
+      <li><button class="nav-link" data-section="latest">Latest Edition</button></li>
+      <li><button class="nav-link" data-section="editions">Previous Editions</button></li>
+      <li><button class="nav-link" data-section="blog">Blog</button></li>
+      <li><button class="nav-link" data-section="videos">Videos</button></li>
+      <li><button class="nav-link" data-section="opensource">Open Source</button></li>
+      <li><button class="nav-link" data-section="community">Community</button></li>
+    </ul>
+
+    <div class="nav-cta">
+      <button class="btn btn-primary btn-sm" data-section="contribute">✍️ Contribute</button>
+    </div>
+
+    <button class="nav-hamburger" id="hamburger" aria-label="Toggle mobile menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile nav drawer -->
+<nav id="mobile-nav" class="nav-mobile" aria-label="Mobile navigation">
+  <button class="nav-link" data-section="home">🏠 Home</button>
+  <button class="nav-link" data-section="about">ℹ️ About</button>
+  <button class="nav-link" data-section="latest">🆕 Latest Edition</button>
+  <button class="nav-link" data-section="editions">📚 Previous Editions</button>
+  <button class="nav-link" data-section="blog">✍️ Blog</button>
+  <button class="nav-link" data-section="videos">🎬 Videos</button>
+  <button class="nav-link" data-section="opensource">💻 Open Source</button>
+  <button class="nav-link" data-section="community">🤝 Community</button>
+  <button class="nav-link" data-section="contribute">🚀 Contribute</button>
+</nav>
+
+
+<!-- ============================================================
+     SECTION: HOME
+     ============================================================ -->
+<section id="section-home" class="page-section" aria-label="Home">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="hero-badge-dot" aria-hidden="true"></span>
+            Q3 2025 Edition Now Live · #AgenticAIInsights
+          </div>
+          <h1 class="hero-title">
+            Community knowledge<br>
+            about <span class="gradient-text">Agentic AI</span>,<br>
+            every quarter.
+          </h1>
+          <p class="hero-subtitle">
+            Inspired by <a href="https://azurebacktoschool.github.io" target="_blank" rel="noopener">Azure Back to School</a>,
+            Agentic AI Insights is a free, community-driven initiative publishing
+            blog posts, videos, demos, and open-source projects about real-world
+            Agentic AI — every three months.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" data-section="latest">View Q3 2025 Edition</button>
+            <button class="btn btn-outline" data-section="contribute">Contribute</button>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-card">
+            <div class="hero-card-header">
+              <div class="hero-card-icon">🤖</div>
+              <div class="hero-card-meta">
+                <strong>Q3 2025 · Autonomous Agents in Production</strong>
+                <span>July – September 2025</span>
+              </div>
+            </div>
+            <div class="hero-stat-row">
+              <div class="hero-stat">
+                <span class="hero-stat-value">18</span>
+                <span class="hero-stat-label">Blog Posts</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-stat-value">12</span>
+                <span class="hero-stat-label">Videos</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-stat-value">8</span>
+                <span class="hero-stat-label">OSS Projects</span>
+              </div>
+            </div>
+            <div class="hero-topics">
+              <span class="tag tag-blue">Azure AI Agent Service</span>
+              <span class="tag tag-teal">Semantic Kernel</span>
+              <span class="tag tag-purple">AutoGen</span>
+              <span class="tag tag-green">Prompt Flow</span>
+              <span class="tag tag-orange">LangGraph</span>
+              <span class="tag tag-blue">MCP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-item-value" data-count="4" data-suffix="">4</span>
+          <div class="stat-item-label">Editions Published</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-value" data-count="68" data-suffix="+">68+</span>
+          <div class="stat-item-label">Contributors</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-value" data-count="240" data-suffix="+">240+</span>
+          <div class="stat-item-label">Resources Published</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-item-value" data-count="18" data-suffix="K+">18K+</span>
+          <div class="stat-item-label">Community Readers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured content -->
+  <div class="container section-pad">
+    <span class="section-label">From This Quarter</span>
+    <h2 class="section-title">Featured community content</h2>
+    <p class="section-subtitle">Hand-picked highlights from the Q3 2025 edition, spanning blog posts, videos, and open-source projects.</p>
+
+    <div class="featured-grid mt-48">
+
+      <article class="card">
+        <div class="card-accent-bar"></div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="tag tag-blue">Blog Post</span>
+            <span class="card-date">📅 Jul 15, 2025</span>
+          </div>
+          <h3 class="card-title">Building Production-Ready Agents with Azure AI Agent Service</h3>
+          <p class="card-excerpt">A deep-dive walkthrough on deploying resilient, observable AI agents using Azure AI Agent Service — from architecture decisions to monitoring in production.</p>
+          <div class="card-footer">
+            <div class="card-author">
+              <div class="avatar">SL</div>
+              <span class="card-author-name">Sarah Lean</span>
+            </div>
+            <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-accent-bar teal"></div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="tag tag-teal">Video</span>
+            <span class="card-date">📅 Jul 22, 2025</span>
+          </div>
+          <h3 class="card-title">Multi-Agent Orchestration with Semantic Kernel — Live Demo</h3>
+          <p class="card-excerpt">Watch how to wire up multiple specialised agents using Semantic Kernel's agent framework, including tool-calling, handoffs, and shared memory patterns.</p>
+          <div class="card-footer">
+            <div class="card-author">
+              <div class="avatar">MR</div>
+              <span class="card-author-name">Marco Rossi</span>
+            </div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-accent-bar purple"></div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="tag tag-purple">Open Source</span>
+            <span class="card-date">📅 Aug 5, 2025</span>
+          </div>
+          <h3 class="card-title">agent-eval-toolkit — Evaluation harness for Agentic AI systems</h3>
+          <p class="card-excerpt">An open-source evaluation framework for measuring correctness, latency, and safety of multi-step agent pipelines, with Azure AI Evaluation integration.</p>
+          <div class="card-footer">
+            <div class="card-author">
+              <div class="avatar">AP</div>
+              <span class="card-author-name">Anya Patel</span>
+            </div>
+            <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">GitHub →</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- CTA to see full edition -->
+    <div class="text-center mt-32">
+      <button class="btn btn-outline" data-section="latest">See all Q3 2025 content →</button>
+    </div>
+  </div>
+
+  <!-- What's inside banner -->
+  <div class="container">
+    <div class="cta-banner">
+      <h2>Ready to share your knowledge?</h2>
+      <p>Every quarter we open submissions for the next edition. Share a blog post, record a short video, demo a project, or open-source your agent toolkit.</p>
+      <div class="cta-actions">
+        <button class="btn btn-primary" data-section="contribute">Submit Your Contribution</button>
+        <button class="btn btn-outline" data-section="about">Learn How It Works</button>
+      </div>
+    </div>
+    <div style="height:80px"></div>
+  </div>
+
+</section><!-- /HOME -->
+
+
+<!-- ============================================================
+     SECTION: ABOUT
+     ============================================================ -->
+<section id="section-about" class="page-section" aria-label="About">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">About</span>
+      <h1 class="section-title">Community-driven Agentic AI knowledge</h1>
+      <p class="section-subtitle">Inspired by <a href="https://azurebacktoschool.github.io" target="_blank" rel="noopener">Azure Back to School</a>, Azure Advent Calendar, and Azure Spring Clean — free, quarterly, and 100% community-powered.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+    <div class="about-grid">
+
+      <div>
+        <span class="section-label">Mission</span>
+        <h2 class="section-title" style="font-size:1.9rem">Why Agentic AI Insights?</h2>
+        <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.8">
+          In the spirit of the <strong style="color:var(--text-primary)">#AzureFamily</strong> community — the same energy that powers Azure Advent Calendar, Azure Spring Clean, and Azure Back to School — Agentic AI Insights dedicates a whole quarter to one of the most transformative shifts in AI: <em>autonomous, goal-driven agents</em>.
+        </p>
+        <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.8">
+          Every three months, practitioners, MVPs, and enthusiasts from across the community come together to publish blog posts, record short videos, ship demos, and release open-source tools — all focused on real-world Agentic AI.
+        </p>
+        <p style="color:var(--text-secondary);margin-bottom:32px;line-height:1.8">
+          Contributors share their work on social media using <strong style="color:var(--azure-blue-light)">#AgenticAIInsights</strong> and link back to this site, growing a permanent, freely accessible knowledge base for everyone.
+        </p>
+        <div class="flex gap-12 flex-wrap">
+          <button class="btn btn-primary" data-section="contribute">Contribute to Next Edition</button>
+          <button class="btn btn-ghost" data-section="community">Join the Community</button>
+        </div>
+      </div>
+
+      <div>
+        <span class="section-label">How It Works</span>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <h4>📢 Call for Contributions Opens (Week 1)</h4>
+            <p>At the start of each quarter, we open submissions via a simple form. Blog posts, videos, demos, and open-source projects are all welcome.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <h4>✍️ Community Creates Content (Weeks 2–10)</h4>
+            <p>Contributors publish their content on their own platforms — personal blogs, YouTube, GitHub — and submit the link. We link everything from this site.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <h4>📅 Edition Goes Live (Week 11)</h4>
+            <p>The full edition schedule is published here, just like Azure Back to School — a table of dates, topics, and contributors.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <h4>🎉 Community Celebration &amp; Wrap-up (Week 13)</h4>
+            <p>We round up the edition with a community call, highlights post, and open nominations for the next quarter's theme.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <span class="section-label">Our Values</span>
+    <h2 class="section-title" style="font-size:1.9rem;margin-top:8px">What we stand for</h2>
+    <div class="value-grid mt-24">
+      <div class="value-card">
+        <div class="value-icon">🌐</div>
+        <h4>Open &amp; Free</h4>
+        <p>All content is freely accessible, forever. No paywalls, no signups to read.</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🤝</div>
+        <h4>Community-First</h4>
+        <p>Content by practitioners, for practitioners. Every contributor is credited and celebrated.</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🔬</div>
+        <h4>Practical &amp; Real-World</h4>
+        <p>We prefer working demos, real lessons learned, and honest write-ups over marketing.</p>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🔄</div>
+        <h4>Quarterly Cadence</h4>
+        <p>Three months gives contributors enough time to ship something meaningful, not just a tweet thread.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <span class="section-label">Inspiration</span>
+    <h2 class="section-title" style="font-size:1.9rem;margin-top:8px">Standing on the shoulders of giants</h2>
+    <p style="color:var(--text-secondary);max-width:680px;margin-bottom:32px">
+      Agentic AI Insights wouldn't exist without these incredible community initiatives. Go check them out:
+    </p>
+    <div class="flex gap-16 flex-wrap">
+      <a href="https://azurebacktoschool.github.io" target="_blank" rel="noopener" class="btn btn-ghost">🏫 Azure Back to School</a>
+      <a href="https://azureadventcalendar.com" target="_blank" rel="noopener" class="btn btn-ghost">🎄 Azure Advent Calendar</a>
+      <a href="https://www.azurespringclean.com" target="_blank" rel="noopener" class="btn btn-ghost">🌸 Azure Spring Clean</a>
+    </div>
+  </div>
+
+</section><!-- /ABOUT -->
+
+
+<!-- ============================================================
+     SECTION: LATEST EDITION
+     ============================================================ -->
+<section id="section-latest" class="page-section" aria-label="Latest Edition">
+
+  <div class="page-header">
+    <div class="container">
+      <div class="page-header-inner">
+        <div>
+          <span class="section-label">Q3 2025 · July – September</span>
+          <h1 class="section-title">Autonomous Agents in Production</h1>
+          <p class="section-subtitle">18 blog posts, 12 videos, 8 open-source projects, and 4 live demos from 38 contributors across the globe.</p>
+        </div>
+        <div class="flex gap-12">
+          <span class="tag tag-blue" style="font-size:0.85rem;padding:6px 14px">🟢 Live</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+
+    <!-- Edition highlights -->
+    <div class="edition-hero-card mb-32">
+      <div class="edition-hero-body">
+        <span class="section-label">Edition Theme</span>
+        <h2 class="edition-hero-title">Taking Agentic AI from prototype to production</h2>
+        <p style="color:var(--text-secondary);max-width:700px;line-height:1.8">
+          This quarter we focus on what it takes to ship agents in the real world — reliability, observability, evaluation, safety guardrails, and the tooling that makes it possible. Contributors share battle-tested patterns, lessons learned, and working code.
+        </p>
+        <div class="edition-stats">
+          <div class="edition-stat"><strong>38</strong><span>Contributors</span></div>
+          <div class="edition-stat"><strong>42</strong><span>Resources</span></div>
+          <div class="edition-stat"><strong>6</strong><span>Countries</span></div>
+          <div class="edition-stat"><strong>Jul 1–Sep 30</strong><span>Window</span></div>
+        </div>
+        <div class="flex gap-12 flex-wrap">
+          <span class="tag tag-blue">Azure AI Agent Service</span>
+          <span class="tag tag-teal">Semantic Kernel</span>
+          <span class="tag tag-purple">AutoGen</span>
+          <span class="tag tag-green">Prompt Flow</span>
+          <span class="tag tag-orange">LangGraph</span>
+          <span class="tag tag-blue">MCP</span>
+          <span class="tag tag-teal">Evaluation</span>
+          <span class="tag tag-purple">Observability</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule table -->
+    <span class="section-label">Full Schedule</span>
+    <h2 class="section-title mt-8" style="font-size:1.6rem">Content schedule</h2>
+    <p style="color:var(--text-secondary);margin-bottom:28px">Updated as each contribution goes live. Share yours with <strong style="color:var(--azure-blue-light)">#AgenticAIInsights</strong>.</p>
+
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:0.9rem">
+        <thead>
+          <tr style="border-bottom:2px solid var(--azure-blue);text-align:left">
+            <th style="padding:12px 16px;color:var(--text-muted);font-weight:600;white-space:nowrap">Date</th>
+            <th style="padding:12px 16px;color:var(--text-muted);font-weight:600">Topic</th>
+            <th style="padding:12px 16px;color:var(--text-muted);font-weight:600">Contributor</th>
+            <th style="padding:12px 16px;color:var(--text-muted);font-weight:600">Type</th>
+            <th style="padding:12px 16px;color:var(--text-muted);font-weight:600">Link</th>
+          </tr>
+        </thead>
+        <tbody id="schedule-body">
+
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">1 Jul 2025</td>
+            <td style="padding:12px 16px">Welcome to Agentic AI Insights Q3 2025</td>
+            <td style="padding:12px 16px">Dwayne Natwick</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">7 Jul 2025</td>
+            <td style="padding:12px 16px">Building Production-Ready Agents with Azure AI Agent Service</td>
+            <td style="padding:12px 16px">Sarah Lean</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">10 Jul 2025</td>
+            <td style="padding:12px 16px">Multi-Agent Orchestration with Semantic Kernel — Live Demo</td>
+            <td style="padding:12px 16px">Marco Rossi</td>
+            <td style="padding:12px 16px"><span class="tag tag-teal">Video</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">14 Jul 2025</td>
+            <td style="padding:12px 16px">AutoGen 0.4 — What Changed and Why It Matters</td>
+            <td style="padding:12px 16px">Priya Nair</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">17 Jul 2025</td>
+            <td style="padding:12px 16px">Observability for Agentic AI: Tracing with Azure Monitor</td>
+            <td style="padding:12px 16px">Thomas Thornton</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">21 Jul 2025</td>
+            <td style="padding:12px 16px">Guardrails and Safety for Production Agents</td>
+            <td style="padding:12px 16px">Wim Matthyssen</td>
+            <td style="padding:12px 16px"><span class="tag tag-teal">Video</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">24 Jul 2025</td>
+            <td style="padding:12px 16px">agent-eval-toolkit — Open-source evaluation harness</td>
+            <td style="padding:12px 16px">Anya Patel</td>
+            <td style="padding:12px 16px"><span class="tag tag-purple">OSS</span></td>
+            <td style="padding:12px 16px"><a href="https://github.com" target="_blank" rel="noopener" style="color:var(--azure-blue-light)">GitHub →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">28 Jul 2025</td>
+            <td style="padding:12px 16px">LangGraph on Azure Container Apps — End-to-End Deployment</td>
+            <td style="padding:12px 16px">Carlos Mendez</td>
+            <td style="padding:12px 16px"><span class="tag tag-green">Demo</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">View →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">4 Aug 2025</td>
+            <td style="padding:12px 16px">MCP: The Protocol Powering Tool-Calling in Agents</td>
+            <td style="padding:12px 16px">Gregor Suttie</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">7 Aug 2025</td>
+            <td style="padding:12px 16px">Semantic Kernel Plugins — Building a Custom Tool Library</td>
+            <td style="padding:12px 16px">Jurgen Kevelaers</td>
+            <td style="padding:12px 16px"><span class="tag tag-teal">Video</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">11 Aug 2025</td>
+            <td style="padding:12px 16px">Prompt Flow vs. Semantic Kernel: Choosing the Right Framework</td>
+            <td style="padding:12px 16px">Vaibhav Gujral</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">14 Aug 2025</td>
+            <td style="padding:12px 16px">azure-agent-starter — Bicep template for agent infrastructure</td>
+            <td style="padding:12px 16px">Karel De Winter</td>
+            <td style="padding:12px 16px"><span class="tag tag-purple">OSS</span></td>
+            <td style="padding:12px 16px"><a href="https://github.com" target="_blank" rel="noopener" style="color:var(--azure-blue-light)">GitHub →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">18 Aug 2025</td>
+            <td style="padding:12px 16px">SRE Meets Agentic AI: Autonomous Incident Response</td>
+            <td style="padding:12px 16px">Nick Colyer</td>
+            <td style="padding:12px 16px"><span class="tag tag-teal">Video</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">21 Aug 2025</td>
+            <td style="padding:12px 16px">Agentic RAG — Retrieval with Chain-of-Thought Planning</td>
+            <td style="padding:12px 16px">Aisha Kamara</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">25 Aug 2025</td>
+            <td style="padding:12px 16px">Testing Agentic Pipelines: Patterns and Anti-Patterns</td>
+            <td style="padding:12px 16px">Peter De Tender</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">1 Sep 2025</td>
+            <td style="padding:12px 16px">Cost Management for LLM-Powered Agents at Scale</td>
+            <td style="padding:12px 16px">Luis Beltran</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">8 Sep 2025</td>
+            <td style="padding:12px 16px">sk-agent-patterns — Reusable Semantic Kernel patterns</td>
+            <td style="padding:12px 16px">Dave Rendon</td>
+            <td style="padding:12px 16px"><span class="tag tag-purple">OSS</span></td>
+            <td style="padding:12px 16px"><a href="https://github.com" target="_blank" rel="noopener" style="color:var(--azure-blue-light)">GitHub →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">15 Sep 2025</td>
+            <td style="padding:12px 16px">Deploying a Multi-Agent System with GitHub Actions + ACA</td>
+            <td style="padding:12px 16px">Sarah Lean</td>
+            <td style="padding:12px 16px"><span class="tag tag-green">Demo</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">View →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">22 Sep 2025</td>
+            <td style="padding:12px 16px">Responsible AI Principles Applied to Autonomous Agents</td>
+            <td style="padding:12px 16px">Wim Matthyssen</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 16px;white-space:nowrap;color:var(--text-muted)">29 Sep 2025</td>
+            <td style="padding:12px 16px">Q3 2025 Wrap-Up — Highlights and What's Next</td>
+            <td style="padding:12px 16px">Dwayne Natwick</td>
+            <td style="padding:12px 16px"><span class="tag tag-blue">Blog</span></td>
+            <td style="padding:12px 16px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cta-banner mt-48">
+      <h2>Want to be in the next edition?</h2>
+      <p>Q4 2025 submissions open October 1st. Theme: <strong>Agent Safety &amp; Governance</strong>.</p>
+      <div class="cta-actions">
+        <button class="btn btn-primary" data-section="contribute">Submit a Contribution</button>
+      </div>
+    </div>
+  </div>
+
+</section><!-- /LATEST -->
+
+
+<!-- ============================================================
+     SECTION: PREVIOUS EDITIONS
+     ============================================================ -->
+<section id="section-editions" class="page-section" aria-label="Previous Editions">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">Archive</span>
+      <h1 class="section-title">Previous Editions</h1>
+      <p class="section-subtitle">Every edition is preserved and freely accessible. Browse the archive to explore all community contributions.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+
+    <!-- Q2 2025 -->
+    <div class="edition-archive-card mb-24">
+      <div class="flex justify-between items-center flex-wrap gap-12" style="margin-bottom:16px">
+        <div>
+          <div class="edition-quarter">Q2 2025 · April – June</div>
+          <div class="edition-theme">Multi-Agent Orchestration</div>
+        </div>
+        <span class="tag tag-blue">32 Resources</span>
+      </div>
+      <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:16px">
+        The community explored how to compose multiple specialised agents into robust pipelines — covering orchestration patterns, inter-agent communication, shared memory, and failure handling.
+      </p>
+      <div class="edition-count-row mb-16">
+        <span>📝 14 Blog Posts</span>
+        <span>🎬 10 Videos</span>
+        <span>💻 6 OSS Projects</span>
+        <span>🎯 2 Live Demos</span>
+        <span>👥 29 Contributors</span>
+      </div>
+      <div style="overflow-x:auto;margin-top:16px" id="q2-schedule" style="display:none">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem">
+          <thead>
+            <tr style="border-bottom:1px solid var(--azure-blue);text-align:left">
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600;white-space:nowrap">Date</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Topic</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Contributor</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Type</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">1 Apr 2025</td><td style="padding:10px 14px">Welcome to Q2 2025</td><td style="padding:10px 14px">Dwayne Natwick</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">7 Apr 2025</td><td style="padding:10px 14px">AutoGen Multi-Agent Conversations: Patterns &amp; Pitfalls</td><td style="padding:10px 14px">Priya Nair</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">14 Apr 2025</td><td style="padding:10px 14px">Orchestrating Agents with Semantic Kernel's Process Framework</td><td style="padding:10px 14px">Marco Rossi</td><td style="padding:10px 14px"><span class="tag tag-teal">Video</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">21 Apr 2025</td><td style="padding:10px 14px">multi-agent-starter — Azure Bicep template for multi-agent systems</td><td style="padding:10px 14px">Karel De Winter</td><td style="padding:10px 14px"><span class="tag tag-purple">OSS</span></td><td style="padding:10px 14px"><a href="https://github.com" target="_blank" rel="noopener" style="color:var(--azure-blue-light)">GitHub →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">5 May 2025</td><td style="padding:10px 14px">Shared State in Multi-Agent Systems with Azure Cosmos DB</td><td style="padding:10px 14px">Thomas Thornton</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">30 Jun 2025</td><td style="padding:10px 14px">Q2 2025 Wrap-Up</td><td style="padding:10px 14px">Dwayne Natwick</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-ghost btn-sm mt-16" data-edition-toggle="q2-schedule">View Schedule ↓</button>
+    </div>
+
+    <!-- Q1 2025 -->
+    <div class="edition-archive-card mb-24">
+      <div class="flex justify-between items-center flex-wrap gap-12" style="margin-bottom:16px">
+        <div>
+          <div class="edition-quarter">Q1 2025 · January – March</div>
+          <div class="edition-theme">Building Your First AI Agent</div>
+        </div>
+        <span class="tag tag-teal">28 Resources</span>
+      </div>
+      <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:16px">
+        A beginner-friendly edition focused on getting started with Agentic AI — covering the basics of agents, tool use, memory, planning, and first deployments on Azure.
+      </p>
+      <div class="edition-count-row mb-16">
+        <span>📝 12 Blog Posts</span>
+        <span>🎬 9 Videos</span>
+        <span>💻 5 OSS Projects</span>
+        <span>🎯 2 Live Demos</span>
+        <span>👥 24 Contributors</span>
+      </div>
+      <div style="overflow-x:auto;margin-top:16px" id="q1-schedule" style="display:none">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem">
+          <thead>
+            <tr style="border-bottom:1px solid var(--azure-blue);text-align:left">
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600;white-space:nowrap">Date</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Topic</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Contributor</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Type</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">6 Jan 2025</td><td style="padding:10px 14px">What Is an AI Agent? A Practical Definition</td><td style="padding:10px 14px">Sarah Lean</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">13 Jan 2025</td><td style="padding:10px 14px">Your First Agent with Azure AI Agent Service</td><td style="padding:10px 14px">Gregor Suttie</td><td style="padding:10px 14px"><span class="tag tag-teal">Video</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">20 Jan 2025</td><td style="padding:10px 14px">Tool Use &amp; Function Calling Explained</td><td style="padding:10px 14px">Vaibhav Gujral</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">31 Mar 2025</td><td style="padding:10px 14px">Q1 2025 Wrap-Up — Key Takeaways</td><td style="padding:10px 14px">Dwayne Natwick</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-ghost btn-sm mt-16" data-edition-toggle="q1-schedule">View Schedule ↓</button>
+    </div>
+
+    <!-- Q4 2024 -->
+    <div class="edition-archive-card">
+      <div class="flex justify-between items-center flex-wrap gap-12" style="margin-bottom:16px">
+        <div>
+          <div class="edition-quarter">Q4 2024 · October – December</div>
+          <div class="edition-theme">Agentic AI Foundations</div>
+        </div>
+        <span class="tag tag-purple">21 Resources</span>
+      </div>
+      <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:16px">
+        Our inaugural edition! The community came together to define what Agentic AI is, explore the landscape of frameworks, and share first impressions of real-world experiments.
+      </p>
+      <div class="edition-count-row mb-16">
+        <span>📝 10 Blog Posts</span>
+        <span>🎬 7 Videos</span>
+        <span>💻 3 OSS Projects</span>
+        <span>🎯 1 Live Demo</span>
+        <span>👥 18 Contributors</span>
+      </div>
+      <div style="overflow-x:auto;margin-top:16px" id="q4-schedule" style="display:none">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem">
+          <thead>
+            <tr style="border-bottom:1px solid var(--azure-blue);text-align:left">
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600;white-space:nowrap">Date</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Topic</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Contributor</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Type</th>
+              <th style="padding:10px 14px;color:var(--text-muted);font-weight:600">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">1 Oct 2024</td><td style="padding:10px 14px">Introducing Agentic AI Insights — Why Now?</td><td style="padding:10px 14px">Dwayne Natwick</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">7 Oct 2024</td><td style="padding:10px 14px">The Agentic AI Landscape: Frameworks Compared</td><td style="padding:10px 14px">Sarah Lean</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">14 Oct 2024</td><td style="padding:10px 14px">Getting Started with Semantic Kernel</td><td style="padding:10px 14px">Gregor Suttie</td><td style="padding:10px 14px"><span class="tag tag-teal">Video</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Watch →</a></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px;white-space:nowrap;color:var(--text-muted)">31 Dec 2024</td><td style="padding:10px 14px">Q4 2024 Wrap-Up — The Year in Agentic AI</td><td style="padding:10px 14px">Dwayne Natwick</td><td style="padding:10px 14px"><span class="tag tag-blue">Blog</span></td><td style="padding:10px 14px"><a href="#" style="color:var(--azure-blue-light)">Read →</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-ghost btn-sm mt-16" data-edition-toggle="q4-schedule">View Schedule ↓</button>
+    </div>
+
+  </div>
+</section><!-- /PREVIOUS EDITIONS -->
+
+
+<!-- ============================================================
+     SECTION: BLOG
+     ============================================================ -->
+<section id="section-blog" class="page-section" aria-label="Blog">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">Blog</span>
+      <h1 class="section-title">Community blog posts</h1>
+      <p class="section-subtitle">In-depth articles from practitioners sharing real-world Agentic AI knowledge.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+    <div class="blog-layout">
+      <div>
+        <div class="filter-bar filter-group">
+          <button class="filter-btn active" data-filter="all">All Posts</button>
+          <button class="filter-btn" data-filter="q3-2025">Q3 2025</button>
+          <button class="filter-btn" data-filter="q2-2025">Q2 2025</button>
+          <button class="filter-btn" data-filter="q1-2025">Q1 2025</button>
+          <button class="filter-btn" data-filter="q4-2024">Q4 2024</button>
+        </div>
+
+        <div class="blog-grid">
+
+          <article class="card card-wide" data-filter="q3-2025">
+            <div class="card-thumb-placeholder" aria-hidden="true">📝</div>
+            <div class="card-body">
+              <div class="card-meta">
+                <span class="tag tag-blue">Blog</span>
+                <span class="tag tag-teal">Q3 2025</span>
+                <span class="card-date">📅 Jul 7, 2025</span>
+              </div>
+              <h3 class="card-title">Building Production-Ready Agents with Azure AI Agent Service</h3>
+              <p class="card-excerpt">A deep-dive walkthrough on deploying resilient, observable AI agents using Azure AI Agent Service — from architecture decisions to monitoring in production.</p>
+              <div class="card-footer">
+                <div class="card-author"><div class="avatar">SL</div><span class="card-author-name">Sarah Lean</span></div>
+                <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-wide" data-filter="q3-2025">
+            <div class="card-thumb-placeholder" aria-hidden="true">🔍</div>
+            <div class="card-body">
+              <div class="card-meta">
+                <span class="tag tag-blue">Blog</span>
+                <span class="tag tag-teal">Q3 2025</span>
+                <span class="card-date">📅 Jul 14, 2025</span>
+              </div>
+              <h3 class="card-title">AutoGen 0.4 — What Changed and Why It Matters</h3>
+              <p class="card-excerpt">A tour of the AutoGen 0.4 architecture, covering the new async runtime, actor model, and what these changes mean for production multi-agent systems.</p>
+              <div class="card-footer">
+                <div class="card-author"><div class="avatar">PN</div><span class="card-author-name">Priya Nair</span></div>
+                <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-wide" data-filter="q3-2025">
+            <div class="card-thumb-placeholder" aria-hidden="true">📊</div>
+            <div class="card-body">
+              <div class="card-meta">
+                <span class="tag tag-blue">Blog</span>
+                <span class="tag tag-teal">Q3 2025</span>
+                <span class="card-date">📅 Jul 17, 2025</span>
+              </div>
+              <h3 class="card-title">Observability for Agentic AI: Tracing with Azure Monitor</h3>
+              <p class="card-excerpt">How to instrument agentic pipelines with OpenTelemetry and route traces to Azure Monitor — including a sample dashboard and alert rules for production use.</p>
+              <div class="card-footer">
+                <div class="card-author"><div class="avatar">TT</div><span class="card-author-name">Thomas Thornton</span></div>
+                <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-wide" data-filter="q3-2025">
+            <div class="card-thumb-placeholder" aria-hidden="true">🔗</div>
+            <div class="card-body">
+              <div class="card-meta">
+                <span class="tag tag-blue">Blog</span>
+                <span class="tag tag-teal">Q3 2025</span>
+                <span class="card-date">📅 Aug 4, 2025</span>
+              </div>
+              <h3 class="card-title">MCP: The Protocol Powering Tool-Calling in Agents</h3>
+              <p class="card-excerpt">An explainer on the Model Context Protocol (MCP) — what it is, how it works, and how to build MCP-compatible tools that work with any Agentic AI framework.</p>
+              <div class="card-footer">
+                <div class="card-author"><div class="avatar">GS</div><span class="card-author-name">Gregor Suttie</span></div>
+                <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-wide" data-filter="q2-2025">
+            <div class="card-thumb-placeholder" aria-hidden="true">🤝</div>
+            <div class="card-body">
+              <div class="card-meta">
+                <span class="tag tag-blue">Blog</span>
+                <span class="tag tag-blue">Q2 2025</span>
+                <span class="card-date">📅 Apr 7, 2025</span>
+              </div>
+              <h3 class="card-title">AutoGen Multi-Agent Conversations: Patterns &amp; Pitfalls</h3>
+              <p class="card-excerpt">Real-world patterns for structuring multi-agent conversations in AutoGen, including lessons learned from production deployments and common failure modes to avoid.</p>
+              <div class="card-footer">
+                <div class="card-author"><div class="avatar">PN</div><span class="card-author-name">Priya Nair</span></div>
+                <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-wide" data-filter="q1-2025">
+            <div class="card-thumb-placeholder" aria-hidden="true">🤖</div>
+            <div class="card-body">
+              <div class="card-meta">
+                <span class="tag tag-blue">Blog</span>
+                <span class="tag tag-purple">Q1 2025</span>
+                <span class="card-date">📅 Jan 6, 2025</span>
+              </div>
+              <h3 class="card-title">What Is an AI Agent? A Practical Definition</h3>
+              <p class="card-excerpt">Cutting through the hype: what does "agentic AI" actually mean in 2025? A practical, framework-agnostic definition with examples and a comparison to traditional automation.</p>
+              <div class="card-footer">
+                <div class="card-author"><div class="avatar">SL</div><span class="card-author-name">Sarah Lean</span></div>
+                <a href="#" class="btn btn-ghost btn-sm">Read →</a>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-widget">
+          <h4>Popular Topics</h4>
+          <div class="sidebar-tags">
+            <span class="tag tag-blue">Azure AI</span>
+            <span class="tag tag-teal">Semantic Kernel</span>
+            <span class="tag tag-purple">AutoGen</span>
+            <span class="tag tag-green">Evaluation</span>
+            <span class="tag tag-orange">LangGraph</span>
+            <span class="tag tag-blue">MCP</span>
+            <span class="tag tag-teal">Observability</span>
+            <span class="tag tag-purple">RAG</span>
+          </div>
+        </div>
+
+        <div class="sidebar-widget">
+          <h4>By Edition</h4>
+          <div class="sidebar-topic">Q3 2025 <span>18</span></div>
+          <div class="sidebar-topic">Q2 2025 <span>14</span></div>
+          <div class="sidebar-topic">Q1 2025 <span>12</span></div>
+          <div class="sidebar-topic">Q4 2024 <span>10</span></div>
+        </div>
+
+        <div class="sidebar-widget">
+          <h4>Top Contributors</h4>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px"><div class="avatar">SL</div><span style="font-size:0.875rem">Sarah Lean</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><div class="avatar">TT</div><span style="font-size:0.875rem">Thomas Thornton</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><div class="avatar">GS</div><span style="font-size:0.875rem">Gregor Suttie</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><div class="avatar">PN</div><span style="font-size:0.875rem">Priya Nair</span></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section><!-- /BLOG -->
+
+
+<!-- ============================================================
+     SECTION: VIDEOS
+     ============================================================ -->
+<section id="section-videos" class="page-section" aria-label="Videos">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">Videos</span>
+      <h1 class="section-title">Community video content</h1>
+      <p class="section-subtitle">Short videos, walkthroughs, and live demos from community contributors. All free, all community-created.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+    <div class="filter-bar filter-group">
+      <button class="filter-btn active" data-filter="all">All Videos</button>
+      <button class="filter-btn" data-filter="demo">Demos</button>
+      <button class="filter-btn" data-filter="walkthrough">Walkthroughs</button>
+      <button class="filter-btn" data-filter="talk">Talks</button>
+    </div>
+
+    <div class="video-grid">
+
+      <article class="video-card" data-filter="walkthrough">
+        <div class="video-thumb" aria-hidden="true">
+          🎬
+          <div class="play-btn" aria-hidden="true">▶</div>
+          <span class="video-duration">22:14</span>
+        </div>
+        <div class="video-body">
+          <div class="card-meta">
+            <span class="tag tag-teal">Walkthrough</span>
+            <span class="tag tag-teal">Q3 2025</span>
+          </div>
+          <h3 class="card-title" style="font-size:0.95rem">Multi-Agent Orchestration with Semantic Kernel — Live Demo</h3>
+          <div class="card-footer">
+            <div class="card-author"><div class="avatar">MR</div><span class="card-author-name">Marco Rossi</span></div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="video-card" data-filter="demo">
+        <div class="video-thumb" aria-hidden="true">
+          🤖
+          <div class="play-btn" aria-hidden="true">▶</div>
+          <span class="video-duration">18:42</span>
+        </div>
+        <div class="video-body">
+          <div class="card-meta">
+            <span class="tag tag-green">Demo</span>
+            <span class="tag tag-teal">Q3 2025</span>
+          </div>
+          <h3 class="card-title" style="font-size:0.95rem">Guardrails and Safety for Production Agents</h3>
+          <div class="card-footer">
+            <div class="card-author"><div class="avatar">WM</div><span class="card-author-name">Wim Matthyssen</span></div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="video-card" data-filter="walkthrough">
+        <div class="video-thumb" aria-hidden="true">
+          🔧
+          <div class="play-btn" aria-hidden="true">▶</div>
+          <span class="video-duration">31:08</span>
+        </div>
+        <div class="video-body">
+          <div class="card-meta">
+            <span class="tag tag-teal">Walkthrough</span>
+            <span class="tag tag-teal">Q3 2025</span>
+          </div>
+          <h3 class="card-title" style="font-size:0.95rem">Semantic Kernel Plugins — Building a Custom Tool Library</h3>
+          <div class="card-footer">
+            <div class="card-author"><div class="avatar">JK</div><span class="card-author-name">Jurgen Kevelaers</span></div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="video-card" data-filter="talk">
+        <div class="video-thumb" aria-hidden="true">
+          🚨
+          <div class="play-btn" aria-hidden="true">▶</div>
+          <span class="video-duration">27:55</span>
+        </div>
+        <div class="video-body">
+          <div class="card-meta">
+            <span class="tag tag-purple">Talk</span>
+            <span class="tag tag-teal">Q3 2025</span>
+          </div>
+          <h3 class="card-title" style="font-size:0.95rem">SRE Meets Agentic AI: Autonomous Incident Response</h3>
+          <div class="card-footer">
+            <div class="card-author"><div class="avatar">NC</div><span class="card-author-name">Nick Colyer</span></div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="video-card" data-filter="walkthrough">
+        <div class="video-thumb" aria-hidden="true">
+          🎯
+          <div class="play-btn" aria-hidden="true">▶</div>
+          <span class="video-duration">20:30</span>
+        </div>
+        <div class="video-body">
+          <div class="card-meta">
+            <span class="tag tag-teal">Walkthrough</span>
+            <span class="tag tag-blue">Q2 2025</span>
+          </div>
+          <h3 class="card-title" style="font-size:0.95rem">Orchestrating Agents with Semantic Kernel's Process Framework</h3>
+          <div class="card-footer">
+            <div class="card-author"><div class="avatar">MR</div><span class="card-author-name">Marco Rossi</span></div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="video-card" data-filter="demo">
+        <div class="video-thumb" aria-hidden="true">
+          🏫
+          <div class="play-btn" aria-hidden="true">▶</div>
+          <span class="video-duration">15:20</span>
+        </div>
+        <div class="video-body">
+          <div class="card-meta">
+            <span class="tag tag-green">Demo</span>
+            <span class="tag tag-purple">Q1 2025</span>
+          </div>
+          <h3 class="card-title" style="font-size:0.95rem">Your First Agent with Azure AI Agent Service</h3>
+          <div class="card-footer">
+            <div class="card-author"><div class="avatar">GS</div><span class="card-author-name">Gregor Suttie</span></div>
+            <a href="#" class="btn btn-ghost btn-sm">Watch →</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section><!-- /VIDEOS -->
+
+
+<!-- ============================================================
+     SECTION: OPEN SOURCE
+     ============================================================ -->
+<section id="section-opensource" class="page-section" aria-label="Open Source">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">Open Source</span>
+      <h1 class="section-title">Community open-source projects</h1>
+      <p class="section-subtitle">Real tools, templates, and frameworks built and shared by the community. Fork, star, and contribute.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+    <div class="filter-bar filter-group">
+      <button class="filter-btn active" data-filter="all">All Projects</button>
+      <button class="filter-btn" data-filter="framework">Frameworks</button>
+      <button class="filter-btn" data-filter="template">Templates</button>
+      <button class="filter-btn" data-filter="tool">Tools</button>
+    </div>
+
+    <div class="repo-grid">
+
+      <article class="repo-card" data-filter="tool">
+        <div class="repo-header">
+          <div class="repo-icon" aria-hidden="true">🔬</div>
+          <div>
+            <div class="repo-name">agent-eval-toolkit</div>
+            <div class="repo-org">by Anya Patel · Q3 2025</div>
+          </div>
+        </div>
+        <p class="repo-desc">Open-source evaluation framework for measuring correctness, latency, and safety of multi-step agent pipelines. Integrates with Azure AI Evaluation.</p>
+        <div class="repo-meta">
+          <span>⭐ 312</span>
+          <span>🍴 48</span>
+          <span>🐍 Python</span>
+        </div>
+        <div class="repo-topics">
+          <span class="tag tag-blue">evaluation</span>
+          <span class="tag tag-teal">azure-ai</span>
+          <span class="tag tag-purple">safety</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm mt-16">View on GitHub →</a>
+      </article>
+
+      <article class="repo-card" data-filter="template">
+        <div class="repo-header">
+          <div class="repo-icon" aria-hidden="true">🏗️</div>
+          <div>
+            <div class="repo-name">azure-agent-starter</div>
+            <div class="repo-org">by Karel De Winter · Q3 2025</div>
+          </div>
+        </div>
+        <p class="repo-desc">Bicep + GitHub Actions template for deploying a production-ready agent infrastructure on Azure — includes ACA, AI Foundry, Cosmos DB, and Key Vault.</p>
+        <div class="repo-meta">
+          <span>⭐ 187</span>
+          <span>🍴 34</span>
+          <span>📄 Bicep</span>
+        </div>
+        <div class="repo-topics">
+          <span class="tag tag-blue">bicep</span>
+          <span class="tag tag-teal">azure</span>
+          <span class="tag tag-green">iac</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm mt-16">View on GitHub →</a>
+      </article>
+
+      <article class="repo-card" data-filter="framework">
+        <div class="repo-header">
+          <div class="repo-icon" aria-hidden="true">🎯</div>
+          <div>
+            <div class="repo-name">sk-agent-patterns</div>
+            <div class="repo-org">by Dave Rendon · Q3 2025</div>
+          </div>
+        </div>
+        <p class="repo-desc">A library of reusable Semantic Kernel agent patterns — supervisor, worker, router, critic — with working examples and integration tests.</p>
+        <div class="repo-meta">
+          <span>⭐ 254</span>
+          <span>🍴 41</span>
+          <span>🔷 C#</span>
+        </div>
+        <div class="repo-topics">
+          <span class="tag tag-teal">semantic-kernel</span>
+          <span class="tag tag-purple">patterns</span>
+          <span class="tag tag-blue">dotnet</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm mt-16">View on GitHub →</a>
+      </article>
+
+      <article class="repo-card" data-filter="template">
+        <div class="repo-header">
+          <div class="repo-icon" aria-hidden="true">🤝</div>
+          <div>
+            <div class="repo-name">multi-agent-starter</div>
+            <div class="repo-org">by Karel De Winter · Q2 2025</div>
+          </div>
+        </div>
+        <p class="repo-desc">Azure Bicep template for multi-agent systems — provisions Azure AI Foundry, Service Bus for agent messaging, and Container Apps for each agent role.</p>
+        <div class="repo-meta">
+          <span>⭐ 143</span>
+          <span>🍴 27</span>
+          <span>📄 Bicep</span>
+        </div>
+        <div class="repo-topics">
+          <span class="tag tag-blue">bicep</span>
+          <span class="tag tag-teal">multi-agent</span>
+          <span class="tag tag-purple">azure</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm mt-16">View on GitHub →</a>
+      </article>
+
+      <article class="repo-card" data-filter="tool">
+        <div class="repo-header">
+          <div class="repo-icon" aria-hidden="true">🧪</div>
+          <div>
+            <div class="repo-name">agent-test-harness</div>
+            <div class="repo-org">by Peter De Tender · Q2 2025</div>
+          </div>
+        </div>
+        <p class="repo-desc">pytest-based test harness for agentic pipelines. Provides mocks for LLM calls, tool execution, and memory — making it easy to write fast, deterministic agent tests.</p>
+        <div class="repo-meta">
+          <span>⭐ 98</span>
+          <span>🍴 16</span>
+          <span>🐍 Python</span>
+        </div>
+        <div class="repo-topics">
+          <span class="tag tag-green">testing</span>
+          <span class="tag tag-blue">pytest</span>
+          <span class="tag tag-teal">mocking</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm mt-16">View on GitHub →</a>
+      </article>
+
+      <article class="repo-card" data-filter="framework">
+        <div class="repo-header">
+          <div class="repo-icon" aria-hidden="true">🌐</div>
+          <div>
+            <div class="repo-name">mcp-azure-tools</div>
+            <div class="repo-org">by Gregor Suttie · Q3 2025</div>
+          </div>
+        </div>
+        <p class="repo-desc">A collection of MCP-compatible Azure tool servers — wrapping Azure Resource Manager, Blob Storage, and Azure Monitor for use with any MCP-supporting agent framework.</p>
+        <div class="repo-meta">
+          <span>⭐ 176</span>
+          <span>🍴 29</span>
+          <span>🟨 TypeScript</span>
+        </div>
+        <div class="repo-topics">
+          <span class="tag tag-purple">mcp</span>
+          <span class="tag tag-blue">azure</span>
+          <span class="tag tag-teal">tools</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener" class="btn btn-ghost btn-sm mt-16">View on GitHub →</a>
+      </article>
+
+    </div>
+
+    <div class="cta-banner mt-48">
+      <h2>Built something for the community?</h2>
+      <p>Open-source Agentic AI projects are a first-class contribution type. Submit your repo for the next edition.</p>
+      <div class="cta-actions">
+        <button class="btn btn-primary" data-section="contribute">Submit Your Project</button>
+      </div>
+    </div>
+  </div>
+</section><!-- /OPEN SOURCE -->
+
+
+<!-- ============================================================
+     SECTION: COMMUNITY
+     ============================================================ -->
+<section id="section-community" class="page-section" aria-label="Community">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">Community</span>
+      <h1 class="section-title">Join the community</h1>
+      <p class="section-subtitle">Agentic AI Insights is powered by the community. Connect, share, and learn together.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+
+    <div class="community-hero">
+      <div style="font-size:3.5rem;margin-bottom:16px" aria-hidden="true">🤝</div>
+      <h2 style="font-size:1.8rem;margin-bottom:12px">Everyone is welcome</h2>
+      <p style="color:var(--text-secondary);max-width:560px;margin:0 auto 28px">
+        Whether you're publishing your first blog post or sharing a production system you've been running for a year — this community is for you.
+        Share your work using <strong style="color:var(--azure-blue-light)">#AgenticAIInsights</strong>.
+      </p>
+      <div class="flex gap-12 justify-center flex-wrap">
+        <button class="btn btn-primary" data-section="contribute">Contribute to Next Edition</button>
+        <a href="https://twitter.com/search?q=%23AgenticAIInsights" target="_blank" rel="noopener" class="btn btn-outline">Follow #AgenticAIInsights</a>
+      </div>
+    </div>
+
+    <h2 class="section-title mt-48" style="font-size:1.6rem">Connect with us</h2>
+    <div class="community-channels mt-24">
+      <a href="https://discord.gg" target="_blank" rel="noopener" class="channel-card">
+        <div class="channel-icon" aria-hidden="true">💬</div>
+        <div class="channel-name">Discord</div>
+        <div class="channel-desc">Chat, ask questions, and share ideas in our community server</div>
+      </a>
+      <a href="https://twitter.com" target="_blank" rel="noopener" class="channel-card">
+        <div class="channel-icon" aria-hidden="true">𝕏</div>
+        <div class="channel-name">X / Twitter</div>
+        <div class="channel-desc">Follow <strong>#AgenticAIInsights</strong> and share your contributions</div>
+      </a>
+      <a href="https://linkedin.com" target="_blank" rel="noopener" class="channel-card">
+        <div class="channel-icon" aria-hidden="true">🔗</div>
+        <div class="channel-name">LinkedIn</div>
+        <div class="channel-desc">Follow the initiative page for edition announcements</div>
+      </a>
+      <a href="https://github.com" target="_blank" rel="noopener" class="channel-card">
+        <div class="channel-icon" aria-hidden="true">🐙</div>
+        <div class="channel-name">GitHub</div>
+        <div class="channel-desc">Submit contributions, report issues, and explore OSS projects</div>
+      </a>
+      <a href="https://www.youtube.com" target="_blank" rel="noopener" class="channel-card">
+        <div class="channel-icon" aria-hidden="true">▶️</div>
+        <div class="channel-name">YouTube</div>
+        <div class="channel-desc">Watch all community videos in the Agentic AI Insights playlist</div>
+      </a>
+    </div>
+
+    <div class="divider"></div>
+
+    <span class="section-label">Contributors</span>
+    <h2 class="section-title mt-8" style="font-size:1.6rem">Community contributors</h2>
+    <p style="color:var(--text-secondary);margin-bottom:28px">All-time contributors across every edition. Thank you! 🙏</p>
+
+    <div class="contributors-grid">
+      <div class="contributor-card"><div class="avatar avatar-lg">DN</div><div class="contributor-info"><strong>Dwayne Natwick</strong><span>4 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">SL</div><div class="contributor-info"><strong>Sarah Lean</strong><span>4 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">GS</div><div class="contributor-info"><strong>Gregor Suttie</strong><span>4 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">TT</div><div class="contributor-info"><strong>Thomas Thornton</strong><span>3 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">MR</div><div class="contributor-info"><strong>Marco Rossi</strong><span>3 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">WM</div><div class="contributor-info"><strong>Wim Matthyssen</strong><span>3 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">PN</div><div class="contributor-info"><strong>Priya Nair</strong><span>2 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">AP</div><div class="contributor-info"><strong>Anya Patel</strong><span>2 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">KW</div><div class="contributor-info"><strong>Karel De Winter</strong><span>2 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">DR</div><div class="contributor-info"><strong>Dave Rendon</strong><span>2 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">JK</div><div class="contributor-info"><strong>Jurgen Kevelaers</strong><span>2 editions</span></div></div>
+      <div class="contributor-card"><div class="avatar avatar-lg">NC</div><div class="contributor-info"><strong>Nick Colyer</strong><span>2 editions</span></div></div>
+    </div>
+  </div>
+</section><!-- /COMMUNITY -->
+
+
+<!-- ============================================================
+     SECTION: CONTRIBUTE
+     ============================================================ -->
+<section id="section-contribute" class="page-section" aria-label="Contribute">
+
+  <div class="page-header">
+    <div class="container">
+      <span class="section-label">Contribute</span>
+      <h1 class="section-title">Share your knowledge</h1>
+      <p class="section-subtitle">Every quarter we welcome new contributions. No prior experience needed — first-time contributors are warmly encouraged.</p>
+    </div>
+  </div>
+
+  <div class="container section-pad">
+    <div class="contribute-grid">
+
+      <!-- Left: how it works -->
+      <div>
+        <span class="section-label">Process</span>
+        <h2 style="font-size:1.6rem;margin:8px 0 24px">How to contribute</h2>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num" aria-hidden="true">1</div>
+            <div class="step-content">
+              <h4>Pick a topic</h4>
+              <p>Choose something you've built, learned, or experimented with in Agentic AI. Real experience beats theory every time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" aria-hidden="true">2</div>
+            <div class="step-content">
+              <h4>Choose your format</h4>
+              <p>Blog post, short video, live demo, or open-source project — pick whatever suits your topic and style.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" aria-hidden="true">3</div>
+            <div class="step-content">
+              <h4>Publish on your own platform</h4>
+              <p>Host your content wherever you like — your blog, YouTube, GitHub, or a talk recording. We'll link to it from this site.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" aria-hidden="true">4</div>
+            <div class="step-content">
+              <h4>Submit the form</h4>
+              <p>Fill in the form with your name, content type, title, and link. We'll review and add it to the edition schedule.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" aria-hidden="true">5</div>
+            <div class="step-content">
+              <h4>Share it with the community</h4>
+              <p>Post on LinkedIn and X/Twitter with <strong style="color:var(--azure-blue-light)">#AgenticAIInsights</strong> and a link back to this site.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <span class="section-label">Guidelines</span>
+        <h3 style="font-size:1.1rem;margin:8px 0 16px">Contribution guidelines</h3>
+        <div class="guidelines">
+          <div class="guideline-item"><span class="guideline-check">✔</span><p>Content must be focused on Agentic AI — agents, frameworks, tools, patterns, or real-world use cases.</p></div>
+          <div class="guideline-item"><span class="guideline-check">✔</span><p>Practical and hands-on content is preferred over high-level overviews.</p></div>
+          <div class="guideline-item"><span class="guideline-check">✔</span><p>Content must be original and published by you. No reposts of others' work.</p></div>
+          <div class="guideline-item"><span class="guideline-check">✔</span><p>No product marketing or sponsored content. Community-first, always.</p></div>
+          <div class="guideline-item"><span class="guideline-check">✔</span><p>All skill levels welcome — beginner walk-throughs are just as valuable as advanced architecture posts.</p></div>
+        </div>
+
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-top:24px">
+          <h4 style="margin-bottom:8px">📅 Q4 2025 Submission Deadline</h4>
+          <p style="font-size:0.875rem;color:var(--text-secondary)">Submissions close <strong style="color:var(--text-primary)">November 15, 2025</strong>. Theme: <strong style="color:var(--azure-blue-light)">Agent Safety &amp; Governance</strong>.</p>
+        </div>
+      </div>
+
+      <!-- Right: submission form -->
+      <div class="form-card">
+        <h2 style="font-size:1.4rem;margin-bottom:8px">Submit Your Contribution</h2>
+        <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:28px">
+          Fill in the details below and we'll be in touch to confirm your spot in the next edition.
+        </p>
+
+        <form id="contribute-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="f-name">Your Name <span style="color:#f87171">*</span></label>
+            <input class="form-input" type="text" id="f-name" name="name" placeholder="e.g. Sarah Lean" required autocomplete="name" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-email">Email Address <span style="color:#f87171">*</span></label>
+            <input class="form-input" type="email" id="f-email" name="email" placeholder="you@example.com" required autocomplete="email" />
+            <p class="form-hint">We'll only use this to confirm your submission.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-twitter">X / Twitter Handle</label>
+            <input class="form-input" type="text" id="f-twitter" name="twitter" placeholder="@yourhandle" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-type">Contribution Type <span style="color:#f87171">*</span></label>
+            <select class="form-select" id="f-type" name="type" required>
+              <option value="" disabled selected>Select a type…</option>
+              <option value="blog">Blog Post</option>
+              <option value="video">Video / Talk Recording</option>
+              <option value="demo">Live Demo</option>
+              <option value="oss">Open-Source Project</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-title">Title <span style="color:#f87171">*</span></label>
+            <input class="form-input" type="text" id="f-title" name="title" placeholder="e.g. Building Agents with Semantic Kernel" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-url">Content URL <span style="color:#f87171">*</span></label>
+            <input class="form-input" type="url" id="f-url" name="url" placeholder="https://yourblog.com/your-post" required />
+            <p class="form-hint">Link to your published blog post, video, GitHub repo, or demo.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-desc">Short Description</label>
+            <textarea class="form-textarea" id="f-desc" name="description" rows="4" placeholder="A 2–3 sentence summary of what your contribution covers and who it's for."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-edition">Target Edition</label>
+            <select class="form-select" id="f-edition" name="edition">
+              <option value="q4-2025" selected>Q4 2025 — Agent Safety &amp; Governance</option>
+              <option value="q1-2026">Q1 2026 (theme TBD)</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+            ✍️ Submit Contribution
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section><!-- /CONTRIBUTE -->
+
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer id="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom:12px">
+          <div class="nav-logo-icon" aria-hidden="true">🤖</div>
+          <div class="nav-logo-text">Agentic <span>AI Insights</span></div>
+        </div>
+        <p>A free, quarterly, community-driven initiative sharing knowledge about Agentic AI through blog posts, videos, demos, and open-source projects.</p>
+        <div class="footer-social">
+          <a href="https://twitter.com" target="_blank" rel="noopener" class="social-btn" aria-label="X / Twitter">𝕏</a>
+          <a href="https://linkedin.com" target="_blank" rel="noopener" class="social-btn" aria-label="LinkedIn">in</a>
+          <a href="https://github.com" target="_blank" rel="noopener" class="social-btn" aria-label="GitHub">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+          </a>
+          <a href="https://discord.gg" target="_blank" rel="noopener" class="social-btn" aria-label="Discord">💬</a>
+          <a href="https://www.youtube.com" target="_blank" rel="noopener" class="social-btn" aria-label="YouTube">▶</a>
+        </div>
+      </div>
+
+      <nav class="footer-col" aria-label="Quick links">
+        <h5>Initiative</h5>
+        <ul>
+          <li><a data-section="home">Home</a></li>
+          <li><a data-section="about">About</a></li>
+          <li><a data-section="latest">Latest Edition</a></li>
+          <li><a data-section="editions">Previous Editions</a></li>
+          <li><a data-section="contribute">Contribute</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-label="Content links">
+        <h5>Content</h5>
+        <ul>
+          <li><a data-section="blog">Blog Posts</a></li>
+          <li><a data-section="videos">Videos</a></li>
+          <li><a data-section="opensource">Open Source</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-label="Community links">
+        <h5>Community</h5>
+        <ul>
+          <li><a data-section="community">Community Hub</a></li>
+          <li><a href="https://twitter.com" target="_blank" rel="noopener">Follow on X</a></li>
+          <li><a href="https://discord.gg" target="_blank" rel="noopener">Join Discord</a></li>
+          <li><a href="https://azurebacktoschool.github.io" target="_blank" rel="noopener">Azure Back to School</a></li>
+          <li><a href="https://azureadventcalendar.com" target="_blank" rel="noopener">Azure Advent Calendar</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2024–2025 Agentic AI Insights Community. Content is © respective contributors.</span>
+      <span>Built with ❤️ and published on <a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>. Inspired by <a href="https://azurebacktoschool.github.io" target="_blank" rel="noopener">Azure Back to School</a>.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>
