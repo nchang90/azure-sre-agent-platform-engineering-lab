@@ -38,6 +38,10 @@ resource "azurerm_container_app_environment" "cae" {
   location                   = var.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
   tags                       = var.tags
+
+  timeouts {
+    delete = "60m"
+  }
 }
 
 resource "azurerm_container_app" "orders_api" {
