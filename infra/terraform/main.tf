@@ -56,6 +56,11 @@ resource "azurerm_log_analytics_workspace" "law" {
   tags                = var.tags
 }
 
+resource "time_sleep" "law_ready" {
+  depends_on      = [azurerm_log_analytics_workspace.law]
+  create_duration = "30s"
+}
+
 resource "azurerm_application_insights" "ai" {
   count               = local.create_app_insights ? 1 : 0
   name                = "ai-${local.suffix}"
