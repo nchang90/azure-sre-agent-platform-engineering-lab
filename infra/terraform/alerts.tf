@@ -99,6 +99,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
   depends_on = [
+    azurerm_application_insights.ai,
     azurerm_log_analytics_workspace.law,
   ]
 
@@ -110,7 +111,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   window_duration         = "PT1M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
-  scopes                  = [azurerm_log_analytics_workspace.law.id]
+  scopes                  = [local.effective_ai_id]
 
   criteria {
     query = <<-KQL
