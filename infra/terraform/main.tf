@@ -13,6 +13,7 @@ locals {
   effective_principal_id = local.create_identity ? azurerm_user_assigned_identity.agent[0].principal_id : data.azurerm_user_assigned_identity.existing[0].principal_id
 
   create_app_insights   = var.existing_agent_app_insights_id == ""
+  effective_ai_id       = local.create_app_insights ? azurerm_application_insights.ai[0].id : data.azurerm_application_insights.existing_ai[0].id
   effective_ai_app_id   = local.create_app_insights ? azurerm_application_insights.ai[0].app_id : data.azurerm_application_insights.existing_ai[0].app_id
   effective_ai_conn_str = local.create_app_insights ? azurerm_application_insights.ai[0].connection_string : data.azurerm_application_insights.existing_ai[0].connection_string
 
