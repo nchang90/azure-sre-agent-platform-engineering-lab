@@ -295,6 +295,11 @@ register_response_plan_file() {
 
     summary="$(response_summary)"
     if [[ "$attempt" -lt 4 && "$code" == "400" && -n "$expected_platform" && "$summary" == *"Incident platform '${expected_platform}' does not match configured incident management type"* ]]; then
+      local actual_type
+      actual_type="$(current_incident_platform_type)"
+      if [[ -n "$actual_type" && "$actual_type" != "None" && "$actual_type" != "$expected_platform" ]]; then
+        die "Response plan '${plan_id}' expects incident platform '${expected_platform}', but the agent is configured for '${actual_type}'."
+      fi
       warn "  Response plan '${plan_id}' is waiting for incident platform '${expected_platform}' to finish initializing."
       wait_for_incident_platform "$expected_platform" 4 15 || true
       continue
