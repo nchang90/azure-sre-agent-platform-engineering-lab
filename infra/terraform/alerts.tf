@@ -115,9 +115,10 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
 
   criteria {
     query = <<-KQL
-      AppRequests
-      | where AppRoleName == "orders-api"
-      | summarize P99Ms = percentile(DurationMs, 99) by bin(TimeGenerated, 1m)
+      requests
+      | extend AppName = tostring(column_ifexists("cloud_RoleName", column_ifexists("AppRoleName", "")))
+      | where AppName == "orders-api"
+      | summarize P99Ms = percentile(duration, 99) by bin(timestamp, 1m)
     KQL
 
     operator                = "GreaterThan"
