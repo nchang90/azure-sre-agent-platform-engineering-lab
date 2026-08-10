@@ -188,6 +188,32 @@ auth() {
   [[ -n "$TOKEN" ]] || die "Received empty Azure access token for https://azuresre.dev"
 }
 
+current_incident_platform_type() {
+  { az rest --method GET \
+      --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
+      --query "properties.incidentManagementConfiguration.type" \
+      -o tsv 2>/dev/null || true; } | tr -d '\r'
+}
+
+wait_for_incident_platform() {
+  local expected_type="$1" attempts="${2:-8}" delay_seconds="${3:-15}" attempt actual_type
+
+  for attempt in $(seq 1 "$attempts"); do
+    actual_type="$(current_incident_platform_type)"
+    if [[ "$actual_type" == "$expected_type" ]]; then
+      ok "  Incident platform ready: $expected_type"
+      return 0
+    fi
+
+    if [[ "$attempt" -lt "$attempts" ]]; then
+      log "Waiting for incident platform '$expected_type' (current: ${actual_type:-None})..."
+      sleep "$delay_seconds"
+    fi
+  done
+
+  return 1
+}
+
 put_json_file() {
   local path="$1" file="$2"
   api PUT "$path" -H "Content-Type: application/json" --data-binary @"$file"
@@ -245,7 +271,7 @@ register_subagent() {
 
 register_response_plan_file() {
   local yaml_path="$1"
-  local code plan_body plan_id handling_agent props body="$TMP_DIR/incident-filter.json"
+  local code plan_body plan_id handling_agent expected_platform props body="$TMP_DIR/incident-filter.json" attempt summary
 
   [[ -f "$yaml_path" ]] || die "Missing response plan YAML: $yaml_path"
 
@@ -254,17 +280,33 @@ register_response_plan_file() {
 
   plan_id="$(jq -r '.id // empty' <<<"$plan_body")"
   handling_agent="$(jq -r '.handlingAgent // "default"' <<<"$plan_body")"
+  expected_platform="$(jq -r '.incidentPlatform // empty' <<<"$plan_body")"
   [[ -n "$plan_id" ]] || die "Response plan YAML missing id: $yaml_path"
   props="$(jq -c 'del(.id, .name)' <<<"$plan_body")"
   jq -nc --arg name "$plan_id" --argjson props "$props" \
     '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
 
-  code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
-  if is_success_http "$code"; then
-    ok "  Response plan -> ${handling_agent} (${plan_id})"
-  else
-    die "Response plan '${plan_id}' registration failed with HTTP $code: $(response_summary)"
-  fi
+  for attempt in 1 2 3 4; do
+    code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
+    if is_success_http "$code"; then
+      ok "  Response plan -> ${handling_agent} (${plan_id})"
+      return 0
+    fi
+
+    summary="$(response_summary)"
+    if [[ "$attempt" -lt 4 && "$code" == "400" && -n "$expected_platform" && "$summary" == *"Incident platform '${expected_platform}' does not match configured incident management type"* ]]; then
+      local actual_type
+      actual_type="$(current_incident_platform_type)"
+      if [[ -n "$actual_type" && "$actual_type" != "None" && "$actual_type" != "$expected_platform" ]]; then
+        die "Response plan '${plan_id}' expects incident platform '${expected_platform}', but the agent is configured for '${actual_type}'."
+      fi
+      warn "  Response plan '${plan_id}' is waiting for incident platform '${expected_platform}' to finish initializing."
+      wait_for_incident_platform "$expected_platform" 4 15 || true
+      continue
+    fi
+
+    die "Response plan '${plan_id}' registration failed with HTTP $code: $summary"
+  done
 }
 
 configure_incident_platform() {
@@ -302,7 +344,7 @@ configure_incident_platform() {
     --body @"$patch_file" \
     --output none 2>/dev/null; then
     ok "  Incident platform: $platform_type"
-    sleep 30
+    wait_for_incident_platform "$platform_type" 8 15 || warn "  Incident platform has not reported ready yet; response plan registration will retry if needed."
   else
     warn "  Could not configure incident platform: $platform_type"
   fi
