@@ -302,6 +302,7 @@ register_response_plan_file() {
       fi
       warn "  Response plan '${plan_id}' is waiting for incident platform '${expected_platform}' to finish initializing."
       wait_for_incident_platform "$expected_platform" 4 15 || true
+      sleep 15
       continue
     fi
 
