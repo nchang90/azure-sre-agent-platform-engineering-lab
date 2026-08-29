@@ -6,6 +6,84 @@
 
 ---
 
+## ⚡ Quick Start: 5-Minute Lab (Hands-on)
+
+### Learning Objectives
+By the end of this quick lab, you'll understand how the Azure SRE Agent:
+- Detects production incidents automatically via Azure Monitor
+- Investigates root causes using Log Analytics KQL queries
+- Proposes fixes and submits pull requests
+- Resolves incidents end-to-end without manual intervention
+
+### Prerequisites
+- Azure subscription with Owner or Contributor role
+- Terraform installed locally
+- `kubectl` configured for your AKS cluster
+- GitHub CLI (`gh`) for PR operations
+
+### Exercise: Deploy, Trigger, and Observe (5 mins)
+
+**Step 1: Deploy S1 infrastructure** (2 mins)
+```bash
+# Initialize and deploy the S1 environment with azmon-lawappinsights recipe
+terraform -chdir=infra/terraform apply -auto-approve \
+  -var-file=recipes/azmon-lawappinsights/terraform/terraform.tfvars.example \
+  -var="resource_group_name=s1-demo-rg" \
+  -var="scenario=s1"
+
+# ✅ Check: Verify deployment succeeded
+terraform -chdir=infra/terraform output
+```
+
+**Step 2: Register SRE Agent automations** (1 min)
+```bash
+# Apply incident filters, response plans, and subagent configurations
+bash scripts/apply-extras.sh s1
+
+# ✅ Check: Verify agent is ready
+az resource show --resource-group s1-demo-rg --name s1-agent --resource-type "Microsoft.App/agents@2025-05-01-preview"
+```
+
+**Step 3: Trigger incident** (1 min)
+```bash
+# Inject a 5xx error (broken deployment or bad code path)
+# Option A: Deploy problematic code
+git checkout broken-feature-branch
+git push
+
+# Option B: Manually trigger via webhook (if HTTP trigger enabled)
+curl -X POST https://<agent-endpoint>/trigger \
+  -H "Content-Type: application/json" \
+  -d '{"alert_type": "5xx_spike", "threshold": 50}'
+
+# ✅ Check: Watch Azure Monitor alert fire
+az monitor metrics-alert list --resource-group s1-demo-rg
+```
+
+**Step 4: Observe automated response** (1 min)
+```bash
+# Watch the agent investigate and fix
+# - SRE Agent queries Log Analytics (KQL) for 5xx patterns
+# - Correlates with deployment history
+# - Identifies root cause at file:line level
+# - Submits PR with fix
+
+# ✅ Validation: Confirm incident resolved
+#    - Alert status changes to "Resolved"
+#    - PR appears in GitHub repo
+#    - Log Analytics shows error rate dropping to baseline
+```
+
+### What You Learned
+- Automatic incident detection flow
+- KQL query patterns for root cause analysis
+- Integration with GitHub for PR-based remediation
+- Session persistence for faster future incident handling
+
+**Next:** Continue to [S2 — Autonomous Remediation](../s2-autonomous-remediation/README.md) for runtime-only scenario.
+
+---
+
 ## Story
 
 A platform engineer ships a change to a shared production workload without the usual guardrails — no change request, no peer review, and no rollout validation. The service is live and broken. The Azure Monitor alert fires automatically — the agent picks it up, triages the severity, queries Log Analytics for 5xx error patterns, correlates with Azure Monitor metrics and deployment history, pinpoints the root cause at the source file level, submits a fix PR, and resolves the alert — all before on-call wakes up. The session is saved so the next similar platform incident is handled faster.

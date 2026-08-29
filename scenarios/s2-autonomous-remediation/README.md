@@ -6,6 +6,86 @@
 
 ---
 
+## ⚡ Quick Start: 5-Minute Lab (Hands-on)
+
+### Learning Objectives
+By completing this lab, you'll:
+- Inject a runtime failure without code changes
+- Observe the SRE Agent's autonomous detection and investigation
+- See remediation proposals and execution workflows
+- Understand the difference between runtime triggers vs. infrastructure changes (S1)
+
+### Prerequisites
+- S1 infrastructure already deployed and working
+- `kubectl` access to the orders-api cluster
+- Orders API service running in default namespace
+
+### Exercise: Break It, Watch It Fix (5 mins)
+
+**Step 1: Verify baseline** (1 min)
+```bash
+# Check that orders-api is healthy
+kubectl get pods -n default | grep orders-api
+# Expected: 3 replicas, all Running and Ready ✅
+
+# Check SRE Agent is running
+az resource show --resource-group s1-demo-rg --name s1-agent --resource-type "Microsoft.App/agents@2025-05-01-preview" --query "properties.provisioningState"
+# Expected: Succeeded ✅
+```
+
+**Step 2: Trigger incident (runtime only)** (1 min)
+```bash
+# Option A: Scale down replicas to overload remaining pods
+kubectl scale deployment orders-api --replicas=0 -n default
+# This causes 100% request failure immediately
+
+# Option B: Call a broken endpoint to spike 5xx errors
+ENDPOINT=$(kubectl get svc orders-api -n default -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -X POST http://$ENDPOINT/api/orders/break
+
+# ✅ Check: Alert fires in 30-60 seconds
+az monitor metrics list --resource-group s1-demo-rg --metric "FailedRequests"
+```
+
+**Step 3: Observe autonomous response** (2 mins)
+```bash
+# Watch SRE Agent take action automatically
+# - Queries Application Insights for error context
+# - Analyzes CPU, memory, disk metrics
+# - Proposes: scale up replicas / restart pods / drain nodes
+
+# ✅ Validation: Confirm remediation executed
+kubectl get pods -n default | grep orders-api
+# Expected: Replicas scale back to 3, all Running ✅
+
+# ✅ Validation: Confirm incident resolved
+# - Azure Monitor alert status: Resolved
+# - Application Insights shows error rate dropping
+# - Log Analytics shows recovery timeline
+```
+
+**Step 4: Review incident record** (1 min)
+```bash
+# Incident summary includes:
+# - Root cause analysis
+# - Timeline of events
+# - Remediation actions taken
+# - Evidence links (logs, metrics, traces)
+
+# ✅ Clean up (optional)
+kubectl scale deployment orders-api --replicas=3 -n default
+```
+
+### What You Learned
+- Runtime-only scenario workflow (no infrastructure changes)
+- Autonomous detection and response patterns
+- Remediation proposal and approval flows
+- Incident documentation and evidence retention
+
+**Next:** Continue to [S3 — AKS Root Cause Investigation](../s3-incident-root-cause-investigation/README.md) for ServiceNow integration.
+
+---
+
 ## Story
 
 This is the fun part of the lab. You break the running app with a single `curl`,

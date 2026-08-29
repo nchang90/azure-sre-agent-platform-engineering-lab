@@ -2,6 +2,109 @@
 
 **Learning Goal:** Demonstrate end-to-end SRE agent automation: incident detection at Azure Front Door → diagnosis via App Insights → intelligent remediation with human approval.
 
+---
+
+## ⚡ Quick Start: 5-Minute Lab (Hands-on)
+
+### Learning Objectives
+By completing this lab, you'll:
+- Understand CDN-level incident detection with Azure Front Door
+- See how SRE Agent diagnoses 502/503 errors
+- Learn to approve and execute automated remediation
+- Understand failover and health probe workflows
+
+### Prerequisites
+- Azure subscription with Owner or Contributor role
+- Terraform installed locally
+- `az cli` authenticated
+- Azure Monitor configured with action groups
+
+### Exercise: Break It at the CDN Edge, Watch It Heal (5 mins)
+
+**Step 1: Deploy S6 infrastructure** (1 min)
+```bash
+# Deploy Front Door + Container Apps with health probes
+terraform -chdir=infra/terraform apply -auto-approve \
+  -var-file=recipes/azmon-lawappinsights/terraform/terraform.tfvars.example \
+  -var="resource_group_name=s6-demo-rg" \
+  -var="scenario=s6"
+
+# ✅ Check: Verify Front Door and Container Apps running
+az container app list --resource-group s6-demo-rg
+az resource show --resource-group s6-demo-rg --resource-type "Microsoft.Cdn/profiles" --name s6-frontdoor
+```
+
+**Step 2: Register SRE Agent automation** (1 min)
+```bash
+# Apply incident response plans and runbooks
+bash scripts/apply-extras.sh s6
+
+# ✅ Check: Verify agent can access Front Door metrics
+az monitor action-group list --resource-group s6-demo-rg
+```
+
+**Step 3: Trigger incident at the edge** (1 min)
+```bash
+# Misconfigure Front Door routing rule to cause 502 Bad Gateway
+# Option A: Break the health probe endpoint
+kubectl patch deployment orders-api -n default \
+  -p '{"spec":{"template":{"spec":{"containers":[{"name":"orders-api","env":[{"name":"HEALTH_ENDPOINT_DOWN","value":"true"}]}]}}}}'
+
+# Option B: Scale down Container Apps replicas to simulate backend failure
+az container app replica set list --resource-group s6-demo-rg --name orders-api
+az container app scale --resource-group s6-demo-rg --name orders-api --target 0
+
+# ✅ Check: Watch Azure Monitor alert fire
+az monitor metrics list --resource-group s6-demo-rg --metric "BackendHealthPercentage" --timespan "PT5M"
+```
+
+**Step 4: SRE Agent proposes fix** (1 min)
+```bash
+# Agent investigates:
+# - Front Door health probe failures
+# - Application Insights for backend error patterns
+# - Dependency traces to isolate root cause
+# - Correlation with recent deployments
+
+# Proposed remediation:
+# - Scale up Container Apps replicas
+# - Update Front Door backend pool to healthy backends
+# - Drain unhealthy origins
+
+# ✅ Check: Verify remediation proposal received
+# Look for: Incident record with "Proposed Actions" section
+# Expected actions: Scale replicas, drain unhealthy pool, or failover to backup
+```
+
+**Step 5: Approve and execute fix** (1 min)
+```bash
+# Review remediation proposal and approve execution
+# (Or set action_mode=Automatic for full automation)
+
+# Option A: Manual approval via CLI
+az rest --method post \
+  --url https://management.azure.com/subscriptions/<sub>/resourcegroups/s6-demo-rg/providers/Microsoft.App/agents/s6-agent/actions/approve?api-version=2025-05-01 \
+  --body '{"incident_id": "<id>", "approval": true}'
+
+# Option B: Automatic execution (if configured)
+# Agent automatically scales Container Apps to 3 replicas
+# and updates Front Door backend pool
+
+# ✅ Validation: Confirm incident resolved
+# - Front Door health probe passes (BackendHealthPercentage = 100)
+# - Application Insights shows error rate dropping
+# - Container Apps shows 3 replicas Running
+# - Azure Monitor alert status: Resolved
+```
+
+### What You Learned
+- CDN-level incident detection and routing
+- Health probe configuration and failure handling
+- Multi-layer diagnostics (Front Door + App Insights)
+- Remediation workflows with human approval gates
+
+---
+
 ## Architecture
 
 ```

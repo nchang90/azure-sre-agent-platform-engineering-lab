@@ -2,7 +2,85 @@
 
 Persona: Platform Operations / On-call SRE
 
-## Story
+---
+
+## ⚡ Quick Start: 5-Minute Lab (Hands-on)
+
+### Learning Objectives
+By the end of this lab, you'll:
+- Understand operator-ready alert workflows
+- See how SRE Agent gathers evidence from Application Insights
+- Learn to create incident records with severity and timeline
+- Understand escalation pathways for production incidents
+
+### Prerequisites
+- S1 infrastructure deployed (Log Analytics + Application Insights)
+- Azure Monitor alert rules configured
+- Owner/Contributor role on subscription
+
+### Exercise: Alert-to-Incident Workflow (5 mins)
+
+**Step 1: Deploy S4 monitoring infrastructure** (1 min)
+```bash
+# Deploy with S4-specific configuration
+terraform -chdir=infra/terraform apply -auto-approve \
+  -var-file=recipes/azmon-lawappinsights/terraform/terraform.tfvars.example \
+  -var="resource_group_name=s4-demo-rg" \
+  -var="scenario=s4"
+
+# ✅ Check: Verify availability tests are configured
+az monitor metrics-alert list --resource-group s4-demo-rg
+```
+
+**Step 2: Register SRE Agent** (1 min)
+```bash
+# Apply incident response plans and automations
+bash scripts/apply-extras.sh s4
+
+# ✅ Check: Verify agent can query Application Insights
+az applicationinsights component show --resource-group s4-demo-rg
+```
+
+**Step 3: Simulate availability failure** (1 min)
+```bash
+# Stop web app to trigger availability alert
+az webapp stop --resource-group s4-demo-rg --name orders-api-s4
+
+# ✅ Check: Watch alert fire in Azure Monitor
+az monitor metrics list --resource-group s4-demo-rg --metric "AvailabilityResults/AvailabilityPercentage"
+```
+
+**Step 4: SRE Agent generates incident summary** (1 min)
+```bash
+# Agent queries Application Insights for:
+# - Failed request patterns
+# - Dependency failures
+# - Performance traces
+# - Error trends
+
+# ✅ Validation: Verify incident summary generated
+# Look for: incident record with owner, severity, timeline, evidence links
+# Expected output: Incident summary ready for escalation
+```
+
+**Step 5: Close incident** (1 min)
+```bash
+# Restore service
+az webapp start --resource-group s4-demo-rg --name orders-api-s4
+
+# ✅ Validation: Confirm alert resolves automatically
+# Verify: Application Insights shows recovery, incident record updated with resolution time
+```
+
+### What You Learned
+- Alert routing and action group configuration
+- Evidence gathering from Application Insights
+- Incident record creation with severity and timeline
+- Operator handoff and escalation patterns
+
+**Next:** Continue to [S5 — PIM Elevation Audit](../s5-pim-elevation-audit/README.md) for security compliance scenarios.
+
+---
 
 The platform team wants an operator-ready incident monitoring workflow for an Azure web app, not another remediation demo. This scenario validates that monitoring is configured, alerts route to the right response channel, the SRE Agent can query telemetry, and operators have a clear runbook for confirming impact, creating the incident record, and escalating with evidence.
 
