@@ -1,0 +1,35 @@
+# Example terraform.tfvars for S3 scenario using servicenow-aks-incident recipe
+# This file shows how S3 deployment would configure the recipe
+
+# Agent configuration (inherited from main)
+resource_group_name = "sre-agent-lab-rg"
+scenario            = "s3"
+location            = "uksouth"
+
+# ServiceNow connector configuration
+enable_service_now_connector = true
+servicenow_instance_url      = "https://dev12345.service-now.com"  # Set via secret or CLI prompt
+servicenow_client_id         = ""  # Set via Azure Key Vault
+servicenow_client_secret     = ""  # Set via Azure Key Vault (never hardcode)
+
+# AKS cluster being monitored
+aks_cluster_name       = "aks-s3-cluster"
+aks_resource_group_name = "sre-agent-lab-rg"
+
+# Shared monitoring resources (created by main provider)
+existing_agent_app_insights_id = "/subscriptions/{subscription-id}/resourceGroups/sre-agent-lab-rg/providers/microsoft.insights/components/sre-agent-appinsights"
+law_resource_id                = "/subscriptions/{subscription-id}/resourceGroups/sre-agent-lab-rg/providers/microsoft.operationalinsights/workspaces/sre-agent-law"
+
+# Optional notifications
+slack_webhook_url = ""  # Set via secret or CI/CD variable
+
+# Daily health check automation
+enable_daily_health_check = true
+health_check_schedule     = "0 8 * * *"  # 8 AM UTC daily
+
+# Tags
+tags = {
+  project     = "azure-sre-agent-lab"
+  environment = "lab"
+  scenario    = "s3"
+}

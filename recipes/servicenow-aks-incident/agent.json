@@ -1,0 +1,79 @@
+{
+  "_scenario": "servicenow-aks-incident",
+  "_description": "AKS cluster incident management with ServiceNow as the incident platform.",
+  "_prerequisites": [
+    "Azure subscription with SRE Agent RP access",
+    "AKS cluster with Container insights enabled",
+    "Log Analytics workspace for AKS diagnostics",
+    "ServiceNow instance with REST API access",
+    "Microsoft Entra ID service principal (AKS + ServiceNow permissions)"
+  ],
+  "_prompts": {
+    "agentName": {
+      "ask": "Agent name",
+      "default": "aks-sre-agent"
+    },
+    "resourceGroup": {
+      "ask": "Resource group containing AKS cluster",
+      "default": "aks-rg"
+    },
+    "location": {
+      "ask": "Region",
+      "options": ["eastus2", "swedencentral", "uksouth", "australiaeast"],
+      "required": true
+    },
+    "aksClusterName": {
+      "ask": "AKS cluster name (used for monitoring)",
+      "required": true
+    },
+    "lawId": {
+      "ask": "Log Analytics workspace resource ID",
+      "default": ""
+    },
+    "serviceNowInstanceUrl": {
+      "ask": "ServiceNow instance URL (e.g., https://dev12345.service-now.com)",
+      "required": true
+    },
+    "serviceNowUsername": {
+      "ask": "ServiceNow integration user",
+      "required": true
+    },
+    "existingUamiId": {
+      "ask": "Existing UAMI resource ID (leave blank to create new)",
+      "default": ""
+    },
+    "existingAgentAppInsightsId": {
+      "ask": "Existing App Insights resource ID for agent telemetry (leave blank to create new)",
+      "default": ""
+    },
+    "modelProvider": {
+      "ask": "AI model provider",
+      "options": ["Anthropic", "MicrosoftFoundry"],
+      "default": "Anthropic"
+    }
+  },
+  "identity": {
+    "agentName": "{{agentName}}",
+    "resourceGroup": "{{resourceGroup}}",
+    "subscription": "",
+    "location": "{{location}}",
+    "targetResourceGroups": "{{resourceGroup}}"
+  },
+  "access": {
+    "accessLevel": "Elevated",
+    "actionMode": "Review"
+  },
+  "upgradeChannel": "Preview",
+  "defaultModelProvider": "{{modelProvider}}",
+  "monthlyAgentUnitLimit": 10000,
+  "tags": {
+    "scenario": "s3-incident-root-cause-investigation",
+    "platform": "servicenow-aks"
+  },
+  "toggles": {
+    "enableWebhookBridge": false,
+    "webhookBridgeTriggerUrl": ""
+  },
+  "existingUamiId": "{{existingUamiId}}",
+  "existingAgentAppInsightsId": "{{existingAgentAppInsightsId}}"
+}
