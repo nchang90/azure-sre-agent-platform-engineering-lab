@@ -21,22 +21,64 @@ az containerapp list --resource-group s1-demo-rg
 # Register S6 incident response automation
 bash scripts/apply-extras.sh s6
 
-# Trigger incident: simulate Front Door routing misconfiguration
-# Scale down replicas to cause health probe failures
+# Option A: Use Azure Chaos Studio for realistic fault injection
+# 1. Create a Chaos Studio experiment to inject latency + failures
+az rest --method put \
+  --url "https://management.azure.com/subscriptions/$(az account show -o tsv --query id)/resourceGroups/s1-demo-rg/providers/Microsoft.Chaos/experiments/frontdoor-fault-injection?api-version=2023-11-01" \
+  --body '{
+    "location": "uksouth",
+    "properties": {
+      "steps": [
+        {
+          "name": "Inject latency and errors",
+          "branches": [
+            {
+              "name": "Inject",
+              "actions": [
+                {
+                  "type": "continuous",
+                  "name": "urn:provider:Microsoft.ContainerApps:fault-injection:injectLatencyFault",
+                  "duration": "PT5M",
+                  "parameters": [
+                    { "key": "latency", "value": "5000" },
+                    { "key": "errorRate", "value": "50" }
+                  ],
+                  "targets": [
+                    { "type": "Microsoft.ContainerApps/containerApps", "id": "/subscriptions/$(az account show -o tsv --query id)/resourceGroups/s1-demo-rg/providers/Microsoft.App/containerApps/orders-api" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "selectors": []
+    }
+  }'
+
+# 2. Run the experiment
+az rest --method post \
+  --url "https://management.azure.com/subscriptions/$(az account show -o tsv --query id)/resourceGroups/s1-demo-rg/providers/Microsoft.Chaos/experiments/frontdoor-fault-injection/start?api-version=2023-11-01"
+
+# Option B: Simple manual scale (if Chaos Studio not configured)
 az containerapp scale \
   --resource-group s1-demo-rg \
   --name orders-api \
   --target 0
 
 # Watch it auto-respond:
-# - Azure Monitor alert fires (30–60 sec for health check failure)
-# - SRE Agent investigates via Application Insights
-# - Identifies Front Door routing issue
-# - Proposes remediation (scale replicas, check routing rule)
+# - Azure Monitor alert fires (30–60 sec)
+# - SRE Agent investigates via Application Insights + Front Door metrics
+# - Identifies routing/latency/error spike
+# - Proposes remediation (scale up, drain unhealthy backends, update routing rule)
 # - Executes fix (or waits for approval)
-# - Service recovers and traffic restored through Front Door
+# - Service recovers and Front Door routes traffic to healthy replicas
 
-# Verify incident resolved
+# Cleanup: Stop the Chaos Studio experiment
+az rest --method post \
+  --url "https://management.azure.com/subscriptions/$(az account show -o tsv --query id)/resourceGroups/s1-demo-rg/providers/Microsoft.Chaos/experiments/frontdoor-fault-injection/stop?api-version=2023-11-01"
+
+# OR manually restore replicas
 az containerapp scale \
   --resource-group s1-demo-rg \
   --name orders-api \
@@ -47,17 +89,18 @@ az containerapp scale \
 
 ## Story
 
-A Platform team misconfigures Azure Front Door routing rules, causing health probes to fail and end-user traffic to hit 502/503 errors. The SRE Agent automatically detects the spike, diagnoses the multi-layer issue (Front Door → Container Apps → health endpoint), proposes remediation, and optionally executes the fix. Traffic is restored before on-call escalates.
+A Platform team runs a Chaos Studio experiment to test resilience: inject latency and failure rates into the orders-api service, simulating degraded backend health. Front Door's health probes detect the issues and mark backends as unhealthy. Traffic reroutes to healthy replicas, but error rates spike. The SRE Agent automatically detects the spike, investigates via Application Insights and Front Door metrics, diagnoses the multi-layer issue, and proposes remediation. Traffic is restored before customer impact escalates.
 
 ---
 
 ## How It Works
 
-1. **Alert fires** → Azure Monitor detects 502/503 spike at Front Door edge
-2. **Agent investigates** → Queries Application Insights + Front Door metrics
-3. **Diagnoses** → Correlates health probe failures with routing misconfiguration
-4. **Proposes fix** → Scale replicas, update routing rule, or failover
-5. **Executes** → Auto-fix (or wait for human approval)
+1. **Chaos Studio injects faults** → Adds latency (5s) + 50% error rate to Container App
+2. **Alert fires** → Azure Monitor detects 5xx spike at Front Door
+3. **Agent investigates** → Queries Application Insights + Front Door health probe metrics
+4. **Diagnoses** → Correlates error spike with backend degradation
+5. **Proposes fix** → Scale up, drain unhealthy backends, or adjust retry policies
+6. **Executes** → Auto-fix (or wait for human approval); experiment stops automatically
 
 ---
 
