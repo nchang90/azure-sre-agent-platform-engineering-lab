@@ -2,21 +2,46 @@
 
 Persona: Platform SRE / On-call
 
+## ⚡ Quick Start (5-minute demo)
+
+```bash
+# 1. Deploy the infrastructure + SRE Agent with S3 config
+terraform -chdir=infra/terraform apply -auto-approve \
+  -var-file=recipes/servicenow-aks-incident/terraform/terraform.tfvars.example
+
+# 2. Apply the SRE Agent recipe (ServiceNow + KQL automations)
+bash scripts/apply-extras.sh s3
+
+# 3. Trigger the demo: deploy broken orders-api workload
+kubectl apply -f infra/k8s/orders-api-broken.yaml
+
+# 4. Watch it:
+#    - Pod enters CrashLoopBackOff
+#    - Azure Monitor alert fires (2-5 min)
+#    - ServiceNow incident auto-created
+#    - SRE Agent investigates via KQL
+#    - Pod restarts or node drains
+#    - ServiceNow incident closes
+```
+
+**Demo complete.** For a real GitHub Actions workflow demo, see [Run](#run) below.
+
 ## Story
 
 A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods fail readiness, crash loop, or nodes show pressure. Azure Monitor detects the AKS symptoms from Log Analytics, ServiceNow owns the S3 incident lifecycle, and the Azure SRE Agent triages evidence, restarts pods, drains bad nodes if needed, scales where appropriate, and rolls back to a known-good revision or GitOps commit. The ServiceNow incident is updated with timeline and evidence.
 
 ## Architecture (high level)
 
-<img src="../../docs/images/s3-aks-infrastructure.svg" alt="S3 AKS infrastructure diagram" width="700" />
-- AKS workload: `orders-api` or a similar demo service
-- Observability: Azure Monitor, Log Analytics, Application Insights
-- Workload manifest: `infra/k8s/orders-api.yaml`
-- Trigger path: GitHub repo change → deployment → AKS telemetry → Azure Monitor alert → incident platform
-- ServiceNow path: ServiceNow incident platform → `snow-aks-incidents` response plan → `aks-remediator`
-- HTTP trigger path: optional test bridge for direct Azure Monitor webhook ingestion
-- Decision loop: gather evidence → detect regression → remediate safely → record incident
-- Optional GitOps path: Flux or Argo rollback instead of direct `kubectl` undo
+<img src="../../images/s3-aks-infrastructure.svg" alt="S3 AKS infrastructure diagram" width="700" />
+- **Recipe**: `servicenow-aks-incident` (orchestrates incident detection, investigation, remediation)
+- **AKS workload**: `orders-api` microservice (demo app)
+- **Observability**: Azure Monitor, Log Analytics, Application Insights (metrics + logs)
+- **Workload manifest**: `infra/k8s/orders-api.yaml` (healthy) or `infra/k8s/orders-api-broken.yaml` (demo failure)
+- **Trigger path**: Pod failure → AKS telemetry → Azure Monitor alert → ServiceNow incident platform
+- **Response path**: ServiceNow incident → Azure SRE Agent → `aks-triage-agent` (KQL investigation) → `aks-remediator` (restart/drain/scale)
+- **Evidence path**: KQL queries → pod logs, node metrics, deployment history → ServiceNow work notes
+- **Remediation path**: Restart pod → drain unhealthy node → scale nodepool → rollback if needed
+- **GitOps path** (optional): Flux/Argo rollback instead of direct `kubectl` undo
 
 ## Trigger
 
@@ -86,68 +111,162 @@ az aks nodepool scale -g <rg> -n <pool> --cluster-name <aks> --node-count 4
 kubectl rollout undo deployment/orders-api -n default
 ```
 
-## Terraform references
+## Recipe & Terraform
 
-Use the Terraform module under `infra/`:
+**S3 uses the `servicenow-aks-incident` recipe** for Azure SRE Agent configuration:
 
-- Log Analytics + App Insights: `main.tf`
-- AKS cluster: `aks.tf`
-- Alerts: `alerts.tf`
-- SRE Agent resource: `sreagent.tf` (`azapi` `Microsoft.App/agents@2025-05-01-preview`)
-- Connectors: `connectors.tf`
-- RBAC least-privilege + admin role: `rbac.tf`
-- Outputs: `output.tf` (agent endpoint, MI id)
-- AKS workload: `infra/k8s/orders-api.yaml`
+- **Recipe location**: `recipes/servicenow-aks-incident/`
+- **Recipe provides**: Agent prompts, ServiceNow connector config, incident automations (filters, platforms), subagent definitions (aks-triage-agent, aks-remediator)
+- **Shared Terraform** under `infra/terraform/`:
+  - Log Analytics + App Insights: `main.tf`
+  - AKS cluster: `aks.tf`
+  - Alerts: `alerts.tf` (pod crash, node pressure)
+  - SRE Agent resource: `sreagent.tf` (`azapi` `Microsoft.App/agents@2025-05-01-preview`)
+  - ServiceNow connector: `connectors.tf`
+  - RBAC least-privilege: `rbac.tf`
+  - Outputs: `output.tf` (agent endpoint, MI id, AKS details)
+- **S3 workload**: `infra/k8s/orders-api.yaml` (healthy baseline)
 
-## Inputs to set per environment
+## Configuration (from recipe)
+
+The `servicenow-aks-incident` recipe provides `terraform.tfvars.example` with S3-specific values:
 
 ```hcl
-variable "agent_name" {}
-variable "resource_group_name" {}
-variable "location" { default = "uksouth" }
-variable "target_resource_groups" { default = ["app-rg"] }
-variable "action_mode" { default = "Review" } # use "Automatic" after confidence
+# S3 configuration (copy to terraform.tfvars)
+agent_name                      = "s3-aks-incident-agent"
+resource_group_name             = "s3-rg"
+location                        = "uksouth"
+scenario                        = "s3"
+enable_service_now_connector    = true
+service_now_instance_url        = "https://<instance>.service-now.com"
+service_now_username            = "<username>"
+# service_now_password provided via TF_VAR_service_now_password env var or GitHub secret
+aks_cluster_name                = "s3-aks-cluster"
+action_mode                     = "Review" # use "Automatic" after testing
 ```
 
-## Run
+See `recipes/servicenow-aks-incident/terraform/terraform.tfvars.example` for all options.
 
-Merge or deploy a bad GitHub repo change, or introduce an AKS workload failure such as a bad image or crash loop.
-Azure Monitor alert fires → ServiceNow incident is created → `snow-aks-incidents` routes to `aks-remediator`.
-Agent gathers evidence, restarts pods, drains nodes if needed, and either stabilizes or rolls back.
+## 🎬 Lab Walkthrough: Step-by-Step
 
-For the explicit ServiceNow-to-SRE-Agent lab path, run the `Deploy SRE Agent Lab` workflow with:
-
-- `environment`: `demo`
-- `apply`: `true`
-- `simulate_aks_incident`: `true`
-
-The workflow performs this sequence:
-
-```text
-Terraform apply
--> apply SRE Agent recipe extras
--> configure ServiceNow as the incident platform
--> register snow-aks-incidents response plan
--> deploy healthy orders-api to AKS
--> apply infra/k8s/orders-api-broken.yaml
--> create a priority 2 ServiceNow incident titled "AKS orders-api broken pod in demo"
--> Azure SRE Agent reads the ServiceNow incident
--> snow-aks-incidents matches title contains AKS and priority 2
--> aks-remediator investigates and writes updates/work notes back to ServiceNow
--> incident appears in the Azure SRE Agent incidents page
-```
-
-Use an AKS-only tfvars file for the demo path:
+### Phase 1: Setup (5 mins)
 
 ```bash
-terraform -chdir=infra/terraform init -reconfigure -backend-config=backend/<environment>.backend.tfvars
-terraform -chdir=infra/terraform apply -auto-approve -var-file=environments/<environment>.tfvars
-az aks get-credentials --resource-group <rg> --name <aks-name> --admin --overwrite-existing
-kubectl apply -f infra/k8s/orders-api.yaml
-bash scripts/apply-extras.sh <environment>
+# 1️⃣  Initialize and deploy all S3 infrastructure
+cd infra/terraform
+terraform init -reconfigure -backend-config=backend/demo.backend.tfvars
+terraform apply -auto-approve \
+  -var-file=../../recipes/servicenow-aks-incident/terraform/terraform.tfvars.example \
+  -var="resource_group_name=s3-demo-rg" \
+  -var="agent_name=s3-agent"
+
+# 2️⃣  Configure kubectl access
+az aks get-credentials --resource-group s3-demo-rg --name s3-aks-cluster --admin --overwrite-existing
+
+# 3️⃣  Register SRE Agent automations (ServiceNow connector, incident filters, subagents)
+bash ../../scripts/apply-extras.sh s3
+
+# ✅ All infrastructure ready. Verify:
+kubectl get nodes
+kubectl get ns
 ```
 
-The GitHub Actions deploy workflow applies the AKS workload automatically when the Terraform output includes `aks_name`.
+### Phase 2: Deploy Healthy Baseline (2 mins)
+
+```bash
+# 4️⃣  Deploy working orders-api (verify it scales and serves traffic)
+kubectl apply -f ../../infra/k8s/orders-api.yaml
+kubectl get pods -n default -w
+# Wait: Deployment "orders-api" is running with 3 replicas ✅
+```
+
+### Phase 3: Trigger Incident (LIVE DEMO) (1 min)
+
+```bash
+# 5️⃣  TRIGGER: Deploy broken workload (bad image, OOM crash loop)
+kubectl apply -f ../../infra/k8s/orders-api-broken.yaml
+kubectl get pods -n default -w
+# Watch: CrashLoopBackOff appears 🔴
+# Next: Azure Monitor alert fires (2–5 mins)
+# Then: ServiceNow incident auto-created
+```
+
+### Phase 4: Observe Incident Response (3–5 mins)
+
+While incident auto-flows through the system:
+
+```bash
+# 📊 Watch pod logs
+kubectl logs deployment/orders-api -n default -f
+
+# 🔍 Monitor node health
+kubectl get nodes -o wide
+kubectl top nodes
+
+# 🧪 See what the SRE Agent investigates (KQL queries):
+# - KubePodInventory (pod state, restarts, readiness)
+# - ContainerLogV2 (crash logs, error messages)
+# - InsightsMetrics (CPU, memory, disk pressure)
+# - KubeEvents (pod state transitions)
+
+# 🎟️  Track ServiceNow incident:
+# - Log into ServiceNow → Incidents
+# - Search: "AKS orders-api"
+# - Watch aks-triage-agent add investigation notes
+# - Watch aks-remediator propose remediation
+```
+
+### Phase 5: Remediation & Resolution (2–3 mins)
+
+SRE Agent auto-executes (or proposes if `action_mode = Review`):
+
+```bash
+# The agent will execute one of:
+# Option A: Restart pod
+kubectl rollout restart deployment/orders-api -n default
+
+# Option B: Drain unhealthy node (if node pressure)
+kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
+
+# Option C: Scale nodepool (if resource constrained)
+az aks nodepool scale -g s3-demo-rg -n nodepool1 --cluster-name s3-aks-cluster --node-count 4
+
+# Option D: Rollback to good revision
+kubectl rollout undo deployment/orders-api -n default
+
+# 🔄 Watch recovery
+kubectl get pods -n default -w
+# Expected: Pods return to Running/Ready ✅
+```
+
+### Phase 6: Verify Closure (1 min)
+
+```bash
+# ✅ Confirm incident resolved:
+kubectl get deployment orders-api -n default
+# Desired: 3, Current: 3, Ready: 3, Available: 3
+
+# ✅ ServiceNow incident closed with:
+# - Timeline of events
+# - Root cause analysis (KQL findings)
+# - Remediation actions taken
+# - Evidence (logs, metrics links)
+# - Links to deployment/PR that caused outage
+```
+
+## 🎯 Presentation Demo Flow
+
+| Step | Action | Duration | Audience Impact |
+|------|--------|----------|-----------------|
+| 1 | Run Phases 1–2 setup | 5 min | Show: Full automation, no manual config |
+| 2 | **Pause here for intro** | — | Audience understands baseline state |
+| 3 | Run Phase 3: trigger incident | 30 sec | 🔴 Live failure (dramatic moment) |
+| 4 | Show ServiceNow incident created | 30 sec | ✨ Auto-detection magic |
+| 5 | Show SRE Agent investigation | 1 min | 🔍 KQL queries, root cause found |
+| 6 | Show remediation proposed | 1 min | ✅ Agent proposes safe actions |
+| 7 | Approve + watch fix | 2–3 min | 🚀 Pod restarts, incident closes |
+| 8 | Show full incident record | 1 min | 📋 Timeline + evidence captured |
+| **Total** | | **11–12 min** | Complete incident lifecycle |
 
 ## Validation
 
