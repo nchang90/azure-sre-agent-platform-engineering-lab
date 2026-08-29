@@ -1,153 +1,98 @@
 # S1 — Incident Detection & Triage
 
-**Persona:** Platform Engineering / On-call
-**Time to complete:** ~15 minutes
-**Entry point:** This is the starting scenario — run it first.
+**Persona:** Platform Engineering / On-call  
+**Time:** ~15 minutes  
+**Entry point:** Start here (foundation for S2–S6)  
+**Recipe:** `azmon-lawappinsights`
 
 ---
 
-## ⚡ Quick Start: 5-Minute Lab (Hands-on)
+## ⚡ Quick Start: 5-Minute Lab
 
-### Learning Objectives
-By the end of this quick lab, you'll understand how the Azure SRE Agent:
-- Detects production incidents automatically via Azure Monitor
-- Investigates root causes using Log Analytics KQL queries
-- Proposes fixes and submits pull requests
-- Resolves incidents end-to-end without manual intervention
-
-### Prerequisites
-- Azure subscription with Owner or Contributor role
-- Terraform installed locally
-- `kubectl` configured for your AKS cluster
-- GitHub CLI (`gh`) for PR operations
-
-### Exercise: Deploy, Trigger, and Observe (5 mins)
-
-**Step 1: Deploy S1 infrastructure** (2 mins)
+### Prerequisites & Setup
 ```bash
-# Initialize and deploy the S1 environment with azmon-lawappinsights recipe
-terraform -chdir=infra/terraform apply -auto-approve \
-  -var-file=recipes/azmon-lawappinsights/terraform/terraform.tfvars.example \
-  -var="resource_group_name=s1-demo-rg" \
-  -var="scenario=s1"
+# 1. Copy and customize terraform.tfvars
+cp recipes/azmon-lawappinsights/terraform/terraform.tfvars.example \
+   infra/terraform/terraform.tfvars
 
-# ✅ Check: Verify deployment succeeded
-terraform -chdir=infra/terraform output
+# 2. Edit terraform.tfvars with your values:
+# - resource_group_name = "s1-demo-rg"
+# - location = "uksouth" (or your region)
+# - agent_name = "s1-agent"
+# - action_mode = "Review" (use "Automatic" after testing)
 ```
 
-**Step 2: Register SRE Agent automations** (1 min)
+### Deploy & Observe (5 mins)
 ```bash
-# Apply incident filters, response plans, and subagent configurations
+# Deploy infrastructure + SRE Agent
+terraform -chdir=infra/terraform apply -auto-approve
+
+# Register incident automations
 bash scripts/apply-extras.sh s1
 
-# ✅ Check: Verify agent is ready
-az resource show --resource-group s1-demo-rg --name s1-agent --resource-type "Microsoft.App/agents@2025-05-01-preview"
-```
+# Trigger incident: inject 5xx error spike
+# Option A: Bad deployment
+git checkout broken-feature-branch && git push
 
-**Step 3: Trigger incident** (1 min)
-```bash
-# Inject a 5xx error (broken deployment or bad code path)
-# Option A: Deploy problematic code
-git checkout broken-feature-branch
-git push
-
-# Option B: Manually trigger via webhook (if HTTP trigger enabled)
+# Option B: Direct webhook trigger
 curl -X POST https://<agent-endpoint>/trigger \
   -H "Content-Type: application/json" \
   -d '{"alert_type": "5xx_spike", "threshold": 50}'
 
-# ✅ Check: Watch Azure Monitor alert fire
-az monitor metrics-alert list --resource-group s1-demo-rg
+# Watch it:
+# - Azure Monitor alert fires (30–60 sec)
+# - SRE Agent investigates via KQL
+# - Root cause identified at file:line level
+# - PR submitted automatically to fix
+# - Incident resolved
 ```
 
-**Step 4: Observe automated response** (1 min)
-```bash
-# Watch the agent investigate and fix
-# - SRE Agent queries Log Analytics (KQL) for 5xx patterns
-# - Correlates with deployment history
-# - Identifies root cause at file:line level
-# - Submits PR with fix
-
-# ✅ Validation: Confirm incident resolved
-#    - Alert status changes to "Resolved"
-#    - PR appears in GitHub repo
-#    - Log Analytics shows error rate dropping to baseline
-```
-
-### What You Learned
-- Automatic incident detection flow
-- KQL query patterns for root cause analysis
-- Integration with GitHub for PR-based remediation
-- Session persistence for faster future incident handling
-
-**Next:** Continue to [S2 — Autonomous Remediation](../s2-autonomous-remediation/README.md) for runtime-only scenario.
+---
 
 ---
 
-## Story
+## How It Works
 
-A platform engineer ships a change to a shared production workload without the usual guardrails — no change request, no peer review, and no rollout validation. The service is live and broken. The Azure Monitor alert fires automatically — the agent picks it up, triages the severity, queries Log Analytics for 5xx error patterns, correlates with Azure Monitor metrics and deployment history, pinpoints the root cause at the source file level, submits a fix PR, and resolves the alert — all before on-call wakes up. The session is saved so the next similar platform incident is handled faster.
-
-<img src="../../docs/images/story1.png" alt="detect and triage" width="600" />
-
----
-
-## How the Agent Handles It
-
-| Step | What happens |
-|------|-------------|
-| **Alert fires** | Agent picks up the Azure Monitor alert automatically via Incident Response Plan — no human trigger needed |
-| **Triage** | Classifies severity, identifies the affected platform workload, plans investigation |
-| **Log Analytics** | Runs KQL queries — 5xx counts, error patterns, spike timing |
-| **Azure Monitor** | Correlates with platform metrics, traces, and deployment history |
-| **Source search** | Finds the root cause at `file:line` level in the platform repo |
-| **Fix PR + alert resolve** | Submits PR with proposed code change, resolves the incident |
-| **Session insights** | Findings saved — next similar incident skips re-discovery |
+1. **Alert fires** → Azure Monitor detects 5xx spike automatically
+2. **Agent investigates** → Runs KQL queries against Log Analytics
+3. **Root cause found** → Correlates spike with recent deployment/code change
+4. **Fix proposed** → Submits PR with code correction
+5. **Alert resolves** → Agent confirms incident is fixed
 
 ---
 
-## Key Concepts
-
-| Concept | What you see in this scenario |
-|---------|-------------------------------|
-| **Incident Response Plan** | Routes the `Orders API 5xx spike` alert to `orchestrator-agent` |
-| **Subagents** | `orchestrator-agent` delegates the investigation to `triage-agent` |
-| **Log Analytics connector** | `triage-agent` queries app logs and traces for the spike |
-| **Azure Monitor metrics** | Agent correlates the spike with CPU, latency, and rollout timing |
-| **Knowledge base** | Agent matches the _Unauthorized Change_ guidance |
-| **Source code search** | Agent finds the root cause at file level |
-| **PR creation** | Agent submits a fix PR for review |
-| **Alert resolution** | Agent resolves the alert after the fix is proposed |
-| **Session insights** | Findings are saved for next time |
-
----
-
-## Scenario Map
-
-| Relationship | Scenario |
-|-------------|----------|
-| **Prerequisites** | None — this is the entry point |
-| **Unlocks** | [S2](./scenario-s2-autonomous-remediation.md) — break the running app at runtime and watch the agent remediate |
-| **Unlocks** | [S3](./scenario-s3-change-issue-triage.md) — customer issues reference this incident's CHG numbers |
-| **Unlocks** | [S4](../s4-alert-response-incident-operations/README.md) — alert response uses this incident as a realistic alert and telemetry baseline |
-
----
-
-## Run
+## How to Run
 
 ```bash
+# Quickest way: use the break-app script
 bash scripts/break-app.sh
-```
 
-To restore afterward:
-
-```bash
-# If runtime 5xx simulation mode was used
+# To restore:
 APP_URL="$(cd infra/terraform && terraform output -raw orders_api_url)"
 curl -X POST "$APP_URL/api/simulate/reset"
-curl -X POST "$APP_URL/api/simulate/clear-cr"
+```
 
-# If fallback image-break mode was used, restore a working image
+---
+
+## Validation Checklist
+
+After the quick start:
+- ✅ Azure Monitor alert fires (check Alerts page in portal)
+- ✅ SRE Agent investigates automatically
+- ✅ PR appears in GitHub repo with fix proposal
+- ✅ Error rate shown in Log Analytics
+- ✅ Alert resolves when fix is applied
+- ✅ Incident record saved for pattern matching
+
+---
+
+## Next: What Comes After S1
+
+- **S2 — Autonomous Remediation**: Break the app at runtime (no code/infrastructure changes)
+- **S3 — AKS Root Cause**: ServiceNow integration + Kubernetes incident investigation
+- **S4 — Alert Response**: Operator-ready monitoring and incident creation workflows
+
+
 az containerapp update -g <rg> -n orders-api --image <working-image>
 ```
 
