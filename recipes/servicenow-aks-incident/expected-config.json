@@ -1,0 +1,27 @@
+{
+  "_description": "Expected configuration values for servicenow-aks-incident recipe deployment.",
+  "_requiredFields": [
+    "agentName",
+    "location",
+    "aksClusterName",
+    "serviceNowInstanceUrl",
+    "serviceNowUsername"
+  ],
+  "_optionalFields": [
+    "resourceGroup",
+    "lawId",
+    "existingUamiId",
+    "existingAgentAppInsightsId"
+  ],
+  "_example": {
+    "agentName": "prod-aks-sre-agent",
+    "resourceGroup": "prod-aks-rg",
+    "location": "eastus2",
+    "aksClusterName": "prod-aks-cluster",
+    "lawId": "/subscriptions/{sub}/resourcegroups/prod-rg/providers/microsoft.operationalinsights/workspaces/prod-law",
+    "serviceNowInstanceUrl": "https://prod-instance.service-now.com",
+    "serviceNowUsername": "sre-integration-user",
+    "modelProvider": "Anthropic",
+    "monthlyAgentUnitLimit": 10000
+  }
+}
