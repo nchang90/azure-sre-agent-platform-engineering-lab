@@ -1,0 +1,41 @@
+api_version: azuresre.ai/v1
+kind: IncidentPlatformConfiguration
+metadata:
+  name: servicenow-aks
+spec:
+  platform: ServiceNow
+  instance_url: "{{serviceNowInstanceUrl}}"
+  authentication:
+    type: oauth2
+    tenant_id: "{{azureTenantId}}"
+    client_id: "{{serviceNowClientId}}"
+  incident_table: incident
+  custom_fields:
+    - name: aks_cluster
+      type: string
+      mandatory: true
+    - name: aks_namespace
+      type: string
+      mandatory: false
+    - name: pod_name
+      type: string
+      mandatory: false
+    - name: node_name
+      type: string
+      mandatory: false
+    - name: incident_type
+      type: choice
+      options: [pod_failure, node_pressure, upgrade_failure, control_plane_issue]
+  incident_lifecycle:
+    creation_trigger: alert_fired
+    approval_required: true
+    approval_group: SRE-AKS
+    closure_conditions:
+      - validation_passed: true
+      - manual_review: false
+  notification_channels:
+    - type: email
+      recipients: ["sre-team@company.com"]
+    - type: slack
+      webhook_url: "{{slackWebhookUrl}}"
+      channel: "#aks-incidents"

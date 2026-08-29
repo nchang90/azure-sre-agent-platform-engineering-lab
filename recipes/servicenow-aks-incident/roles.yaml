@@ -1,0 +1,51 @@
+api_version: azuresre.ai/v1
+kind: RoleConfiguration
+metadata:
+  name: aks-recipe-roles
+spec:
+  roles:
+    - name: aks-reader
+      description: Read-only access to AKS cluster and monitoring data
+      permissions:
+        - resource: subscriptions/*/resourceGroups/*/providers/Microsoft.ContainerService/managedClusters/*
+          actions:
+            - read
+            - get
+            - list
+        - resource: subscriptions/*/resourceGroups/*/providers/Microsoft.OperationalInsights/workspaces/*
+          actions:
+            - read
+            - get
+      assignable_to:
+        - aks-triage-agent
+
+    - name: aks-executor
+      description: Execute remediation actions on AKS clusters
+      permissions:
+        - resource: subscriptions/*/resourceGroups/*/providers/Microsoft.ContainerService/managedClusters/*
+          actions:
+            - read
+            - write
+            - update
+            - patch
+            - execute
+        - resource: subscriptions/*/resourceGroups/*/providers/Microsoft.OperationalInsights/workspaces/*
+          actions:
+            - read
+            - query
+      assignable_to:
+        - aks-remediator
+      requires_approval: true
+
+    - name: servicenow-incident-writer
+      description: Create and update incidents in ServiceNow
+      permissions:
+        - resource: https://{{serviceNowInstanceUrl}}/api/now/table/incident
+          actions:
+            - create
+            - read
+            - update
+            - close
+      assignable_to:
+        - aks-triage-agent
+        - aks-remediator

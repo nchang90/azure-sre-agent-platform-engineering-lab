@@ -1,51 +1,42 @@
 {
-  "_scenario": "dynatrace-servicenow",
-  "_description": "SRE Agent recipe mirrored for ServiceNow incident handling and governed triage.",
+  "_scenario": "servicenow-aks-incident",
+  "_description": "AKS cluster incident management with ServiceNow as the incident platform.",
   "_prerequisites": [
     "Azure subscription with SRE Agent RP access",
-    "ServiceNow instance with API access",
-    "Log Analytics workspace connected to your app",
-    "GitHub repo with app source code",
-    "(Optional) Existing UAMI and App Insights for the agent"
+    "AKS cluster with Container insights enabled",
+    "Log Analytics workspace for AKS diagnostics",
+    "ServiceNow instance with REST API access",
+    "Microsoft Entra ID service principal (AKS + ServiceNow permissions)"
   ],
   "_prompts": {
     "agentName": {
       "ask": "Agent name",
-      "default": "my-sre-agent"
+      "default": "aks-sre-agent"
     },
     "resourceGroup": {
-      "ask": "Resource group for the agent",
-      "default": "sre-agent-rg"
+      "ask": "Resource group containing AKS cluster",
+      "default": "aks-rg"
     },
     "location": {
       "ask": "Region",
       "options": ["eastus2", "swedencentral", "uksouth", "australiaeast"],
       "required": true
     },
-    "targetRGs": {
-      "ask": "Resource groups to monitor (comma-separated)",
+    "aksClusterName": {
+      "ask": "AKS cluster name (used for monitoring)",
       "required": true
     },
     "lawId": {
       "ask": "Log Analytics workspace resource ID",
+      "default": ""
+    },
+    "serviceNowInstanceUrl": {
+      "ask": "ServiceNow instance URL (e.g., https://dev12345.service-now.com)",
       "required": true
     },
-    "githubRepo": {
-      "ask": "GitHub repo (org/repo format)",
+    "serviceNowUsername": {
+      "ask": "ServiceNow integration user",
       "required": true
-    },
-    "snowInstance": {
-      "ask": "ServiceNow instance URL (e.g. https://dev181595.service-now.com)",
-      "required": true
-    },
-    "snowUser": {
-      "ask": "ServiceNow username",
-      "required": true
-    },
-    "snowPassword": {
-      "ask": "ServiceNow password",
-      "required": true,
-      "secret": true
     },
     "existingUamiId": {
       "ask": "Existing UAMI resource ID (leave blank to create new)",
@@ -66,16 +57,19 @@
     "resourceGroup": "{{resourceGroup}}",
     "subscription": "",
     "location": "{{location}}",
-    "targetResourceGroups": "{{targetRGs}}"
+    "targetResourceGroups": "{{resourceGroup}}"
   },
   "access": {
-    "accessLevel": "High",
+    "accessLevel": "Elevated",
     "actionMode": "Review"
   },
   "upgradeChannel": "Preview",
   "defaultModelProvider": "{{modelProvider}}",
   "monthlyAgentUnitLimit": 10000,
-  "tags": {},
+  "tags": {
+    "scenario": "s3-incident-root-cause-investigation",
+    "platform": "servicenow-aks"
+  },
   "toggles": {
     "enableWebhookBridge": false,
     "webhookBridgeTriggerUrl": ""

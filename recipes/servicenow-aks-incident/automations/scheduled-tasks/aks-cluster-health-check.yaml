@@ -1,0 +1,35 @@
+api_version: azuresre.ai/v1
+kind: ScheduledTaskConfiguration
+metadata:
+  name: aks-cluster-health-check
+spec:
+  name: aks-cluster-health-check
+  description: Daily health check for all monitored AKS clusters
+  schedule: "0 8 * * *"  # 8 AM UTC daily
+  timezone: UTC
+  agent: aks-triage-agent
+  task: |
+    Query Log Analytics for:
+    1. Pod restart rate (should be < 5 per hour)
+    2. Node NotReady count (should be 0)
+    3. Control plane API latency (should be < 1s)
+    4. Any pod pending > 30 minutes
+    
+    If issues found:
+    - Create informational incident in ServiceNow (P3)
+    - Log summary to monitoring dashboard
+    
+    Return health_summary:
+    {
+      "cluster": "{{aksClusterName}}",
+      "timestamp": "ISO8601",
+      "pod_restart_rate": "X/hour",
+      "unhealthy_nodes": N,
+      "pending_pods": N,
+      "control_plane_latency_ms": Y,
+      "status": "healthy|warning|critical"
+    }
+  notification:
+    on_success: false
+    on_failure: true
+    recipients: ["sre-team@company.com"]

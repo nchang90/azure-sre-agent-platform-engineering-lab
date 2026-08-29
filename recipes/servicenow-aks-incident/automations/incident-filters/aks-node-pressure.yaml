@@ -1,0 +1,37 @@
+api_version: azuresre.ai/v1
+kind: IncidentFilterConfiguration
+metadata:
+  name: aks-node-pressure
+spec:
+  name: aks-node-pressure
+  description: Detects node NotReady, disk pressure, memory pressure
+  filter_rules:
+    - alert_name: "AKSNodeNotReady"
+      condition: "node_status = 'NotReady'"
+      severity: "P2"
+      lookback_minutes: 5
+    - alert_name: "AKSNodeDiskPressure"
+      condition: "node_condition = 'DiskPressure'"
+      severity: "P2"
+      lookback_minutes: 5
+    - alert_name: "AKSNodeMemoryPressure"
+      condition: "node_condition = 'MemoryPressure'"
+      severity: "P2"
+      lookback_minutes: 5
+    - alert_name: "AKSNodePodEviction"
+      condition: "pods_evicted > 3 in last 5m"
+      severity: "P2"
+      lookback_minutes: 5
+  incident_template:
+    title: "AKS Node Issue: {{node_name}} ({{node_status}}) in {{cluster_name}}"
+    priority: "2"
+    state: "New"
+    assignment_group: "SRE-AKS"
+    custom_fields:
+      aks_cluster: "{{cluster_name}}"
+      node_name: "{{node_name}}"
+      node_status: "{{node_status}}"
+      incident_type: "node_pressure"
+  routing:
+    primary_agent: aks-triage-agent
+    escalation_after_minutes: 20

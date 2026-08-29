@@ -14,7 +14,8 @@ Fetch all open issues from the repo. Focus on issues that have **[Customer Issue
 
 For each open issue, check its current state:
 
-### Case A: Already triaged (bot comment + labels exist, no updates since)
+### Case A: Already triaged
+
 → **Skip it** — already handled.
 
 ### Case B: Has labels but NO bot comment
@@ -47,7 +48,7 @@ Current labels: [list existing labels]
 Read the title and description. Pick ONE category:
 
 | Category | What it looks like |
-|----------|-------------------|
+| --- | --- |
 | **Bug** | "Error", "500", "crash", "not working", "broken", "OOM", "memory leak" |
 | **Performance** | "slow", "timeout", "high CPU", "high memory", "latency" |
 | **Change-related** | References a CHG number, "after deploy", "since release", "regression after rollout" |
@@ -64,7 +65,7 @@ For change-related reports, also pull context from `change-lookup` and apply the
 ### Pick a sub-category:
 
 | Type | Examples |
-|------|----------|
+| --- | --- |
 | **API Bug** | Order API 500s, order lookup failures, checkout regression |
 | **Frontend Bug** | Change portal broken, page not rendering, CORS errors |
 | **Infrastructure** | Container restarts, OOM kills, deployment failures, scaling issues |
@@ -185,7 +186,7 @@ Thanks for the suggestion!
 ## Labels Cheat Sheet
 
 | Situation | Labels to Add |
-|-----------|---------------|
+| --- | --- |
 | Bug, need more info | `needs-more-info` + sub-category |
 | Bug, ready to investigate | `bug` + sub-category + severity |
 | Performance issue | `performance` + sub-category |

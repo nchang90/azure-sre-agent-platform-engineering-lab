@@ -1,0 +1,33 @@
+api_version: azuresre.ai/v1
+kind: IncidentFilterConfiguration
+metadata:
+  name: aks-pod-failures
+spec:
+  name: aks-pod-failures
+  description: Detects pod crashes, restart loops, and image pull failures
+  filter_rules:
+    - alert_name: "AKSPodCrashLoopBackOff"
+      condition: "pod_status = 'CrashLoopBackOff'"
+      severity: "P2"
+      lookback_minutes: 5
+    - alert_name: "AKSPodImagePullBackOff"
+      condition: "pod_status = 'ImagePullBackOff'"
+      severity: "P2"
+      lookback_minutes: 10
+    - alert_name: "AKSPodHighRestartCount"
+      condition: "container_restarts > 5 in last 1h"
+      severity: "P2"
+      lookback_minutes: 60
+  incident_template:
+    title: "AKS Pod Failure: {{pod_name}} in {{cluster_name}}/{{namespace}}"
+    priority: "2"
+    state: "New"
+    assignment_group: "SRE-AKS"
+    custom_fields:
+      aks_cluster: "{{cluster_name}}"
+      aks_namespace: "{{namespace}}"
+      pod_name: "{{pod_name}}"
+      incident_type: "pod_failure"
+  routing:
+    primary_agent: aks-triage-agent
+    escalation_after_minutes: 30
