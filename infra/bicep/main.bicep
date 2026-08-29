@@ -89,6 +89,22 @@ module containerApps 'modules/containerapps.bicep' = {
   }
 }
 
+module frontDoor 'modules/frontdoor.bicep' = {
+  name: 'frontdoor'
+  scope: rg
+  params: {
+    location: 'global'
+    resourceToken: resourceToken
+    containerAppsEnvironmentName: containerApps.outputs.name
+    logAnalyticsWorkspaceId: monitoring.outputs.workspaceId
+    tags: defaultTags
+    skuName: 'Standard_AzureFrontDoor'
+    healthProbePath: '/health'
+    healthProbeProtocol: 'Https'
+    sessionAffinityEnabled: false
+  }
+}
+
 module sreAgent 'modules/sre-agent.bicep' = {
   name: 'sre-agent'
   scope: rg
@@ -126,6 +142,10 @@ output SRE_APP_INSIGHTS_APP_ID string = monitoring.outputs.appInsightsAppId
 
 output SRE_CONTAINER_APPS_ENVIRONMENT_ID string = containerApps.outputs.id
 output SRE_CONTAINER_APPS_ENVIRONMENT_NAME string = containerApps.outputs.name
+
+output FRONT_DOOR_ID string = frontDoor.outputs.id
+output FRONT_DOOR_NAME string = frontDoor.outputs.name
+output FRONT_DOOR_HOSTNAME string = frontDoor.outputs.hostName
 
 output SRE_AGENT_ID string = sreAgent.outputs.id
 output SRE_AGENT_NAME string = sreAgent.outputs.name
