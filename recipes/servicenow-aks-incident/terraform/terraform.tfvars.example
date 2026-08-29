@@ -1,35 +1,56 @@
 # Example terraform.tfvars for S3 scenario using servicenow-aks-incident recipe
-# This file shows how S3 deployment would configure the recipe
+# Copy to infra/terraform/terraform.tfvars and customize before `terraform apply`
+#
+# This file configures the SHARED infra/terraform/ for S3 with:
+# - ServiceNow connector enabled
+# - AKS cluster monitoring
+# - Daily health check automation
+# - Log Analytics + App Insights integration
 
-# Agent configuration (inherited from main)
+# Agent configuration
 resource_group_name = "sre-agent-lab-rg"
+agent_name          = "aks-sre-agent-s3"
 scenario            = "s3"
 location            = "uksouth"
 
-# ServiceNow connector configuration
+# Access & action modes (S3 uses High with Review approval for safety)
+access_level  = "High"
+action_mode   = "Review"
+upgrade_channel = "Preview"
+
+# ServiceNow connector (recipe-specific)
 enable_service_now_connector = true
-servicenow_instance_url      = "https://dev12345.service-now.com"  # Set via secret or CLI prompt
-servicenow_client_id         = ""  # Set via Azure Key Vault
-servicenow_client_secret     = ""  # Set via Azure Key Vault (never hardcode)
+servicenow_instance_url      = "https://dev12345.service-now.com"  # Update with your instance
+servicenow_client_id         = ""  # Set via secret manager or Azure Key Vault
+servicenow_client_secret     = ""  # Set via secret manager (never hardcode)
 
 # AKS cluster being monitored
-aks_cluster_name       = "aks-s3-cluster"
-aks_resource_group_name = "sre-agent-lab-rg"
+aks_cluster_name        = "aks-s3-cluster"
+aks_node_vm_size        = "Standard_B2s"
+aks_min_count           = 1
+aks_max_count           = 3
+aks_user_node_vm_size   = "Standard_B2s"
+aks_user_min_count      = 1
+aks_user_max_count      = 3
 
-# Shared monitoring resources (created by main provider)
-existing_agent_app_insights_id = "/subscriptions/{subscription-id}/resourceGroups/sre-agent-lab-rg/providers/microsoft.insights/components/sre-agent-appinsights"
-law_resource_id                = "/subscriptions/{subscription-id}/resourceGroups/sre-agent-lab-rg/providers/microsoft.operationalinsights/workspaces/sre-agent-law"
+# Monitoring (shared resources created by main.tf)
+enable_app_insights_connector  = true
+enable_log_analytics_connector = true
+enable_azure_monitor_connector = true
+azure_monitor_lookback_days    = 7
+
+# Automation
+enable_sev01_incident_filter = true
+enable_daily_health_check    = true
 
 # Optional notifications
-slack_webhook_url = ""  # Set via secret or CI/CD variable
-
-# Daily health check automation
-enable_daily_health_check = true
-health_check_schedule     = "0 8 * * *"  # 8 AM UTC daily
+slack_webhook_url = ""  # Set via CI/CD secret if desired
 
 # Tags
 tags = {
   project     = "azure-sre-agent-lab"
   environment = "lab"
   scenario    = "s3"
+  recipe      = "servicenow-aks-incident"
 }
+

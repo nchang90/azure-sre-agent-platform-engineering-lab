@@ -14,18 +14,26 @@ This recipe integrates Azure Kubernetes Service (AKS) cluster health monitoring 
 - ServiceNow instance with REST API enabled
 - Microsoft Entra ID service principal with permissions for both AKS and ServiceNow
 
-## Quick Start
+## Deployment
+
+This recipe uses the shared `/infra/terraform/` configuration. Deploy via:
 
 ```bash
-./bin/new-agent.sh --recipe servicenow-aks-incident --non-interactive \
-  --set agentName=aks-sre-agent \
-  --set resourceGroup=prod-aks-rg \
-  --set location=eastus2 \
-  --set aksClusterName=prod-aks \
-  --set lawId=/subscriptions/.../workspaces/prod-law \
-  --set serviceNowInstanceUrl=https://prod-instance.service-now.com \
-  --set serviceNowUsername=sre-integration-user \
-  -o aks-sre-agent/
+# 1. Copy the recipe tfvars example
+cp recipes/servicenow-aks-incident/terraform/terraform.tfvars.example \
+   infra/terraform/terraform.tfvars
+
+# 2. Edit tfvars with your values
+vim infra/terraform/terraform.tfvars
+
+# 3. Deploy infrastructure
+cd infra/terraform
+terraform init
+terraform apply -var-file=terraform.tfvars
+
+# 4. Register recipe connectors and automations
+cd ../../
+./scripts/apply-extras.sh --scenario s3 --recipe servicenow-aks-incident
 ```
 
 ## Parameters
