@@ -62,6 +62,12 @@ Break the running app with a single command, then watch the SRE Agent respond en
 
 ---
 
+## Architecture
+
+<img src="../../images/s2-autonomous-remediation.svg" alt="S2 autonomous remediation workflow diagram" width="700" />
+
+---
+
 ## Validation Checklist
 
 After the quick start:

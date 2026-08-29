@@ -61,6 +61,12 @@ A Platform team misconfigures Azure Front Door routing rules, causing health pro
 
 ---
 
+## Architecture
+
+<img src="../../images/story4.png" alt="S6 Front Door incident response workflow diagram" width="700" />
+
+---
+
 ## Validation Checklist
 
 After the quick start:

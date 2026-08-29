@@ -87,6 +87,12 @@ A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods 
 
 ---
 
+## Architecture
+
+<img src="../../images/s3-aks-infrastructure.svg" alt="S3 AKS infrastructure diagram" width="700" />
+
+---
+
 ## Validation Checklist
 
 After the quick start:

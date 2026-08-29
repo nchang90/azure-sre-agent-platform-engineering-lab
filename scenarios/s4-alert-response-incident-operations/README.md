@@ -57,6 +57,12 @@ Operator receives an availability alert for the orders-api service. The SRE Agen
 
 ---
 
+## Architecture
+
+<img src="../../images/s4-alert-response-infrastructure.svg" alt="S4 alert response architecture diagram" width="700" />
+
+---
+
 ## Validation Checklist
 
 After the quick start:

@@ -59,6 +59,12 @@ A platform engineer ships a change without guardrails—no peer review, no rollo
 
 ---
 
+## Architecture
+
+<img src="../../images/story1.png" alt="S1 incident detection architecture diagram" width="700" />
+
+---
+
 ## Validation Checklist
 
 After the quick start:
