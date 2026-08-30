@@ -12,6 +12,22 @@ resource "azurerm_role_assignment" "self_log_reader" {
   principal_type       = "ServicePrincipal"
 }
 
+resource "azurerm_role_assignment" "orders_api_action_contributor" {
+  count                = local.apps_enabled && lower(var.access_level) == "high" ? 1 : 0
+  scope                = azurerm_container_app.orders_api[0].id
+  role_definition_name = "Contributor"
+  principal_id         = local.effective_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_role_assignment" "aks_action_contributor" {
+  count                = local.aks_enabled && lower(var.access_level) == "high" ? 1 : 0
+  scope                = azurerm_kubernetes_cluster.aks[0].id
+  role_definition_name = "Contributor"
+  principal_id         = local.effective_principal_id
+  principal_type       = "ServicePrincipal"
+}
+
 resource "azurerm_role_assignment" "self_smi_reader" {
   count                = var.deploy_sre_agent ? 1 : 0
   scope                = azurerm_resource_group.agent.id

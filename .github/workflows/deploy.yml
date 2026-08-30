@@ -9,6 +9,7 @@ on:
         options:
           - demo
           - sbox
+          - dev
         default: sbox
       plan:
         description: "Run Terraform plan"
@@ -129,7 +130,7 @@ jobs:
               "The GitHub Actions deployment intentionally applied infra/k8s/orders-api-broken.yaml to AKS cluster ${AKS_NAME} in resource group ${RG}. The orders-api deployment did not roll out because the pod image is intentionally broken. This incident has priority 2 and title contains AKS, so it should match the snow-aks-incidents response plan and appear on the Azure SRE Agent incidents page after ServiceNow ingestion."
           fi
 
-      - name: Build and update Container Apps
+      - name: Build and update application images
         shell: bash
         run: |
           set -euo pipefail
@@ -146,6 +147,7 @@ jobs:
           ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
           ORDERS_API_NAME="$(read_tf orders_api_name)"
           CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
+          RUNTIME_STACK="$(read_tf runtime_stack)"
           AGENT_ID="$(read_tf agent_id)"
           RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
 
@@ -154,17 +156,26 @@ jobs:
           az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/
           az acr build --registry "$ACR_NAME" --image change-lookup:latest src/change-lookup/
 
-          echo "Updating Container Apps…"
-
-          az containerapp update \
-            --name "$ORDERS_API_NAME" \
-            --resource-group "$RG" \
-            --image "$ACR_LOGIN_SERVER/orders-api:latest" \
-            --output none
-
-          az containerapp update \
-            --name "$CHANGE_LOOKUP_NAME" \
-            --resource-group "$RG" \
-            --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
-            --output none
-
+          case "$RUNTIME_STACK" in
+            containerapps)
+              echo "Updating Container Apps..."
+              az containerapp update \
+                --name "$ORDERS_API_NAME" \
+                --resource-group "$RG" \
+                --image "$ACR_LOGIN_SERVER/orders-api:latest" \
+                --output none
+              az containerapp update \
+                --name "$CHANGE_LOOKUP_NAME" \
+                --resource-group "$RG" \
+                --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
+                --output none
+              ;;
+            webapp)
+              echo "Restarting App Service apps to pull the new images..."
+              az webapp restart --resource-group "$RG" --name "$ORDERS_API_NAME"
+              az webapp restart --resource-group "$RG" --name "$CHANGE_LOOKUP_NAME"
+              ;;
+            *)
+              echo "No image-based runtime update is required for $RUNTIME_STACK."
+              ;;
+          esac
