@@ -62,6 +62,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
   tags                = var.tags
   depends_on = [
     azurerm_log_analytics_workspace.law,
+    azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_health,
   ]
 
   description             = "Orders API: container errors / back-off (crash loop) detected in the last 1 minute."
@@ -101,14 +102,15 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   depends_on = [
     azurerm_application_insights.ai,
     azurerm_log_analytics_workspace.law,
+    azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors,
   ]
 
-  description             = "Orders API: P99 request latency exceeded the 2s SLO over the last 1 minute."
+  description             = "Orders API: P99 request latency exceeded the 2s SLO over the last 5 minutes."
   display_name            = "Orders API latency (P99) degraded"
   severity                = 2
   enabled                 = true
-  evaluation_frequency    = "PT1M"
-  window_duration         = "PT1M"
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
   scopes                  = [local.effective_ai_id]
