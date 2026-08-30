@@ -1,5 +1,5 @@
 # Example terraform.tfvars for S3 scenario using servicenow-aks-incident recipe
-# Copy to infra/terraform/terraform.tfvars and customize before `terraform apply`
+# Use as a reference for infra/terraform/environments/demo.tfvars.
 #
 # This file configures the SHARED infra/terraform/ for S3 with:
 # - ServiceNow connector enabled
@@ -20,18 +20,16 @@ upgrade_channel = "Preview"
 
 # ServiceNow connector (recipe-specific)
 enable_service_now_connector = true
-servicenow_instance_url      = "https://dev12345.service-now.com"  # Update with your instance
-servicenow_client_id         = ""  # Set via secret manager or Azure Key Vault
-servicenow_client_secret     = ""  # Set via secret manager (never hardcode)
+service_now_instance         = "https://dev12345.service-now.com"
+service_now_username         = "sre-integration-user"
 
 # AKS cluster being monitored
-aks_cluster_name        = "aks-s3-cluster"
-aks_node_vm_size        = "Standard_B2s"
-aks_min_count           = 1
-aks_max_count           = 3
-aks_user_node_vm_size   = "Standard_B2s"
-aks_user_min_count      = 1
-aks_user_max_count      = 3
+aks_node_vm_size      = "Standard_B2s"
+aks_min_count         = 1
+aks_max_count         = 3
+aks_user_node_vm_size = "Standard_B2s"
+aks_user_min_count    = 1
+aks_user_max_count    = 3
 
 # Monitoring (shared resources created by main.tf)
 enable_app_insights_connector  = true
@@ -43,8 +41,7 @@ azure_monitor_lookback_days    = 7
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true
 
-# Optional notifications
-slack_webhook_url = ""  # Set via CI/CD secret if desired
+# Set TF_VAR_service_now_password or SERVICENOW_PASSWORD outside this file.
 
 # Tags
 tags = {
@@ -53,4 +50,3 @@ tags = {
   scenario    = "s3"
   recipe      = "servicenow-aks-incident"
 }
-

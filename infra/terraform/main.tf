@@ -25,6 +25,7 @@ locals {
   apps_enabled    = local.scenario_value == "s1" || local.scenario_value == "s2"
   webapps_enabled = local.scenario_value == "s4"
   aks_enabled     = local.scenario_value == "s3"
+  images_enabled  = local.apps_enabled || local.webapps_enabled
 }
 
 resource "azurerm_resource_group" "agent" {
@@ -72,4 +73,3 @@ data "azurerm_application_insights" "existing_ai" {
   name                = regex("[^/]+$", var.existing_agent_app_insights_id)
   resource_group_name = regex("/resourceGroups/([^/]+)/", var.existing_agent_app_insights_id)[0]
 }
-
