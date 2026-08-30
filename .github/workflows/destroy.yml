@@ -7,14 +7,16 @@ on:
         description: "Target environment"
         type: choice
         options:
-          - demo
           - sbox
-        default: demo
+        default: sbox
       destroy:
         description: "tf_destroy"
         required: true
         type: boolean
         default: false
+  schedule:
+    - cron: "0 20 * * *"
+      timezone: "Europe/London"
 
 permissions:
   contents: read
@@ -27,6 +29,10 @@ concurrency:
 jobs:
   destroy:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(github.event_name == 'schedule' && '["demo","sbox"]' || format('["{0}"]', inputs.environment)) }}
     env:
       TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
 
@@ -55,7 +61,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ inputs.environment }}.backend.tfvars
+        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ inputs.environment }}.tfvars
+        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ matrix.environment }}.tfvars

@@ -80,12 +80,17 @@ output "aks_subnet_id" {
 
 output "acr_name" {
   description = "Azure Container Registry name (for ACR-Tasks builds)."
-  value       = local.apps_enabled ? azurerm_container_registry.acr[0].name : ""
+  value       = local.images_enabled ? azurerm_container_registry.acr[0].name : ""
 }
 
 output "acr_login_server" {
   description = "Azure Container Registry login server."
-  value       = local.apps_enabled ? azurerm_container_registry.acr[0].login_server : ""
+  value       = local.images_enabled ? azurerm_container_registry.acr[0].login_server : ""
+}
+
+output "runtime_stack" {
+  description = "Runtime selected by the scenario."
+  value       = local.apps_enabled ? "containerapps" : (local.aks_enabled ? "aks" : (local.webapps_enabled ? "webapp" : "none"))
 }
 
 output "container_app_environment_id" {

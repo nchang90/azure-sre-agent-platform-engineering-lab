@@ -1,8 +1,9 @@
 # S4 — Alert Response and Incident Operations
 
 **Persona:** Platform Operations / On-call SRE  
-**Time:** ~10 minutes (after S1)  
-**Prerequisite:** S1 infrastructure deployed  
+**Time:** ~15 minutes
+**Runtime:** Azure App Service
+**Infrastructure:** Terraform
 **Recipe:** `azmon-lawappinsights`
 
 ---
@@ -10,33 +11,54 @@
 ## ⚡ Quick Start: 5-Minute Lab
 
 ### Prerequisites & Setup
+
+Set your notification email in `infra/terraform/environments/dev.tfvars` and
+confirm these scenario values:
+
+```hcl
+scenario                       = "s4"
+access_level                   = "Low"
+action_mode                    = "Review"
+webapp_port                    = 8080
+enable_app_insights_connector  = true
+enable_log_analytics_connector = true
+enable_sev01_incident_filter   = true
+```
+
 ```bash
-# S1 infrastructure must be running
-# Verify Azure Monitor alerts are configured
-az monitor metrics-alert list --resource-group s1-demo-rg
-# Expected: At least one alert for orders-api availability ✅
+gh workflow run deploy.yml \
+  -f environment=dev \
+  -f plan=true \
+  -f apply=true
+
+gh run watch
+
+RESOURCE_GROUP="rg-sre-lab-dev"
+APP_NAME="$(az webapp list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[?starts_with(name, 'orders-api-')].name | [0]" \
+  --output tsv)"
+APP_URL="https://$(az webapp show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_NAME" \
+  --query defaultHostName \
+  --output tsv)"
+curl --fail --silent --show-error "$APP_URL/health"
 ```
 
 ### Deploy & Observe (5 mins)
 ```bash
-# Register S4 incident response automation
-bash scripts/apply-extras.sh s4
-
 # Trigger availability failure
-APP_URL="$(cd infra/terraform && terraform output -raw orders_api_url)"
-curl -X POST "$APP_URL/api/simulate/failure-rate/100"
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/simulate/failure-rate/100"
 
-# Alert fires → SRE Agent investigates automatically:
-# - Queries Application Insights for failed requests
-# - Traces dependency failures
-# - Correlates with metrics and traces
-# - Generates incident summary with owner, severity, timeline, evidence
-
-# Watch the incident summary appear in portal
-# Should include: impact, affected service, failed endpoints, error types, recovery status
-
-# Restore service
-curl -X POST "$APP_URL/api/simulate/reset"
+for request in {1..30}; do
+  curl --silent --output /dev/null \
+    --write-out "request $request: HTTP %{http_code}\n" \
+    -X POST "$APP_URL/api/orders" \
+    -H "Content-Type: application/json" \
+    --data '{"customerId":"lab-user","sku":"S4-DEMO","quantity":1}'
+done
 ```
 
 ---
@@ -78,9 +100,8 @@ After the quick start:
 ## Cleanup
 
 ```bash
-# Restore the app
-APP_URL="$(cd infra/terraform && terraform output -raw orders_api_url)"
-curl -X POST "$APP_URL/api/simulate/reset"
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/simulate/reset"
 ```
 
 ---

@@ -1,5 +1,5 @@
 resource "azurerm_monitor_action_group" "sre_lab" {
-  count               = local.apps_enabled ? 1 : 0
+  count               = local.apps_enabled || local.webapps_enabled ? 1 : 0
   name                = "ag-sre-lab-${local.suffix}"
   resource_group_name = azurerm_resource_group.agent.name
   short_name          = "sreLab"
@@ -93,6 +93,46 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
   }
 }
 
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
+  count               = local.apps_enabled || local.webapps_enabled ? 1 : 0
+  name                = "alert-orders-api-5xx"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_application_insights.ai,
+    azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors,
+  ]
+
+  description             = "Orders API: more than five HTTP 5xx responses detected in the last five minutes."
+  display_name            = "Orders API HTTP 5xx spike"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT1M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [local.effective_ai_id]
+
+  criteria {
+    query = <<-KQL
+      requests
+      | where cloud_RoleName == "orders-api"
+      | where success == false and resultCode startswith "5"
+      | summarize FailedRequests = count()
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 5
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "FailedRequests"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.sre_lab[0].id]
+  }
+}
+
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   count               = local.apps_enabled ? 1 : 0
   name                = "alert-orders-api-latency"
@@ -102,7 +142,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   depends_on = [
     azurerm_application_insights.ai,
     azurerm_log_analytics_workspace.law,
-    azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors,
+    azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_5xx,
   ]
 
   description             = "Orders API: P99 request latency exceeded the 2s SLO over the last 5 minutes."

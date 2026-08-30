@@ -20,12 +20,21 @@ resource "azurerm_linux_web_app" "orders_api" {
   service_plan_id     = azurerm_service_plan.webapps[0].id
   https_only          = true
   tags                = var.tags
+  depends_on          = [azurerm_role_assignment.apps_acrpull]
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.apps[0].id]
+  }
 
   site_config {
-    always_on = false
+    always_on                                     = true
+    health_check_path                             = "/health"
+    container_registry_use_managed_identity       = true
+    container_registry_managed_identity_client_id = azurerm_user_assigned_identity.apps[0].client_id
 
     application_stack {
-      docker_image_name = var.webapp_image
+      docker_image_name = "${azurerm_container_registry.acr[0].login_server}/orders-api:latest"
     }
   }
 
@@ -43,12 +52,20 @@ resource "azurerm_linux_web_app" "change_lookup" {
   service_plan_id     = azurerm_service_plan.webapps[0].id
   https_only          = true
   tags                = var.tags
+  depends_on          = [azurerm_role_assignment.apps_acrpull]
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.apps[0].id]
+  }
 
   site_config {
-    always_on = false
+    always_on                                     = false
+    container_registry_use_managed_identity       = true
+    container_registry_managed_identity_client_id = azurerm_user_assigned_identity.apps[0].client_id
 
     application_stack {
-      docker_image_name = var.webapp_image
+      docker_image_name = "${azurerm_container_registry.acr[0].login_server}/change-lookup:latest"
     }
   }
 
