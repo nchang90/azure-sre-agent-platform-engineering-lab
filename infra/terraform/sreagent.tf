@@ -23,7 +23,7 @@ resource "azapi_resource" "sre_agent" {
       actionConfiguration = {
         accessLevel = var.access_level
         identity    = local.effective_identity_id
-        mode        = var.action_mode
+        mode        = var.action_mode == "Automatic" ? "Autonomous" : var.action_mode
       }
       logConfiguration = {
         applicationInsightsConfiguration = {
