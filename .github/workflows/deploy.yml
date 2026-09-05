@@ -67,10 +67,10 @@ jobs:
         run: terraform -chdir=infra/terraform validate
 
       - name: Terraform plan
-        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
+        run: terraform -chdir=infra/terraform plan -parallelism=1 -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
 
       - name: Terraform apply
-        run: terraform -chdir=infra/terraform apply -auto-approve tfplan
+        run: terraform -chdir=infra/terraform apply -parallelism=1 -auto-approve tfplan
 
       - name: Apply recipe extras
         shell: bash
