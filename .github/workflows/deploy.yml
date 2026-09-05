@@ -67,26 +67,7 @@ jobs:
         run: terraform -chdir=infra/terraform validate
 
       - name: Terraform plan
-        shell: bash
-        run: |
-          set -euo pipefail
-          TF_CMD=(terraform -chdir=infra/terraform plan -parallelism=1 -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars)
-
-          set +e
-          "${TF_CMD[@]}" 2>&1 | tee /tmp/terraform-plan.log
-          status=${PIPESTATUS[0]}
-          set -e
-
-          if [[ $status -eq 0 ]]; then
-            exit 0
-          fi
-
-          if grep -Eq "context deadline exceeded|Failed to retrieve resource" /tmp/terraform-plan.log; then
-            echo "Transient AzAPI timeout detected during plan; retrying once."
-            "${TF_CMD[@]}"
-          else
-            exit $status
-          fi
+        run: terraform -chdir=infra/terraform plan -parallelism=1 -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
 
       - name: Terraform apply
         run: terraform -chdir=infra/terraform apply -parallelism=1 -auto-approve tfplan
