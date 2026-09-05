@@ -64,4 +64,23 @@ jobs:
         run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ matrix.environment }}.tfvars
+        shell: bash
+        run: |
+          set -euo pipefail
+          TF_CMD=(terraform -chdir=infra/terraform destroy -parallelism=1 -auto-approve -var-file=environments/${{ matrix.environment }}.tfvars)
+
+          set +e
+          "${TF_CMD[@]}" 2>&1 | tee /tmp/terraform-destroy.log
+          status=${PIPESTATUS[0]}
+          set -e
+
+          if [[ $status -eq 0 ]]; then
+            exit 0
+          fi
+
+          if grep -Eq "context deadline exceeded|Failed to retrieve resource" /tmp/terraform-destroy.log; then
+            echo "Transient AzAPI timeout detected during destroy; retrying once."
+            "${TF_CMD[@]}"
+          else
+            exit $status
+          fi
