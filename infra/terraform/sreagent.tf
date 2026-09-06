@@ -51,6 +51,7 @@ resource "azapi_resource" "sre_agent" {
   # they target the agent's own system-assigned identity, so they must be
   # created after this resource. Listing them would form a dependency cycle.
   depends_on = [
+    azurerm_role_assignment.monitoring_contributor,
     azurerm_role_assignment.monitoring_reader,
     azurerm_role_assignment.self_log_reader,
     azurerm_subnet.agent,
