@@ -13,5 +13,4 @@ incident platform is ServiceNow.
 
 Scenario s3 additionally applies:
 
-- `aks-incidents.yaml` for AKS-focused incidents (priorities 1-3)
-- `aks-pod-urgent.yaml` for urgent pod incidents (priorities 1-2 with `pod` in the title)
+- `aks-pod-urgent.yaml` for urgent AKS pod incidents (priorities 1-2 with `AKS` in the title)
