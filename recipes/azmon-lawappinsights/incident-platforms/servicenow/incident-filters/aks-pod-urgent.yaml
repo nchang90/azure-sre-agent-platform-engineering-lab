@@ -1,0 +1,14 @@
+metadata:
+  name: snow-aks-pod-urgent
+spec:
+  name: ServiceNow AKS Pod Urgent Incidents
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  titleContains: pod
+  handlingAgent: aks-remediator
+  agentMode: autonomous
+  deepInvestigationEnabled: true
+  maxAutomatedInvestigationAttempts: 3
