@@ -128,6 +128,7 @@ configure_catalog_scope() {
       if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
         # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
         RESPONSE_PLAN_NAMES=(
+          aks-incidents
           aks-pod-urgent
         )
       fi
