@@ -82,9 +82,9 @@ configure_catalog_scope() {
     *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
   esac
 
-  case "$ENABLE_SERVICE_NOW_CONNECTOR" in
+  case "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" in
     true|false) ;;
-    *) die "Unsupported enable_service_now_connector value '$ENABLE_SERVICE_NOW_CONNECTOR' in $TFVARS_FILE. Expected true or false." ;;
+    *) die "Unsupported enable_service_now_incident_platform value '$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM' in $TFVARS_FILE. Expected true or false." ;;
   esac
 
   case "$SCENARIO" in
@@ -124,7 +124,7 @@ configure_catalog_scope() {
   case "$SCENARIO" in
     s3)
       log "Including S3 AKS ServiceNow incident catalog from scenario=s3."
-      if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+      if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
         # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
         RESPONSE_PLAN_NAMES=(
           aks-incidents

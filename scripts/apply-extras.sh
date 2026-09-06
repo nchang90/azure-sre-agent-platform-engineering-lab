@@ -19,7 +19,7 @@ PYTHON="${PYTHON:-python3}"
 
 ENVIRONMENT=""
 SCENARIO=""
-ENABLE_SERVICE_NOW_CONNECTOR="false"
+ENABLE_SERVICE_NOW_INCIDENT_PLATFORM="false"
 SERVICE_NOW_INSTANCE=""
 SERVICE_NOW_USERNAME=""
 SERVICE_NOW_PASSWORD=""
@@ -45,7 +45,7 @@ The selected tfvars file scopes the catalog:
   all scenarios      -> one shared incident response plan
   scenario = s1|s2|s3|s4|s5 -> primary scenario selector
   runtime scope is derived from scenario: s1/s2=containerapps, s3=aks, s4=webapp, s5=none
-  enable_service_now_connector = true -> ServiceNow incident platform
+  enable_service_now_incident_platform = true -> ServiceNow incident platform
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -122,7 +122,7 @@ configure_environment() {
   SCENARIO="$(tfvar scenario | tr '[:upper:]' '[:lower:]')"
   [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, or s5)."
   RUNTIME_STACK="$(resolve_runtime_stack "$SCENARIO")"
-  ENABLE_SERVICE_NOW_CONNECTOR="$(tfvar_bool enable_service_now_connector false)"
+  ENABLE_SERVICE_NOW_INCIDENT_PLATFORM="$(tfvar_bool enable_service_now_incident_platform false)"
   SERVICE_NOW_INSTANCE="$(tfvar service_now_instance)"
   SERVICE_NOW_USERNAME="$(tfvar service_now_username)"
   SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-${SERVICENOW_PASSWORD:-}}"
@@ -132,7 +132,7 @@ configure_environment() {
     containerapps) log "Detected runtime scope: Container Apps" ;;
     aks) log "Detected runtime scope: AKS" ;;
   esac
-  log "Detected incident platform: $( [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]] && echo "ServiceNow" || echo "AzMonitor" )"
+  log "Detected incident platform: $( [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]] && echo "ServiceNow" || echo "AzMonitor" )"
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
 }
 
@@ -315,17 +315,17 @@ configure_incident_platform() {
   local platform_type="AzMonitor"
   local connection_name="azmonitor"
 
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+  if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
     platform_type="ServiceNow"
     connection_name="servicenow"
 
-    [[ -n "$SERVICE_NOW_INSTANCE" ]] || die "service_now_instance is required when enable_service_now_connector=true"
-    [[ -n "$SERVICE_NOW_USERNAME" ]] || die "service_now_username is required when enable_service_now_connector=true"
-    [[ -n "$SERVICE_NOW_PASSWORD" ]] || die "TF_VAR_service_now_password or SERVICENOW_PASSWORD is required when enable_service_now_connector=true"
+    [[ -n "$SERVICE_NOW_INSTANCE" ]] || die "service_now_instance is required when enable_service_now_incident_platform=true"
+    [[ -n "$SERVICE_NOW_USERNAME" ]] || die "service_now_username is required when enable_service_now_incident_platform=true"
+    [[ -n "$SERVICE_NOW_PASSWORD" ]] || die "TF_VAR_service_now_password or SERVICENOW_PASSWORD is required when enable_service_now_incident_platform=true"
   fi
 
   log "Configuring incident platform: $platform_type"
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+  if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
     jq -n \
       --arg type "$platform_type" \
       --arg connectionName "$connection_name" \
@@ -395,7 +395,7 @@ create_response_plans() {
   log "Step 4/4: Creating response plans..."
   local plan incident_platform_dir="azure-monitor"
 
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+  if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
     incident_platform_dir="servicenow"
   fi
 

@@ -16,14 +16,14 @@ Set these values in `infra/terraform/environments/demo.tfvars`:
 scenario                     = "s3"
 access_level                 = "High"
 action_mode                  = "Review"
-enable_service_now_connector = true
-service_now_instance         = "https://<instance>.service-now.com"
-service_now_username         = "<integration-user>"
+enable_service_now_incident_platform = true
+service_now_instance                 = "https://<instance>.service-now.com"
+service_now_username                 = "<integration-user>"
 ```
 
 Add `SERVICENOW_PASSWORD` to the GitHub Actions repository secrets. The workflow
-passes it to Terraform and the incident-injection helper without storing it in
-source control.
+exposes it to incident-platform configuration and the incident-injection helper
+without storing it in source control.
 
 ### Deploy & Observe
 
@@ -114,4 +114,3 @@ After the quick start:
 - Advance to [S4 — Alert Response & Incident Operations](../s4-alert-response-incident-operations/README.md)
 - Explore [S5 — PIM Elevation Audit](../s5-pim-elevation-audit/README.md) for compliance scenarios
 - Try [S6 — Front Door Incident Response](../s6-frontdoor-incident-response/README.md) for CDN-level incidents
-

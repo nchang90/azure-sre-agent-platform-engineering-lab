@@ -38,6 +38,11 @@
       "ask": "ServiceNow integration user",
       "required": true
     },
+    "serviceNowPassword": {
+      "ask": "ServiceNow password",
+      "required": true,
+      "secret": true
+    },
     "existingUamiId": {
       "ask": "Existing UAMI resource ID (leave blank to create new)",
       "default": ""
