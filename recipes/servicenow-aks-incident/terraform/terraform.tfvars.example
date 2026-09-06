@@ -2,7 +2,7 @@
 # Use as a reference for infra/terraform/environments/demo.tfvars.
 #
 # This file configures the SHARED infra/terraform/ for S3 with:
-# - ServiceNow connector enabled
+# - ServiceNow incident platform enabled
 # - AKS cluster monitoring
 # - Daily health check automation
 # - Log Analytics + App Insights integration
@@ -18,10 +18,10 @@ access_level  = "High"
 action_mode   = "Review"
 upgrade_channel = "Preview"
 
-# ServiceNow connector (recipe-specific)
-enable_service_now_connector = true
-service_now_instance         = "https://dev12345.service-now.com"
-service_now_username         = "sre-integration-user"
+# ServiceNow incident platform (recipe-specific)
+enable_service_now_incident_platform = true
+service_now_instance                 = "https://dev12345.service-now.com"
+service_now_username                 = "sre-integration-user"
 
 # AKS cluster being monitored
 aks_node_vm_size      = "Standard_B2s"

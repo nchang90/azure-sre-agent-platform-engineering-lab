@@ -3,9 +3,6 @@
     "enableAzureMonitorConnector": true,
     "enableLogAnalyticsConnector": "{{lawId:bool}}",
     "lawResourceId": "{{lawId}}",
-    "enableServiceNowConnector": true,
-    "serviceNowInstanceUrl": "{{serviceNowInstanceUrl}}",
-    "serviceNowUsername": "{{serviceNowUsername}}",
     "aksClusterName": "{{aksClusterName}}",
     "azureMonitorLookbackDays": 7
   },

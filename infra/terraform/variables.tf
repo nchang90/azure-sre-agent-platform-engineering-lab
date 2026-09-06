@@ -248,7 +248,7 @@ variable "enable_azure_monitor_connector" {
   default     = false
 }
 
-variable "enable_service_now_connector" {
+variable "enable_service_now_incident_platform" {
   description = "Configure ServiceNow as the incident platform during recipe extras."
   type        = bool
   default     = false

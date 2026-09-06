@@ -12,7 +12,7 @@ This recipe integrates Azure Kubernetes Service (AKS) cluster health monitoring 
 - AKS cluster with Container insights (Azure Monitor for containers) enabled
 - Log Analytics workspace configured for AKS diagnostics
 - ServiceNow instance with REST API enabled
-- Microsoft Entra ID service principal with permissions for both AKS and ServiceNow
+- ServiceNow integration user with incident table API access
 
 ## Deployment
 
@@ -31,7 +31,7 @@ cd infra/terraform
 terraform init
 terraform apply -var-file=terraform.tfvars
 
-# 4. Register recipe connectors and automations
+# 4. Configure the incident platform and register recipe automations
 cd ../../
 ./scripts/apply-extras.sh --scenario s3 --recipe servicenow-aks-incident
 ```
@@ -47,14 +47,15 @@ cd ../../
 | lawId | | `/subscriptions/.../workspaces/prod-law` | Log Analytics workspace resource ID. If blank, metrics-only mode. |
 | serviceNowInstanceUrl | ✅ | `https://prod-instance.service-now.com` | ServiceNow instance URL |
 | serviceNowUsername | ✅ | `sre-integration-user` | Integration user with incident CRUD permissions |
+| serviceNowPassword | ✅ | Secret | ServiceNow password; keep it outside source control. |
 | modelProvider | | `Anthropic` | Options: `Anthropic`, `MicrosoftFoundry` |
 
 ## What You Get
 
 | Category | Items |
 |---|---|
-| **Platform** | Azure Monitor (pod/node health alerts) |
-| **Connectors** | Log Analytics, Azure Monitor, ServiceNow REST API |
+| **Incident platform** | ServiceNow |
+| **Connectors** | Log Analytics, Azure Monitor |
 | **Skills** | investigate-aks-alerts, triage-pod-node-health, remediate-aks-resources |
 | **Subagents** | aks-triage-agent, aks-remediator |
 | **Response Plans** | aks-pod-failures, aks-node-pressure, aks-cluster-upgrade |
