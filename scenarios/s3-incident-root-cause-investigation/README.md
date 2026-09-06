@@ -44,7 +44,7 @@ and creates the ServiceNow incident that starts the investigation.
 
 ## Story
 
-A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods crash loop, nodes show pressure, or readiness probes fail. Azure Monitor detects the AKS symptoms, ServiceNow owns the incident lifecycle, and the Azure SRE Agent investigates via KQL queries, then safely restarts pods, drains nodes if needed, or rolls back the deployment. The incident record includes timeline, evidence, and all actions taken.
+A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods crash loop, nodes show pressure, or readiness probes fail. Azure Monitor detects the AKS symptoms, ServiceNow owns the incident lifecycle, and the Azure SRE Agent investigates via KQL queries, then safely restarts pods, drains nodes if needed, or rolls back the deployment. This keeps one active incident platform (ServiceNow) while still using Azure Monitor as the detection source. The incident record includes timeline, evidence, and all actions taken.
 
 ---
 
@@ -66,6 +66,7 @@ A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods 
 1. **Deploy broken workload** → pod enters CrashLoopBackOff immediately
 2. **Azure Monitor alerts** (2–5 min) → detects pod crash via Log Analytics
 3. **ServiceNow incident created** → Alert triggers automation to open ticket
+   - Urgent AKS incidents (priority 1-2 with `AKS` in the title) are routed through the `aks-pod-urgent` response plan to `aks-remediator`.
 4. **SRE Agent investigates** → Runs KQL queries to find root cause
    - Examines `KubePodInventory` for pod state and restart counts
    - Checks `ContainerLogV2` for crash logs and error messages

@@ -11,6 +11,7 @@ ALL_SUBAGENT_NAMES=(
 # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
 ALL_RESPONSE_PLAN_NAMES=(
   aks-incidents
+  aks-pod-urgent
   aks-critical-errors
   all-incidents
   azmon-sev01
@@ -128,6 +129,7 @@ configure_catalog_scope() {
         # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
         RESPONSE_PLAN_NAMES=(
           aks-incidents
+          aks-pod-urgent
         )
       fi
       KB_NAMES=(
