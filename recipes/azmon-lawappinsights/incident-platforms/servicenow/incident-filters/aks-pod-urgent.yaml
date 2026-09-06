@@ -7,7 +7,7 @@ spec:
   priorities:
   - "1"
   - "2"
-  titleContains: AKS
+  titleContains: AKS pod
   handlingAgent: aks-remediator
   agentMode: autonomous
   deepInvestigationEnabled: true
