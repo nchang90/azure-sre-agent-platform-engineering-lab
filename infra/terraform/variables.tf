@@ -37,13 +37,13 @@ variable "access_level" {
 }
 
 variable "action_mode" {
-  description = "Review = human approval. Automatic = agent acts independently."
+  description = "Review = human approval. Autonomous = agent acts independently. ReadOnly = investigate without actions."
   type        = string
   default     = "Review"
 
   validation {
-    condition     = contains(["Review", "Automatic"], var.action_mode)
-    error_message = "action_mode must be Review or Automatic."
+    condition     = contains(["Review", "Autonomous", "ReadOnly"], var.action_mode)
+    error_message = "action_mode must be Review, Autonomous, or ReadOnly."
   }
 }
 

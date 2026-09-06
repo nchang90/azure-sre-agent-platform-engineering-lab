@@ -64,4 +64,4 @@ jobs:
         run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ matrix.environment }}.tfvars
+        run: terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file=environments/${{ matrix.environment }}.tfvars

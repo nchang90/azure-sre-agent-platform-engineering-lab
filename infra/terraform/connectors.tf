@@ -70,6 +70,7 @@ resource "azapi_resource" "connector" {
 
   timeouts {
     create = "10m"
+    read   = "10m"
     update = "10m"
     delete = "10m"
   }
