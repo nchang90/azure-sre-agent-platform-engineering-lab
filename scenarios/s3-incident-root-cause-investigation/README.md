@@ -66,7 +66,7 @@ A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods 
 1. **Deploy broken workload** → pod enters CrashLoopBackOff immediately
 2. **Azure Monitor alerts** (2–5 min) → detects pod crash via Log Analytics
 3. **ServiceNow incident created** → Alert triggers automation to open ticket
-   - Urgent AKS pod incidents (priority 1-2 with `AKS pod` in the title) are routed through the `snow-aks-pod-urgent` response plan to `aks-remediator`.
+   - Urgent AKS pod incidents (priority 1-2 with `AKS pod` in the title) are routed through the `aks-pod-urgent` response plan to `aks-remediator`.
 4. **SRE Agent investigates** → Runs KQL queries to find root cause
    - Examines `KubePodInventory` for pod state and restart counts
    - Checks `ContainerLogV2` for crash logs and error messages

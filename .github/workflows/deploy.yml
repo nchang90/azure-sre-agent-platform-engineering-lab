@@ -107,7 +107,9 @@ jobs:
             bash scripts/create-servicenow-incident.sh \
               "${ENVIRONMENT}" \
               "AKS pod rollout failed for orders-api in ${ENVIRONMENT}" \
-              "The GitHub Actions deployment connected to AKS cluster ${AKS_NAME} in resource group ${RG}, applied infra/k8s/orders-api.yaml, and deployment/orders-api did not become available within 180 seconds. Review the workflow pod describe output for scheduling, image pull, quota, or readiness details."
+              "The GitHub Actions deployment connected to AKS cluster ${AKS_NAME} in resource group ${RG}, applied infra/k8s/orders-api.yaml, and deployment/orders-api did not become available within 180 seconds. Review the workflow pod describe output for scheduling, image pull, quota, or readiness details." \
+              "1" \
+              "1"
             exit 1
           fi
 
@@ -127,7 +129,9 @@ jobs:
             bash scripts/create-servicenow-incident.sh \
               "${ENVIRONMENT}" \
               "AKS pod incident: orders-api broken in ${ENVIRONMENT}" \
-              "The GitHub Actions deployment intentionally applied infra/k8s/orders-api-broken.yaml to AKS cluster ${AKS_NAME} in resource group ${RG}. The orders-api deployment did not roll out because the pod image is intentionally broken. This incident has priority 2 and title contains \"AKS pod\", so it should match the snow-aks-pod-urgent response plan and appear on the Azure SRE Agent incidents page after ServiceNow ingestion."
+              "The GitHub Actions deployment intentionally applied infra/k8s/orders-api-broken.yaml to AKS cluster ${AKS_NAME} in resource group ${RG}. The orders-api deployment did not roll out because the pod image is intentionally broken. This incident has priority 1 and title contains \"AKS pod\", so it should match the aks-pod-urgent response plan and appear on the Azure SRE Agent incidents page after ServiceNow ingestion." \
+              "1" \
+              "1"
           fi
 
       - name: Build and update application images

@@ -1,5 +1,5 @@
 metadata:
-  name: snow-aks-pod-urgent
+  name: aks-pod-urgent
 spec:
   name: ServiceNow AKS Pod Urgent Incidents
   incidentPlatform: ServiceNow
