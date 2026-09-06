@@ -16,7 +16,6 @@ Set these values in `infra/terraform/environments/demo.tfvars`:
 scenario                     = "s3"
 access_level                 = "High"
 action_mode                  = "Review"
-enable_azure_monitor_connector         = true
 enable_service_now_incident_platform = true
 service_now_instance                 = "https://<instance>.service-now.com"
 service_now_username                 = "<integration-user>"

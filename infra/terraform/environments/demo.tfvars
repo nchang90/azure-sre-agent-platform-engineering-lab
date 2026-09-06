@@ -38,7 +38,6 @@ enable_vnet = false
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
-enable_azure_monitor_connector = true
 
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true
