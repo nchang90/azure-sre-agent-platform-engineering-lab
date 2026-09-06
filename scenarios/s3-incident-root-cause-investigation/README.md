@@ -16,6 +16,7 @@ Set these values in `infra/terraform/environments/demo.tfvars`:
 scenario                     = "s3"
 access_level                 = "High"
 action_mode                  = "Review"
+enable_azure_monitor_connector         = true
 enable_service_now_incident_platform = true
 service_now_instance                 = "https://<instance>.service-now.com"
 service_now_username                 = "<integration-user>"
@@ -44,7 +45,7 @@ and creates the ServiceNow incident that starts the investigation.
 
 ## Story
 
-A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods crash loop, nodes show pressure, or readiness probes fail. Azure Monitor detects the AKS symptoms, ServiceNow owns the incident lifecycle, and the Azure SRE Agent investigates via KQL queries, then safely restarts pods, drains nodes if needed, or rolls back the deployment. The incident record includes timeline, evidence, and all actions taken.
+A new deployment hits AKS and the `orders-api` workload becomes unhealthy. Pods crash loop, nodes show pressure, or readiness probes fail. Azure Monitor detects the AKS symptoms, ServiceNow owns the incident lifecycle, and the Azure SRE Agent investigates via KQL queries, then safely restarts pods, drains nodes if needed, or rolls back the deployment. This keeps one active incident platform (ServiceNow) while still using Azure Monitor as the detection source. The incident record includes timeline, evidence, and all actions taken.
 
 ---
 
