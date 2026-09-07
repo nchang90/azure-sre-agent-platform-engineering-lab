@@ -77,29 +77,20 @@ jobs:
           retryable_errors='context deadline exceeded|Failed to retrieve resource|The workspace could not be found'
           attempt_log="$(mktemp)"
           log_file="$(mktemp)"
-          exec 3>&1
-          trap 'exec 3>&-; rm -f "$attempt_log" "$log_file"' EXIT
+          trap 'rm -f "$attempt_log" "$log_file"' EXIT
           : > "$log_file"
 
           run_terraform_apply() {
-            local output_dir output_pipe tee_pid terraform_status tee_status
+            local output_dir script_output terraform_status
 
             output_dir="$(mktemp -d)"
-            output_pipe="${output_dir}/terraform-apply.pipe"
-            mkfifo "$output_pipe"
-            tee "$attempt_log" < "$output_pipe" | tee -a "$log_file" >&3 &
-            tee_pid=$!
+            script_output="${output_dir}/terraform-apply.log"
 
             terraform_status=0
-            terraform -chdir=infra/terraform apply -auto-approve tfplan > "$output_pipe" 2>&1 || terraform_status=$?
-
-            tee_status=0
-            wait "$tee_pid" || tee_status=$?
+            script -qefc 'terraform -chdir=infra/terraform apply -auto-approve tfplan' "$script_output" || terraform_status=$?
+            sed '/^Script started on /d; /^Script done on /d' "$script_output" > "$attempt_log"
+            cat "$attempt_log" >> "$log_file"
             rm -rf "$output_dir"
-
-            if [[ "$tee_status" -ne 0 && "$terraform_status" -eq 0 ]]; then
-              return "$tee_status"
-            fi
 
             return "$terraform_status"
           }
@@ -118,12 +109,12 @@ jobs:
             fi
 
             if [[ "$attempt" -lt 2 ]] && [[ "$retryable_match" == "true" ]]; then
-              echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..." | tee -a "$log_file" >&3
+              echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..." | tee -a "$log_file"
               sleep 30
               continue
             fi
 
-            echo "Terraform apply failed on attempt ${attempt} of 2 (retryable_error=${retryable_match})." | tee -a "$log_file" >&3
+            echo "Terraform apply failed on attempt ${attempt} of 2 (retryable_error=${retryable_match})." | tee -a "$log_file"
             exit 1
           done
 
