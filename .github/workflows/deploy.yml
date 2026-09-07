@@ -83,7 +83,7 @@ jobs:
             : > "$attempt_log"
             echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
 
-            if terraform -chdir=infra/terraform apply -auto-approve tfplan 2>&1 | tee "$attempt_log" | tee -a "$log_file"; then
+            if terraform -chdir=infra/terraform apply -auto-approve tfplan > >(tee "$attempt_log" | tee -a "$log_file") 2>&1; then
               exit 0
             fi
 
