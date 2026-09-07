@@ -74,6 +74,7 @@ jobs:
         run: |
           set -euo pipefail
 
+          retryable_errors='context deadline exceeded|Failed to retrieve resource|The workspace could not be found'
           attempt_log="$(mktemp)"
           log_file="$(mktemp)"
           trap 'rm -f "$attempt_log" "$log_file"' EXIT
@@ -87,7 +88,7 @@ jobs:
               exit 0
             fi
 
-            if [[ "$attempt" -lt 2 ]] && grep -Eq 'context deadline exceeded|Failed to retrieve resource|The workspace could not be found' "$attempt_log"; then
+            if [[ "$attempt" -lt 2 ]] && grep -Eq "$retryable_errors" "$attempt_log"; then
               echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..."
               sleep 30
               continue
