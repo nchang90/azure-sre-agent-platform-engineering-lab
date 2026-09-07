@@ -70,7 +70,26 @@ jobs:
         run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
 
       - name: Terraform apply
-        run: terraform -chdir=infra/terraform apply -auto-approve tfplan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          log_file="$(mktemp)"
+          trap 'rm -f "$log_file"' EXIT
+
+          for attempt in 1 2; do
+            if terraform -chdir=infra/terraform apply -auto-approve tfplan 2>&1 | tee "$log_file"; then
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 2 ]] && grep -Eq 'context deadline exceeded|Failed to retrieve resource|The workspace could not be found' "$log_file"; then
+              echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..."
+              sleep 30
+              continue
+            fi
+
+            exit 1
+          done
 
       - name: Apply recipe extras
         shell: bash
