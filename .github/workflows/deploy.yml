@@ -77,14 +77,15 @@ jobs:
           retryable_errors='context deadline exceeded|Failed to retrieve resource|The workspace could not be found'
           attempt_log="$(mktemp)"
           log_file="$(mktemp)"
-          trap 'rm -f "$attempt_log" "$log_file"' EXIT
+          exec 3>&1
+          trap 'exec 3>&-; rm -f "$attempt_log" "$log_file"' EXIT
           : > "$log_file"
 
           for attempt in 1 2; do
             : > "$attempt_log"
             echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
 
-            if terraform -chdir=infra/terraform apply -auto-approve tfplan > >(tee "$attempt_log" | tee -a "$log_file") 2>&1; then
+            if terraform -chdir=infra/terraform apply -auto-approve tfplan > >(tee "$attempt_log" | tee -a "$log_file" >&3) 2>&1; then
               exit 0
             fi
 
