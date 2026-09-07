@@ -85,7 +85,8 @@ jobs:
             : > "$attempt_log"
             echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
 
-            output_pipe="$(mktemp -u)"
+            output_dir="$(mktemp -d)"
+            output_pipe="${output_dir}/terraform-apply.pipe"
             mkfifo "$output_pipe"
             tee "$attempt_log" < "$output_pipe" | tee -a "$log_file" >&3 &
             tee_pid=$!
@@ -94,14 +95,14 @@ jobs:
             terraform -chdir=infra/terraform apply -auto-approve tfplan > "$output_pipe" 2>&1 || terraform_exit=$?
 
             wait "$tee_pid"
-            rm -f "$output_pipe"
+            rm -rf "$output_dir"
 
             if [[ "$terraform_exit" -eq 0 ]]; then
               exit 0
             fi
 
             if [[ "$attempt" -lt 2 ]] && grep -Eq "$retryable_errors" "$attempt_log"; then
-              echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..."
+              echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..." | tee -a "$log_file" >&3
               sleep 30
               continue
             fi
