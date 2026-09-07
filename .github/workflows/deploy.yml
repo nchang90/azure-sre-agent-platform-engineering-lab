@@ -85,7 +85,18 @@ jobs:
             : > "$attempt_log"
             echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
 
-            if terraform -chdir=infra/terraform apply -auto-approve tfplan 1> >(tee "$attempt_log" | tee -a "$log_file" >&3) 2>&1; then
+            output_pipe="$(mktemp -u)"
+            mkfifo "$output_pipe"
+            tee "$attempt_log" < "$output_pipe" | tee -a "$log_file" >&3 &
+            tee_pid=$!
+
+            terraform_exit=0
+            terraform -chdir=infra/terraform apply -auto-approve tfplan > "$output_pipe" 2>&1 || terraform_exit=$?
+
+            wait "$tee_pid"
+            rm -f "$output_pipe"
+
+            if [[ "$terraform_exit" -eq 0 ]]; then
               exit 0
             fi
 
