@@ -76,9 +76,12 @@ jobs:
 
           log_file="$(mktemp)"
           trap 'rm -f "$log_file"' EXIT
+          : > "$log_file"
 
           for attempt in 1 2; do
-            if terraform -chdir=infra/terraform apply -auto-approve tfplan 2>&1 | tee "$log_file"; then
+            echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
+
+            if terraform -chdir=infra/terraform apply -auto-approve tfplan 2>&1 | tee -a "$log_file"; then
               exit 0
             fi
 
