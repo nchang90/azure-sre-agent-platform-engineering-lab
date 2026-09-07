@@ -81,9 +81,8 @@ jobs:
           trap 'exec 3>&-; rm -f "$attempt_log" "$log_file"' EXIT
           : > "$log_file"
 
-          for attempt in 1 2; do
-            : > "$attempt_log"
-            echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
+          run_terraform_apply() {
+            local output_dir output_pipe tee_pid terraform_status tee_status
 
             output_dir="$(mktemp -d)"
             output_pipe="${output_dir}/terraform-apply.pipe"
@@ -91,13 +90,25 @@ jobs:
             tee "$attempt_log" < "$output_pipe" | tee -a "$log_file" >&3 &
             tee_pid=$!
 
-            terraform_exit=0
-            terraform -chdir=infra/terraform apply -auto-approve tfplan > "$output_pipe" 2>&1 || terraform_exit=$?
+            terraform_status=0
+            terraform -chdir=infra/terraform apply -auto-approve tfplan > "$output_pipe" 2>&1 || terraform_status=$?
 
-            wait "$tee_pid"
+            tee_status=0
+            wait "$tee_pid" || tee_status=$?
             rm -rf "$output_dir"
 
-            if [[ "$terraform_exit" -eq 0 ]]; then
+            if [[ "$tee_status" -ne 0 && "$terraform_status" -eq 0 ]]; then
+              return "$tee_status"
+            fi
+
+            return "$terraform_status"
+          }
+
+          for attempt in 1 2; do
+            : > "$attempt_log"
+            echo "Terraform apply attempt ${attempt} of 2..." | tee -a "$log_file"
+
+            if run_terraform_apply; then
               exit 0
             fi
 
