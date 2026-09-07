@@ -112,12 +112,18 @@ jobs:
               exit 0
             fi
 
-            if [[ "$attempt" -lt 2 ]] && grep -Eq "$retryable_errors" "$attempt_log"; then
+            retryable_match=false
+            if grep -Eq "$retryable_errors" "$attempt_log"; then
+              retryable_match=true
+            fi
+
+            if [[ "$attempt" -lt 2 ]] && [[ "$retryable_match" == "true" ]]; then
               echo "Terraform apply hit a transient Azure control-plane error; retrying once in 30 seconds..." | tee -a "$log_file" >&3
               sleep 30
               continue
             fi
 
+            echo "Terraform apply failed on attempt ${attempt} of 2 (retryable_error=${retryable_match})." | tee -a "$log_file" >&3
             exit 1
           done
 
