@@ -70,7 +70,25 @@ jobs:
         run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
 
       - name: Terraform apply
-        run: terraform -chdir=infra/terraform apply -auto-approve tfplan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          set +e
+          APPLY_OUTPUT="$(terraform -chdir=infra/terraform apply -auto-approve tfplan 2>&1)"
+          APPLY_EXIT=$?
+          set -e
+          echo "$APPLY_OUTPUT"
+
+          if [[ $APPLY_EXIT -ne 0 ]]; then
+            if echo "$APPLY_OUTPUT" | grep -qi "workspace could not be found"; then
+              echo "Terraform apply hit transient workspace lookup issue; retrying once..."
+              sleep 10
+              terraform -chdir=infra/terraform apply -auto-approve tfplan
+            else
+              exit $APPLY_EXIT
+            fi
+          fi
 
       - name: Apply recipe extras
         shell: bash
