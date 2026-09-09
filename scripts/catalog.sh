@@ -1,8 +1,11 @@
 # shellcheck shell=bash
 ALL_SUBAGENT_NAMES=(
   aks-remediator
+  aks-triage-agent
   alert-investigator
+  incident-comms-agent
   incident-orchestrator
+  incident-summary-agent
   issue-triager
   pim-elevation
   triage-agent
@@ -64,7 +67,10 @@ subagent_path() {
   case "$1" in
     alert-investigator) echo "recipes/azmon-lawappinsights/agents/alert-investigator.yaml" ;;
     aks-remediator) echo "recipes/azmon-lawappinsights/agents/aks-remediator.yaml" ;;
+    aks-triage-agent) echo "recipes/alert-response-incident-operations/config/subagents/aks-triage-agent.yaml" ;;
+    incident-comms-agent) echo "recipes/alert-response-incident-operations/config/subagents/incident-comms-agent.yaml" ;;
     incident-orchestrator) echo "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml" ;;
+    incident-summary-agent) echo "recipes/alert-response-incident-operations/config/subagents/incident-summary-agent.yaml" ;;
     issue-triager) echo "recipes/azmon-lawappinsights/agents/issue-triager.yaml" ;;
     pim-elevation) echo "recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml" ;;
     triage-agent) echo "recipes/azmon-lawappinsights/agents/triage-agent.yaml" ;;
@@ -125,12 +131,18 @@ configure_catalog_scope() {
   case "$SCENARIO" in
     s3)
       log "Including S3 AKS ServiceNow incident catalog from scenario=s3."
+      SUBAGENT_NAMES=(
+        aks-triage-agent
+        incident-summary-agent
+        incident-comms-agent
+      )
       if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
         # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
         RESPONSE_PLAN_NAMES=(
           aks-incidents
-          aks-pod-urgent
         )
+      else
+        RESPONSE_PLAN_NAMES=()
       fi
       KB_NAMES=(
         incident-report.md

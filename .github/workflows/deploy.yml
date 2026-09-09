@@ -20,7 +20,7 @@ on:
         type: boolean
         default: true
       simulate_aks_incident:
-        description: "Deploy a broken AKS pod and create a ServiceNow incident"
+        description: "Deploy a broken AKS pod for an existing ServiceNow incident"
         type: boolean
         default: false
 
@@ -122,12 +122,7 @@ jobs:
             kubectl get pods --namespace default -l app=orders-api -o wide
             kubectl describe deployment/orders-api --namespace default
             kubectl describe pods --namespace default -l app=orders-api
-            bash scripts/create-servicenow-incident.sh \
-              "${ENVIRONMENT}" \
-              "AKS incident: orders-api rollout failed in ${ENVIRONMENT}" \
-              "The GitHub Actions deployment connected to AKS cluster ${AKS_NAME} in resource group ${RG}, applied infra/k8s/orders-api.yaml, and deployment/orders-api did not become available within 180 seconds. Review the workflow pod describe output for scheduling, image pull, quota, or readiness details." \
-              "1" \
-              "1"
+            echo "The deployment failed; update the active ServiceNow incident through Azure SRE Agent."
             exit 1
           fi
 
@@ -144,12 +139,7 @@ jobs:
             kubectl describe deployment/orders-api --namespace default
             kubectl describe pods --namespace default -l app=orders-api
 
-            bash scripts/create-servicenow-incident.sh \
-              "${ENVIRONMENT}" \
-              "AKS incident: orders-api broken in ${ENVIRONMENT}" \
-              "The GitHub Actions deployment intentionally applied infra/k8s/orders-api-broken.yaml to AKS cluster ${AKS_NAME} in resource group ${RG}. The orders-api deployment did not roll out because the pod image is intentionally broken. This incident has priority 1 and title contains \"AKS\", so it should match the aks-pod-urgent response plan and appear on the Azure SRE Agent incidents page after ServiceNow ingestion." \
-              "1" \
-              "1"
+            echo "The simulation does not create a ServiceNow incident; Azure SRE Agent updates an existing matching AKS incident."
           fi
 
       - name: Build and update application images

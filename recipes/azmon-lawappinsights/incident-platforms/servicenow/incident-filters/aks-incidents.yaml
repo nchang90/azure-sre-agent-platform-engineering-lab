@@ -1,5 +1,5 @@
 metadata:
-  name: snow-aks-incidents
+  name: aks-incidents
 spec:
   name: ServiceNow AKS Incident Response
   incidentPlatform: ServiceNow
@@ -9,7 +9,7 @@ spec:
   - "2"
   - "3"
   titleContains: AKS
-  handlingAgent: aks-remediator
+  handlingAgent: aks-triage-agent
   agentMode: autonomous
   deepInvestigationEnabled: true
   maxAutomatedInvestigationAttempts: 3
