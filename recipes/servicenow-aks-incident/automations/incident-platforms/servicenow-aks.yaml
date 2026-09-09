@@ -1,5 +1,0 @@
-name: servicenow
-spec:
-  platformType: ServiceNow
-  connectionUrl: "{{serviceNowInstanceUrl}}"
-  connectionKey: '{"endpoint":"{{serviceNowInstanceUrl}}","username":"{{serviceNowUsername}}","password":"{{serviceNowPassword}}"}'

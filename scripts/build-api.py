@@ -78,6 +78,7 @@ def build_agent(path):
         "system_prompt": "instructions",
         "handoff_description": "handoffDescription",
         "agent_type": "agentMode",
+        "handoffs": "handoffs",
         "tools": "tools",
         "model": "model",
         "description": "description",
@@ -87,8 +88,7 @@ def build_agent(path):
         if src in spec and spec[src] is not None:
             properties[dst] = spec[src]
 
-    # Workspace-mode agents do not support agent-to-agent handoff registration.
-    properties["handoffs"] = []
+    properties.setdefault("handoffs", [])
 
     json.dump(
         {"name": name, "type": "ExtendedAgent", "tags": [], "properties": properties},
