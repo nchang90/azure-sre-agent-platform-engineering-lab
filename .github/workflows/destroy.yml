@@ -61,7 +61,25 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          set +e
+          INIT_OUTPUT="$(terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars 2>&1)"
+          INIT_EXIT=$?
+          set -e
+          echo "$INIT_OUTPUT"
+
+          if [[ $INIT_EXIT -ne 0 ]]; then
+            if echo "$INIT_OUTPUT" | grep -qiE "Failed to install provider|failed to retrieve cryptographic signature|500 Internal Server Error returned from github.com"; then
+              echo "Terraform init hit transient provider download issue; retrying once..."
+              sleep 10
+              terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
+            else
+              exit $INIT_EXIT
+            fi
+          fi
 
       - name: Terraform destroy
         run: terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file=environments/${{ matrix.environment }}.tfvars
