@@ -254,6 +254,18 @@ variable "enable_service_now_incident_platform" {
   default     = false
 }
 
+variable "service_now_instance" {
+  description = "ServiceNow instance URL used for incident integration."
+  type        = string
+  default     = ""
+}
+
+variable "service_now_username" {
+  description = "ServiceNow username used for incident integration."
+  type        = string
+  default     = ""
+}
+
 variable "azure_monitor_lookback_days" {
   description = "Lookback window in days for the Azure Monitor connector."
   type        = number

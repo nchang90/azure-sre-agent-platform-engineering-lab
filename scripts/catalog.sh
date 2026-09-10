@@ -130,20 +130,16 @@ configure_catalog_scope() {
 
   case "$SCENARIO" in
     s3)
-      log "Including S3 AKS ServiceNow incident catalog from scenario=s3."
+      log "Including S3 high-severity AKS incident catalog from scenario=s3."
       SUBAGENT_NAMES=(
         aks-triage-agent
         incident-summary-agent
         incident-comms-agent
       )
-      if [[ "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" == "true" ]]; then
-        # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
-        RESPONSE_PLAN_NAMES=(
-          aks-incidents
-        )
-      else
-        RESPONSE_PLAN_NAMES=()
-      fi
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      RESPONSE_PLAN_NAMES=(
+        aks-critical-errors
+      )
       KB_NAMES=(
         incident-report.md
         on-call-handoff.md

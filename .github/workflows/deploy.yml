@@ -20,7 +20,7 @@ on:
         type: boolean
         default: true
       simulate_aks_incident:
-        description: "Deploy a broken AKS pod for an existing ServiceNow incident"
+        description: "Trigger a high-severity AKS incident with a broken pod"
         type: boolean
         default: false
 
@@ -122,7 +122,7 @@ jobs:
             kubectl get pods --namespace default -l app=orders-api -o wide
             kubectl describe deployment/orders-api --namespace default
             kubectl describe pods --namespace default -l app=orders-api
-            echo "The deployment failed; update the active ServiceNow incident through Azure SRE Agent."
+            echo "The deployment failed; investigate the AKS alert through Azure SRE Agent."
             exit 1
           fi
 
@@ -139,7 +139,44 @@ jobs:
             kubectl describe deployment/orders-api --namespace default
             kubectl describe pods --namespace default -l app=orders-api
 
-            echo "The simulation does not create a ServiceNow incident; Azure SRE Agent updates an existing matching AKS incident."
+            echo "The Sev1 AKS alert will create an Azure Monitor incident for Azure SRE Agent investigation."
+
+            SERVICE_NOW_INSTANCE="$(read_tf service_now_instance)"
+            SERVICE_NOW_USERNAME="$(read_tf service_now_username)"
+            SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-}"
+
+            if [[ -z "$SERVICE_NOW_INSTANCE" || -z "$SERVICE_NOW_USERNAME" || -z "$SERVICE_NOW_PASSWORD" ]]; then
+              echo "ServiceNow instance, username, and SERVICENOW_PASSWORD are required to update the existing AKS incident." >&2
+              exit 1
+            fi
+
+            INCIDENT_RESPONSE="$(
+              curl --silent --show-error --fail \
+                --user "$SERVICE_NOW_USERNAME:$SERVICE_NOW_PASSWORD" \
+                --get "${SERVICE_NOW_INSTANCE%/}/api/now/table/incident" \
+                --data-urlencode "sysparm_query=active=true^short_descriptionLIKEAKS^ORDERBYDESCsys_created_on" \
+                --data-urlencode "sysparm_fields=sys_id,number" \
+                --data-urlencode "sysparm_limit=1"
+            )"
+            INCIDENT_SYS_ID="$(jq -r '.result[0].sys_id // empty' <<<"$INCIDENT_RESPONSE")"
+            INCIDENT_NUMBER="$(jq -r '.result[0].number // empty' <<<"$INCIDENT_RESPONSE")"
+
+            if [[ -z "$INCIDENT_SYS_ID" ]]; then
+              echo "No active ServiceNow incident with 'AKS' in its short description was found." >&2
+              exit 1
+            fi
+
+            WORK_NOTE="S3 simulation deployed a broken orders-api workload to AKS cluster ${AKS_NAME}. A Sev1 Azure Monitor crash-loop alert is expected and Azure SRE Agent will investigate the resulting incident."
+            UPDATE_BODY="$(jq -nc --arg work_notes "$WORK_NOTE" '{work_notes:$work_notes}')"
+            curl --silent --show-error --fail \
+              --user "$SERVICE_NOW_USERNAME:$SERVICE_NOW_PASSWORD" \
+              --request PATCH \
+              --header "Content-Type: application/json" \
+              --data "$UPDATE_BODY" \
+              "${SERVICE_NOW_INSTANCE%/}/api/now/table/incident/${INCIDENT_SYS_ID}" \
+              >/dev/null
+
+            echo "Updated existing ServiceNow incident ${INCIDENT_NUMBER} with the AKS simulation context."
           fi
 
       - name: Build and update application images

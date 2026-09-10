@@ -13,6 +13,16 @@ output "agent_data_plane_url" {
   value       = try(azapi_resource.sre_agent[0].output.properties.agentEndpoint, "")
 }
 
+output "service_now_instance" {
+  description = "ServiceNow instance used for S3 incident synchronization."
+  value       = var.service_now_instance
+}
+
+output "service_now_username" {
+  description = "ServiceNow username used for S3 incident synchronization."
+  value       = var.service_now_username
+}
+
 output "managed_identity_id" {
   description = "Resource ID of the User-Assigned Managed Identity used by the agent."
   value       = local.effective_identity_id

@@ -1,9 +1,10 @@
-For S3 ServiceNow AKS incidents, start with aks-triage-agent. Preserve the same
+For S3 high-severity Azure Monitor AKS incidents, start with aks-triage-agent.
+Preserve the same
 incident conversation context through this handoff chain:
 
 aks-triage-agent -> incident-summary-agent -> incident-comms-agent
 
 Each specialist must add only its assigned output, preserve prior evidence, and
-avoid claiming that remediation was executed. The final agent must return the
-work-note content for the incident response plan to post to the active
-ServiceNow incident, then return control to the main agent.
+avoid claiming that remediation was executed. The final agent must return an
+operator-ready update for the active Azure SRE Agent incident, then return
+control to the main agent.
