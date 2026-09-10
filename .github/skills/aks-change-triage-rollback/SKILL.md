@@ -21,7 +21,7 @@ Use this skill when 5xx/latency spike after an AKS deployment, pods enter CrashL
    - Drain node if pressure: `kubectl drain <node> --ignore-daemonsets --delete-emptydir-data`.
    - Scale if load: `az aks nodepool scale ...`.
    - Roll back if regression persists: `kubectl rollout undo ...` or GitOps revert.
-   - For `ImagePullBackOff` caused by `ErrImagePull` or registry `NotFound`, do not restart first: it only retries the invalid image. Verify the prior revision or GitOps last-known-good image, then roll back the scoped deployment.
+   - For `ImagePullBackOff` due to a missing image (events show `ErrImagePull` with "NotFound"/"manifest unknown"), do not restart first: it only retries the same tag. Verify a prior known-good revision or GitOps last-known-good image, then roll back the scoped deployment.
 
 ## AKS Log Analytics queries
 
