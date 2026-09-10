@@ -33,6 +33,8 @@ jobs:
           else
             echo "No shell scripts to lint"
           fi
+      - name: Validate apply-extras workspace-mode fallback
+        run: bash scripts/test-apply-extras-workspace-mode.sh
 
   markdownlint:
     runs-on: ubuntu-latest
