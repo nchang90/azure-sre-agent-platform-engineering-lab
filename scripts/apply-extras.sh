@@ -251,6 +251,19 @@ contains() {
   return 1
 }
 
+workspace_mode_handoffs_unsupported() {
+  [[ -s "$RESP" ]] && grep -q "New agent-to-agent handoffs are not supported in workspace mode" "$RESP"
+}
+
+remove_agent_handoffs_for_workspace_mode() {
+  local body="$1"
+  jq '
+    .properties.handoffs = [] |
+    .properties.instructions = ((.properties.instructions // "") + "\n\nWorkspace mode fallback: agent-to-agent handoffs are unavailable in this environment. Complete any downstream handoff responsibilities yourself and return the final output expected from this workflow.")
+  ' "$body" >"$TMP_DIR/agent-workspace-fallback.json"
+  mv "$TMP_DIR/agent-workspace-fallback.json" "$body"
+}
+
 register_subagent() {
   local yaml_path="$1" name="$2"
   local body="$TMP_DIR/agent.json" code
@@ -266,6 +279,11 @@ register_subagent() {
   fi
 
   code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
+  if [[ "$code" == "400" ]] && workspace_mode_handoffs_unsupported; then
+    warn "  $name does not support handoffs in workspace mode; retrying without handoffs."
+    remove_agent_handoffs_for_workspace_mode "$body"
+    code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
+  fi
   report_result "$code" "Registered: $name" "$name"
 }
 
