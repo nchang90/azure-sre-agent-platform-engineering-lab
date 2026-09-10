@@ -61,7 +61,13 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
-        run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
+        shell: bash
+        run: |
+          terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars || {
+            echo "Terraform init failed; retrying once..."
+            sleep 10
+            terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
+          }
 
       - name: Terraform destroy
         run: terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file=environments/${{ matrix.environment }}.tfvars
