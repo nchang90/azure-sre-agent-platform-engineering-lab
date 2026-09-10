@@ -135,6 +135,6 @@ curl --fail --silent --show-error \
 
 ## Next: What Comes After S2
 
-- **S3 — AKS Root Cause**: ServiceNow integration + Kubernetes investigation
+- **S3 — AKS Root Cause**: High-severity Azure Monitor incidents + Kubernetes investigation
 - **S4 — Alert Response**: Operator-ready monitoring workflows
 - **S5 — PIM Audit**: Compliance and security audit scenarios
