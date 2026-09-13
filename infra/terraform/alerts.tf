@@ -229,7 +229,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unavai
   display_name            = "AKS orders-api workload unavailable"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
@@ -290,7 +290,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
   display_name            = "AKS orders-api service missing"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
@@ -339,7 +339,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unheal
   display_name            = "AKS orders-api workload unhealthy"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT10M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
@@ -404,7 +404,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
   display_name            = "AKS orders-api service has no endpoints"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
