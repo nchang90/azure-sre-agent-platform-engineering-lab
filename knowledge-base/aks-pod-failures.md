@@ -10,7 +10,10 @@ Follow the lab flow strictly:
 
 - Confirm the triggering signal:
   - `AKS orders-api workload unavailable`
-  - `AKS pods not ready`
+  - `AKS orders-api workload unhealthy`
+  - `AKS - CrashLoop/OOM detected`
+  - `AKS - Failed or pending pods`
+  - `AKS - Pod restart spike`
 - Capture the affected pod name, current status, restart count, and first-seen
   time.
 

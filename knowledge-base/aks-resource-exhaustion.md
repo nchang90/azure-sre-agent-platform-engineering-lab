@@ -9,7 +9,8 @@ Follow the lab flow strictly:
 ## 1) Detect
 
 - Confirm the triggering signal:
-  - `AKS pods not ready`
+  - `AKS - Failed or pending pods`
+  - `AKS - CrashLoop/OOM detected` (OOMKilled)
   - node pressure, pending pods, or repeated restarts during investigation
 - Record the affected pod or node, peak pressure symptom, and first-seen time.
 
