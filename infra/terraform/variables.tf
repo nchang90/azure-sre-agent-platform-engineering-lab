@@ -260,7 +260,7 @@ variable "enable_azure_monitor_connector" {
 }
 
 variable "azure_monitor_resource_id" {
-  description = "Optional ARM resource ID for the Azure Monitor connector scope. Defaults to the S3 monitored resource group when scenario = s3, otherwise the current subscription ID."
+  description = "Optional ARM resource ID for the Azure Monitor connector scope. Defaults to the S3 Log Analytics workspace when scenario = s3, otherwise the current subscription ID."
   type        = string
   default     = ""
 
