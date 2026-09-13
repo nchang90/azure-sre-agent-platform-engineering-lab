@@ -2,6 +2,7 @@ locals {
   resolved_app_insights_id     = var.app_insights_resource_id != "" ? var.app_insights_resource_id : (local.create_app_insights ? azurerm_application_insights.ai[0].id : "")
   resolved_app_insights_app_id = var.app_insights_app_id != "" ? var.app_insights_app_id : (local.create_app_insights ? azurerm_application_insights.ai[0].app_id : "")
   resolved_law_id              = var.law_resource_id != "" ? var.law_resource_id : azurerm_log_analytics_workspace.law.id
+  resolved_azure_monitor_id    = var.azure_monitor_resource_id != "" ? var.azure_monitor_resource_id : data.azurerm_subscription.current.id
 
   app_insights_resource_name  = basename(local.resolved_app_insights_id)
   log_analytics_resource_name = basename(local.resolved_law_id)
@@ -37,9 +38,9 @@ locals {
     name = "azure-monitor"
     properties = {
       dataConnectorType = "AzureMonitor"
-      dataSource        = data.azurerm_subscription.current.id
+      dataSource        = local.resolved_azure_monitor_id
       extendedProperties = {
-        armResourceId = data.azurerm_subscription.current.id
+        armResourceId = local.resolved_azure_monitor_id
         lookbackDays  = var.azure_monitor_lookback_days
       }
       identity = "system"

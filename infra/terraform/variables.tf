@@ -259,6 +259,12 @@ variable "enable_azure_monitor_connector" {
   default     = false
 }
 
+variable "azure_monitor_resource_id" {
+  description = "Optional ARM resource ID for the Azure Monitor connector scope. Defaults to the current subscription ID."
+  type        = string
+  default     = ""
+}
+
 variable "azure_monitor_lookback_days" {
   description = "Lookback window in days for the Azure Monitor connector."
   type        = number
