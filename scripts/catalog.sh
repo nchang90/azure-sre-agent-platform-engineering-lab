@@ -27,6 +27,9 @@ ALL_RESPONSE_PLAN_NAMES=(
 )
 
 ALL_KB_NAMES=(
+  aks-network-connectivity.md
+  aks-pod-failures.md
+  aks-resource-exhaustion.md
   github-issue-triage.md
   http-500-errors.md
   incident-report.md
@@ -143,6 +146,9 @@ configure_catalog_scope() {
         aks-critical-errors
       )
       KB_NAMES=(
+        aks-network-connectivity.md
+        aks-pod-failures.md
+        aks-resource-exhaustion.md
         incident-report.md
         on-call-handoff.md
         orders-architecture.md

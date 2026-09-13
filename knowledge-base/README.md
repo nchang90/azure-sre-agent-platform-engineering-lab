@@ -6,7 +6,7 @@ Central repository for runbooks, architecture docs, and incident guides.
 See [runbooks/](runbooks/) for actionable runbooks organized by service area:
 - **Containers**: HTTP 5xx errors, Container Apps issues
 - **Front Door**: Routing rules, health probes, origin failures
-- **AKS**: Node pool issues, pod scheduling, network problems
+- **AKS**: [Pod failures](aks-pod-failures.md), [network connectivity](aks-network-connectivity.md), [resource exhaustion](aks-resource-exhaustion.md)
 - **Monitoring**: Log Analytics queries, alert tuning
 
 ## 🏗️ Architecture

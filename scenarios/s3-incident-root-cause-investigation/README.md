@@ -52,6 +52,7 @@ triage, incident summary, and operator communications.
 | **AKS Cluster** | Runs orders-api microservice workload |
 | **Log Analytics** | Stores pod logs, node metrics, and events (`KubePodInventory`, `ContainerLogV2`, `KubeEvents`) |
 | **Application Insights** | Captures application traces and errors |
+| **Azure Monitor Connector** | Feeds Azure Monitor incidents into the Azure SRE Agent |
 | **Azure Monitor Alert** | Triggers on pod crash loop, critical workload loss, missing service, or node pressure |
 | **Azure Monitor Incident** | Created from the Sev1 AKS alert and owns the investigation lifecycle |
 | **ServiceNow Incident** | Existing active AKS incident receives the simulation context as a work note |
@@ -118,6 +119,7 @@ After the quick start:
 | Alert rules | `infra/terraform/alerts.tf` |
 | AKS configuration | `infra/terraform/aks.tf` |
 | Knowledge base docs | `knowledge-base/` (runbooks, incident templates) |
+| S3 AKS runbooks | `knowledge-base/aks-*.md` |
 
 ---
 
