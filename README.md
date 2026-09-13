@@ -29,7 +29,7 @@ resource group, with a federated credential scoped to this repository:
 | Setting | Value |
 |---|---|
 | Issuer | `https://token.actions.githubusercontent.com` |
-| Subject | `repo:nchang90@60232417/azure-sre-agent-platform-engineering-lab@1259865415:ref:refs/heads/main` |
+| Subject | `repo:nchang90/azure-sre-agent-platform-engineering-lab:ref:refs/heads/main` |
 | Audience | `api://AzureADTokenExchange` |
 
 Because the subject is pinned to `refs/heads/main`, only workflow runs on `main` (scheduled or
@@ -43,7 +43,7 @@ Roles held by the identity at subscription scope:
 
 Both the Azure CLI and Terraform use this identity:
 
-- `azure/login@v2` is given `client-id`/`tenant-id`/`subscription-id` with no `client-secret`.
+- `azure/login@v3` is given `client-id`/`tenant-id`/`subscription-id` with no `client-secret`.
 - Terraform authenticates natively via `ARM_USE_OIDC=true` plus `ARM_CLIENT_ID`, `ARM_TENANT_ID`,
   and `ARM_SUBSCRIPTION_ID`. This applies to the `azurerm` and `azapi` providers *and* to the
   `azurerm` state backend, so Terraform never falls back to the CLI token — which cannot be
