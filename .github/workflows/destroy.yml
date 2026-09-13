@@ -8,6 +8,8 @@ on:
         type: choice
         options:
           - sbox
+          - demo
+          - dev
         default: sbox
       destroy:
         description: "tf_destroy"
