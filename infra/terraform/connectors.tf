@@ -38,7 +38,7 @@ locals {
     name = "azure-monitor"
     properties = {
       dataConnectorType = "AzureMonitor"
-      dataSource        = local.resolved_azure_monitor_id
+      dataSource        = "azure-monitor"
       extendedProperties = {
         armResourceId = local.resolved_azure_monitor_id
         lookbackDays  = var.azure_monitor_lookback_days
