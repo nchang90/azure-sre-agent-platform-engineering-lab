@@ -7,8 +7,6 @@
     "incidentPlatform": "AzMonitor"
   },
   "connectors": [
-    { "name": "app-insights", "type": "AppInsights" },
-    { "name": "log-analytics", "type": "LogAnalytics" },
     { "name": "azure-monitor", "type": "AzureMonitor" }
   ],
   "skills": [
