@@ -107,7 +107,14 @@ configure_catalog_scope() {
       log "Skipping runtime subagents for runtime_stack=none."
       ;;
     webapp)
-      log "Skipping runtime subagents for runtime_stack=webapp."
+      if [[ "$SCENARIO" == "s2" ]]; then
+        log "Including App Service incident catalog for S2."
+        SUBAGENT_NAMES+=(
+          triage-agent
+        )
+      else
+        log "Skipping runtime subagents for runtime_stack=webapp."
+      fi
       ;;
     containerapps)
       log "Including Container Apps incident catalog from runtime_stack=containerapps."
@@ -162,9 +169,14 @@ configure_catalog_scope() {
       SKILL_NAMES=(
         incident-orchestrator-coordination
         investigate-azure-alerts
-        containerapps-500-diagnostics
-        containerapps-latency-diagnostics
+        triage-app-errors
       )
+      if [[ "$RUNTIME_STACK" == "containerapps" ]]; then
+        SKILL_NAMES+=(
+          containerapps-500-diagnostics
+          containerapps-latency-diagnostics
+        )
+      fi
       ;;
     s4)
       log "Including S4 alert response issue-triage catalog from scenario=s4."

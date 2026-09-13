@@ -87,6 +87,17 @@ variable "scenario" {
   type        = string
 }
 
+variable "runtime" {
+  description = "Application runtime for S2. Other scenarios retain their fixed runtime."
+  type        = string
+  default     = "containerapps"
+
+  validation {
+    condition     = contains(["containerapps", "webapp"], var.runtime)
+    error_message = "runtime must be containerapps or webapp."
+  }
+}
+
 variable "webapp_image" {
   description = "Container image for S4 Linux Web Apps."
   type        = string

@@ -107,8 +107,8 @@ build_and_update_images() {
 
 log "Applying Terraform plan for $ENVIRONMENT..."
 terraform_apply
-bash "$SCRIPT_DIR/apply-extras.sh" "$ENVIRONMENT"
 TF_OUT="$(terraform -chdir=infra/terraform output -json)"
+RUNTIME_STACK_OVERRIDE="$(read_tf runtime_stack)" bash "$SCRIPT_DIR/apply-extras.sh" "$ENVIRONMENT"
 deploy_aks_workload
 build_and_update_images
 ok "Deployment completed for $ENVIRONMENT."

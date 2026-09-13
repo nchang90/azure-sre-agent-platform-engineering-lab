@@ -134,7 +134,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
 }
 
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
-  count               = local.apps_enabled ? 1 : 0
+  count               = local.apps_enabled || (local.scenario_value == "s2" && local.webapps_enabled) ? 1 : 0
   name                = "alert-orders-api-latency"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name

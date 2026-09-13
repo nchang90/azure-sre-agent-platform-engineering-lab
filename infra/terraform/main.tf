@@ -22,8 +22,8 @@ locals {
 
   scenario_value = lower(trimspace(var.scenario))
 
-  apps_enabled    = local.scenario_value == "s1" || local.scenario_value == "s2"
-  webapps_enabled = local.scenario_value == "s4"
+  apps_enabled    = local.scenario_value == "s1" || (local.scenario_value == "s2" && var.runtime == "containerapps")
+  webapps_enabled = local.scenario_value == "s4" || (local.scenario_value == "s2" && var.runtime == "webapp")
   aks_enabled     = local.scenario_value == "s3"
   images_enabled  = local.apps_enabled || local.webapps_enabled
 }

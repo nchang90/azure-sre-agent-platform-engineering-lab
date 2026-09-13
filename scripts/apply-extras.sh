@@ -116,12 +116,17 @@ configure_environment() {
   log "Selecting Terraform environment: $ENVIRONMENT"
   SCENARIO="$(tfvar scenario | tr '[:upper:]' '[:lower:]')"
   [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, or s5)."
-  RUNTIME_STACK="$(resolve_runtime_stack "$SCENARIO")"
+  RUNTIME_STACK="${RUNTIME_STACK_OVERRIDE:-$(resolve_runtime_stack "$SCENARIO")}"
+  case "$RUNTIME_STACK" in
+    containerapps|aks|webapp|none) ;;
+    *) die "Unsupported runtime stack override: $RUNTIME_STACK" ;;
+  esac
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
   case "$RUNTIME_STACK" in
     none) log "Detected runtime scope: none (monitoring-only mode)" ;;
     containerapps) log "Detected runtime scope: Container Apps" ;;
     aks) log "Detected runtime scope: AKS" ;;
+    webapp) log "Detected runtime scope: App Service" ;;
   esac
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
 }

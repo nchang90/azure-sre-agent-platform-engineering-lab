@@ -71,7 +71,7 @@ az identity federated-credential create \
 
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 - Trigger: daily schedule and manual run.
-- Inputs: `environment` (`demo`/`sbox`/`dev`), `plan`, `apply`.
+- Inputs: `environment` (`demo`/`sbox`/`dev`), S2 `runtime` (`containerapps`/`webapp`), `plan`, `apply`.
 
 Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.yml)
 - Trigger: daily schedule and manual run.

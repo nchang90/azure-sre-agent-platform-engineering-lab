@@ -11,6 +11,13 @@ on:
           - sbox
           - dev
         default: sbox
+      runtime:
+        description: "S2 application runtime"
+        type: choice
+        options:
+          - containerapps
+          - webapp
+        default: containerapps
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -32,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
+      RUNTIME: ${{ inputs.runtime || 'containerapps' }}
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -67,7 +75,7 @@ jobs:
 
       - name: Terraform plan
         if: github.event_name == 'schedule' || inputs.plan || inputs.apply
-        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
+        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars -var="runtime=${RUNTIME}"
 
       - name: Deploy
         if: github.event_name == 'schedule' || inputs.apply

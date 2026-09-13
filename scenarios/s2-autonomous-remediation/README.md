@@ -2,7 +2,7 @@
 
 **Persona:** Platform / SRE  
 **Time:** ~15 minutes
-**Runtime:** Azure Container Apps
+**Runtime:** Azure Container Apps (default) or Azure App Service
 **Infrastructure:** Terraform
 **Recipe:** `azmon-lawappinsights`
 
@@ -17,7 +17,7 @@ Set these values in `tfvars`:
 ```hcl
 scenario                       = "s2"
 access_level                   = "High"
-action_mode                    = "Automatic"
+action_mode                    = "Autonomous"
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
 enable_sev01_incident_filter   = true
@@ -30,6 +30,7 @@ Then deploy the environment:
 # then apply-extras.sh detects scenario=s2 and registers the S2 catalog.
 gh workflow run deploy.yml \
   -f environment=sbox \
+  -f runtime=containerapps \
   -f plan=true \
   -f apply=true
 
@@ -54,7 +55,21 @@ az containerapp show \
 curl --fail --silent --show-error "$APP_URL/health"
 ```
 
-> **Caution:** `Automatic` mode allows the agent to perform write actions. Use only
+Select `runtime=webapp` to run S2 on Azure App Service. This creates a Linux B1
+App Service Plan and requires at least one available B1 VM quota in the selected region.
+For App Service, load the URL with:
+
+```bash
+APP_FQDN="$(az webapp show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_NAME" \
+  --query defaultHostName \
+  --output tsv)"
+APP_URL="https://$APP_FQDN"
+curl --fail --silent --show-error "$APP_URL/health"
+```
+
+> **Caution:** `Autonomous` mode allows the agent to perform write actions. Use only
 > in the isolated lab resource group. Return to `Review` mode after the exercise.
 
 ### Deploy & Observe (5 mins)
@@ -87,7 +102,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 
 Unlike S1, which introduces the platform through Bicep and `azd`, S2 uses the
 Terraform environment to deploy the Orders API and an SRE Agent with `High`
-access in `Automatic` mode. Break the running Container App with a single API
+access in `Autonomous` mode. Break the running application with a single API
 call, then watch the agent **detect** the 5xx spike, **investigate** the root
 cause, **execute** a safe remediation, and verify recovery without waiting for
 human approval.
@@ -98,8 +113,8 @@ human approval.
 
 1. **Inject failure** → Set the Orders API runtime failure rate to 100%
 2. **Alert fires** → Application Insights detects 5xx spike
-3. **Agent investigates** → Correlates telemetry, Container Apps logs, and revision state
-4. **Proposes fix** → Reset the simulation or restart the active revision
+3. **Agent investigates** → Correlates telemetry with the selected runtime state
+4. **Proposes fix** → Reset the simulation or restart the application
 5. **Executes** → Applies the safe fix automatically
 6. **Confirms recovery** → Re-checks health and metrics
 
@@ -118,7 +133,7 @@ After the quick start:
 - ✅ SRE Agent investigates automatically
 - ✅ Application Insights shows error spike + recovery
 - ✅ Remediation actions proposed or executed
-- ✅ Active Container Apps revision remains healthy
+- ✅ Selected application runtime remains healthy
 - ✅ Error rate drops to baseline
 
 ---
