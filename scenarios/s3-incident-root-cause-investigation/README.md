@@ -52,7 +52,7 @@ triage, incident summary, and operator communications.
 | **AKS Cluster** | Runs orders-api microservice workload |
 | **Log Analytics** | Stores pod logs, node metrics, and events (`KubePodInventory`, `ContainerLogV2`, `KubeEvents`) |
 | **Application Insights** | Captures application traces and errors |
-| **Azure Monitor Alert** | Triggers on pod crash loop or node pressure |
+| **Azure Monitor Alert** | Triggers on pod crash loop, critical workload loss, missing service, or node pressure |
 | **Azure Monitor Incident** | Created from the Sev1 AKS alert and owns the investigation lifecycle |
 | **ServiceNow Incident** | Existing active AKS incident receives the simulation context as a work note |
 | **Azure SRE Agent** | Coordinates the three incident-investigation subagents |
@@ -62,7 +62,7 @@ triage, incident summary, and operator communications.
 ## How It Works
 
 1. **Deploy broken workload** → pod enters CrashLoopBackOff immediately
-2. **Azure Monitor alerts** (2–5 min) → detects pod crash via Log Analytics
+2. **Azure Monitor alerts** (2–5 min) → detects pod crash or deletion-induced workload loss via Log Analytics
 3. **Incident created** → The Sev1 AKS alert matches the `aks-critical-errors` response plan
 4. **Azure SRE Agent investigates** → Uses a three-subagent handoff chain
    - Examines `KubePodInventory` for pod state and restart counts
@@ -100,6 +100,7 @@ After the quick start:
 - Three S3 subagents are registered
 - The AKS triage agent can query monitoring evidence
 - A Sev1 AKS alert creates an Azure Monitor incident automatically
+- Critical `orders-api` workload or service deletion also raises a Sev1 AKS alert
 - The newest active matching ServiceNow incident receives an S3 work note
 - The handoff chain completes in triage → summary → incident update order
 - No PIR or remediation subagent is added
