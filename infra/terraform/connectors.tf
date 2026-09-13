@@ -84,10 +84,16 @@ resource "azapi_resource" "connector" {
     properties = jsondecode(local.connector_map[each.value])
   }
 
+  retry = {
+    error_message_regex  = ["context deadline exceeded"]
+    interval_seconds     = 30
+    max_interval_seconds = 300
+  }
+
   timeouts {
-    create = "10m"
-    read   = "10m"
-    update = "10m"
-    delete = "10m"
+    create = "30m"
+    read   = "30m"
+    update = "30m"
+    delete = "30m"
   }
 }
