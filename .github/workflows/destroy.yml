@@ -36,7 +36,10 @@ jobs:
       matrix:
         environment: ${{ fromJSON(github.event_name == 'schedule' && '["demo","sbox"]' || format('["{0}"]', inputs.environment)) }}
     env:
-      TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Validate confirmation input

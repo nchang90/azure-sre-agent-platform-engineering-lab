@@ -10,24 +10,27 @@
 
 Deploy the Terraform environment and register the S3 recipe:
 
-The workflow deploys a broken AKS workload. Its Sev1 Azure Monitor alert creates
-an SRE Agent incident automatically, matching the S0/S1 incident flow. It also
-adds the simulation context to the newest active ServiceNow incident whose short
-description contains `AKS`.
-
-Before running the workflow, create that active ServiceNow incident and set the
-repository secret `SERVICENOW_PASSWORD`. The demo environment supplies the
-ServiceNow instance URL and username.
+The workflow deploys the healthy `orders-api` workload to AKS:
 
 ```bash
 gh workflow run deploy.yml \
   -f environment=demo \
   -f plan=true \
-  -f apply=true \
-  -f simulate_aks_incident=true
+  -f apply=true
 
 gh run watch
 ```
+
+Once it completes, break the workload by hand to raise the incident:
+
+```bash
+az aks get-credentials --resource-group rg-sre-lab-demo --name <aks-name> --admin
+kubectl apply -f infra/k8s/orders-api-broken.yaml
+kubectl rollout status deployment/orders-api --namespace default --timeout=120s
+```
+
+The rollout will fail into a crash loop. Its Sev1 Azure Monitor alert creates an
+SRE Agent incident automatically, matching the S0/S1 incident flow.
 
 Terraform creates the Azure SRE Agent. The deployment workflow then registers
 the three S3 subagents from the recipe.

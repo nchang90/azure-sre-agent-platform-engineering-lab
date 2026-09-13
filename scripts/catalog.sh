@@ -89,11 +89,6 @@ configure_catalog_scope() {
     *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
   esac
 
-  case "$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM" in
-    true|false) ;;
-    *) die "Unsupported enable_service_now_incident_platform value '$ENABLE_SERVICE_NOW_INCIDENT_PLATFORM' in $TFVARS_FILE. Expected true or false." ;;
-  esac
-
   case "$SCENARIO" in
     ""|s1|s2|s3|s4|s5) ;;
     *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s1, s2, s3, s4, s5." ;;

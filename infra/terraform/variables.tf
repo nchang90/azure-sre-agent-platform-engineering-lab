@@ -248,24 +248,6 @@ variable "enable_azure_monitor_connector" {
   default     = false
 }
 
-variable "enable_service_now_incident_platform" {
-  description = "Configure ServiceNow as the incident platform during recipe extras."
-  type        = bool
-  default     = false
-}
-
-variable "service_now_instance" {
-  description = "ServiceNow instance URL used for incident integration."
-  type        = string
-  default     = ""
-}
-
-variable "service_now_username" {
-  description = "ServiceNow username used for incident integration."
-  type        = string
-  default     = ""
-}
-
 variable "azure_monitor_lookback_days" {
   description = "Lookback window in days for the Azure Monitor connector."
   type        = number

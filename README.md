@@ -17,14 +17,69 @@ See [docs/quickstart.md](docs/quickstart.md) for step-by-step provisioning instr
 
 ## GitHub Actions
 
+### Authentication (OIDC federated identity)
+
+Workflows authenticate to Azure with **workload identity federation** — no client secrets are
+stored anywhere. GitHub mints a short-lived OIDC token, and Entra ID exchanges it for an Azure
+access token.
+
+The identity is the user-assigned managed identity `uami-github` in the `terraform-tfstate`
+resource group, with a federated credential scoped to this repository:
+
+| Setting | Value |
+|---|---|
+| Issuer | `https://token.actions.githubusercontent.com` |
+| Subject | `repo:nchang90@60232417/azure-sre-agent-platform-engineering-lab@1259865415:ref:refs/heads/main` |
+| Audience | `api://AzureADTokenExchange` |
+
+Because the subject is pinned to `refs/heads/main`, only workflow runs on `main` (scheduled or
+manually dispatched) can obtain a token. Runs from branches or forks are rejected by Entra ID.
+
+Roles held by the identity at subscription scope:
+
+- `Contributor` — create and manage lab resources.
+- `User Access Administrator` — required because [`infra/terraform/rbac.tf`](infra/terraform/rbac.tf)
+  creates role assignments for the SRE Agent.
+
+Both the Azure CLI and Terraform use this identity:
+
+- `azure/login@v2` is given `client-id`/`tenant-id`/`subscription-id` with no `client-secret`.
+- Terraform authenticates natively via `ARM_USE_OIDC=true` plus `ARM_CLIENT_ID`, `ARM_TENANT_ID`,
+  and `ARM_SUBSCRIPTION_ID`. This applies to the `azurerm` and `azapi` providers *and* to the
+  `azurerm` state backend, so Terraform never falls back to the CLI token — which cannot be
+  refreshed mid-run and would otherwise expire during a long `apply`.
+
+Both workflows therefore declare `permissions: id-token: write`.
+
+Repository secrets required (all are non-sensitive identifiers, stored as secrets by convention):
+`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
+
+To add another branch or a GitHub environment, create an additional federated credential rather
+than loosening the existing subject:
+
+```bash
+az identity federated-credential create \
+  --name github-<branch> \
+  --identity-name uami-github \
+  --resource-group terraform-tfstate \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject "repo:nchang90/azure-sre-agent-platform-engineering-lab:ref:refs/heads/<branch>" \
+  --audiences api://AzureADTokenExchange
+```
+
+### Workflows
+
 Deploy workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 - Trigger: daily schedule and manual run.
-- Inputs: `environment` (`demo`/`sbox`), `plan`, `apply`.
-- OIDC secrets required: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
+- Inputs: `environment` (`demo`/`sbox`/`dev`), `plan`, `apply`.
 
 Destroy workflow: [`.github/workflows/destroy.yml`](.github/workflows/destroy.yml)
 - Trigger: daily schedule and manual run.
-- Uses the same OIDC secrets as deploy.
+- Uses the same federated identity as deploy.
+
+Terraform state lives in the `tfstate` container of the `terraformstatesboxprd` storage account
+(`terraform-tfstate` resource group), one key per environment — see
+[`infra/terraform/backend/`](infra/terraform/backend/).
 
 ## Scenarios
 

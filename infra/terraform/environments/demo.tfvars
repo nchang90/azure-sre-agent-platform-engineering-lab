@@ -41,7 +41,3 @@ enable_log_analytics_connector = true
 
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true
-
-enable_service_now_incident_platform = false
-service_now_instance                 = "https://dev411761.service-now.com"
-service_now_username                 = "admin"

@@ -19,10 +19,6 @@ on:
         description: "Run Terraform apply"
         type: boolean
         default: true
-      simulate_aks_incident:
-        description: "Trigger a high-severity AKS incident with a broken pod"
-        type: boolean
-        default: false
 
   schedule:
     - cron: "0 10 * * *"
@@ -36,7 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
-      TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout repository
@@ -67,164 +66,9 @@ jobs:
         run: terraform -chdir=infra/terraform validate
 
       - name: Terraform plan
+        if: github.event_name == 'schedule' || inputs.plan || inputs.apply
         run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
 
-      - name: Terraform apply
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          set +e
-          APPLY_OUTPUT="$(terraform -chdir=infra/terraform apply -auto-approve tfplan 2>&1)"
-          APPLY_EXIT=$?
-          set -e
-          echo "$APPLY_OUTPUT"
-
-          if [[ $APPLY_EXIT -ne 0 ]]; then
-            if echo "$APPLY_OUTPUT" | grep -qi "workspace could not be found"; then
-              echo "Terraform apply hit transient workspace lookup issue; retrying once..."
-              sleep 10
-              terraform -chdir=infra/terraform apply -auto-approve tfplan
-            else
-              exit $APPLY_EXIT
-            fi
-          fi
-
-      - name: Apply recipe extras
-        shell: bash
-        run: bash scripts/apply-extras.sh "${ENVIRONMENT}"
-
-      - name: Deploy AKS workload
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
-          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
-
-          AKS_NAME="$(read_tf aks_name)"
-          if [[ -z "$AKS_NAME" ]]; then
-            echo "AKS stack is disabled for this environment; skipping AKS workload deployment."
-            exit 0
-          fi
-
-          AGENT_ID="$(read_tf agent_id)"
-          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
-
-          az aks get-credentials \
-            --resource-group "$RG" \
-            --name "$AKS_NAME" \
-            --admin \
-            --overwrite-existing
-
-          kubectl apply -f infra/k8s/orders-api.yaml
-          if ! kubectl rollout status deployment/orders-api --namespace default --timeout=180s; then
-            kubectl get pods --namespace default -l app=orders-api -o wide
-            kubectl describe deployment/orders-api --namespace default
-            kubectl describe pods --namespace default -l app=orders-api
-            echo "The deployment failed; investigate the AKS alert through Azure SRE Agent."
-            exit 1
-          fi
-
-          if [[ "${{ inputs.simulate_aks_incident || false }}" == "true" ]]; then
-            echo "Simulating AKS incident with broken orders-api image..."
-            kubectl apply -f infra/k8s/orders-api-broken.yaml
-
-            if kubectl rollout status deployment/orders-api --namespace default --timeout=120s; then
-              echo "Broken AKS incident simulation unexpectedly rolled out successfully."
-              exit 1
-            fi
-
-            kubectl get pods --namespace default -l app=orders-api -o wide
-            kubectl describe deployment/orders-api --namespace default
-            kubectl describe pods --namespace default -l app=orders-api
-
-            echo "The Sev1 AKS alert will create an Azure Monitor incident for Azure SRE Agent investigation."
-
-            SERVICE_NOW_INSTANCE="$(read_tf service_now_instance)"
-            SERVICE_NOW_USERNAME="$(read_tf service_now_username)"
-            SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-}"
-
-            if [[ -z "$SERVICE_NOW_INSTANCE" || -z "$SERVICE_NOW_USERNAME" || -z "$SERVICE_NOW_PASSWORD" ]]; then
-              echo "ServiceNow instance, username, and SERVICENOW_PASSWORD are required to update the existing AKS incident." >&2
-              exit 1
-            fi
-
-            INCIDENT_RESPONSE="$(
-              curl --silent --show-error --fail \
-                --user "$SERVICE_NOW_USERNAME:$SERVICE_NOW_PASSWORD" \
-                --get "${SERVICE_NOW_INSTANCE%/}/api/now/table/incident" \
-                --data-urlencode "sysparm_query=active=true^short_descriptionLIKEAKS^ORDERBYDESCsys_created_on" \
-                --data-urlencode "sysparm_fields=sys_id,number" \
-                --data-urlencode "sysparm_limit=1"
-            )"
-            INCIDENT_SYS_ID="$(jq -r '.result[0].sys_id // empty' <<<"$INCIDENT_RESPONSE")"
-            INCIDENT_NUMBER="$(jq -r '.result[0].number // empty' <<<"$INCIDENT_RESPONSE")"
-
-            if [[ -z "$INCIDENT_SYS_ID" ]]; then
-              echo "No active ServiceNow incident with 'AKS' in its short description was found." >&2
-              exit 1
-            fi
-
-            WORK_NOTE="S3 simulation deployed a broken orders-api workload to AKS cluster ${AKS_NAME}. A Sev1 Azure Monitor crash-loop alert is expected and Azure SRE Agent will investigate the resulting incident."
-            UPDATE_BODY="$(jq -nc --arg work_notes "$WORK_NOTE" '{work_notes:$work_notes}')"
-            curl --silent --show-error --fail \
-              --user "$SERVICE_NOW_USERNAME:$SERVICE_NOW_PASSWORD" \
-              --request PATCH \
-              --header "Content-Type: application/json" \
-              --data "$UPDATE_BODY" \
-              "${SERVICE_NOW_INSTANCE%/}/api/now/table/incident/${INCIDENT_SYS_ID}" \
-              >/dev/null
-
-            echo "Updated existing ServiceNow incident ${INCIDENT_NUMBER} with the AKS simulation context."
-          fi
-
-      - name: Build and update application images
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
-          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
-
-          ACR_NAME="$(read_tf acr_name)"
-          if [[ -z "$ACR_NAME" ]]; then
-            echo "Container Apps stack is disabled for this environment; skipping image build and app updates."
-            exit 0
-          fi
-
-          ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
-          ORDERS_API_NAME="$(read_tf orders_api_name)"
-          CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
-          RUNTIME_STACK="$(read_tf runtime_stack)"
-          AGENT_ID="$(read_tf agent_id)"
-          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
-
-          echo "Building images in ACR: $ACR_NAME"
-
-          az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/
-          az acr build --registry "$ACR_NAME" --image change-lookup:latest src/change-lookup/
-
-          case "$RUNTIME_STACK" in
-            containerapps)
-              echo "Updating Container Apps..."
-              az containerapp update \
-                --name "$ORDERS_API_NAME" \
-                --resource-group "$RG" \
-                --image "$ACR_LOGIN_SERVER/orders-api:latest" \
-                --output none
-              az containerapp update \
-                --name "$CHANGE_LOOKUP_NAME" \
-                --resource-group "$RG" \
-                --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
-                --output none
-              ;;
-            webapp)
-              echo "Restarting App Service apps to pull the new images..."
-              az webapp restart --resource-group "$RG" --name "$ORDERS_API_NAME"
-              az webapp restart --resource-group "$RG" --name "$CHANGE_LOOKUP_NAME"
-              ;;
-            *)
-              echo "No image-based runtime update is required for $RUNTIME_STACK."
-              ;;
-          esac
+      - name: Deploy
+        if: github.event_name == 'schedule' || inputs.apply
+        run: bash scripts/deploy.sh "${ENVIRONMENT}" tfplan
