@@ -19,6 +19,8 @@ jobs:
         run: terraform -chdir=infra/terraform init -backend=false
       - name: Terraform validate
         run: terraform -chdir=infra/terraform validate -no-color
+      - name: Verify backend state keys
+        run: bash scripts/test-terraform-backend-config.sh
 
   shellcheck:
     runs-on: ubuntu-latest
