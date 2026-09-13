@@ -84,6 +84,7 @@ jobs:
             if echo "$APPLY_OUTPUT" | grep -qi "workspace could not be found"; then
               echo "Terraform apply hit transient workspace lookup issue; retrying once..."
               sleep 10
+              terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
               terraform -chdir=infra/terraform apply -auto-approve tfplan
             else
               exit $APPLY_EXIT
