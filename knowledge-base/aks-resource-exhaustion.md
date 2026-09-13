@@ -3,7 +3,8 @@
 Use this runbook for S3 incidents where `orders-api` or its AKS nodes show CPU,
 memory, or scheduling pressure.
 
-Follow the lab flow strictly: **detect → triage → correlate → remediate → validate recovery**.
+Follow the lab flow strictly:
+**detect → triage → correlate → remediate → validate recovery**.
 
 ## 1) Detect
 
@@ -38,7 +39,8 @@ Follow the lab flow strictly: **detect → triage → correlate → remediate �
 ### CPU saturation
 
 - Pods remain running but latency or readiness degrades.
-- Check whether one node or one workload is consuming a disproportionate share of CPU.
+- Check whether one node or one workload is consuming a disproportionate share
+  of CPU.
 
 ### Memory pressure or OOMKilled
 
@@ -53,7 +55,8 @@ Follow the lab flow strictly: **detect → triage → correlate → remediate �
 ### Unhealthy nodes
 
 - Nodes show `NotReady`, `DiskPressure`, `MemoryPressure`, or `PIDPressure`.
-- Validate whether draining or scaling the node pool is safer than repeated pod restarts.
+- Validate whether draining or scaling the node pool is safer than repeated pod
+  restarts.
 
 ## 5) Remediate (safe and reversible first)
 

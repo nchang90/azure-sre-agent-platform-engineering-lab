@@ -3,14 +3,16 @@
 Use this runbook for S3 incidents where the `orders-api` deployment in the
 `default` namespace is unhealthy, restarting, or unable to schedule.
 
-Follow the lab flow strictly: **detect → triage → correlate → remediate → validate recovery**.
+Follow the lab flow strictly:
+**detect → triage → correlate → remediate → validate recovery**.
 
 ## 1) Detect
 
 - Confirm the triggering signal:
   - `AKS orders-api workload unavailable`
   - `AKS pods not ready`
-- Capture the affected pod name, current status, restart count, and first-seen time.
+- Capture the affected pod name, current status, restart count, and first-seen
+  time.
 
 ## 2) Triage
 
@@ -61,7 +63,8 @@ Follow the lab flow strictly: **detect → triage → correlate → remediate �
 
 Prefer low-risk rollback and recovery actions:
 
-1. Restore the healthy deployment manifest if a bad image or config was applied.
+1. Restore the healthy deployment manifest if a bad image or config was
+   applied.
 2. Restart the deployment when the issue looks transient.
 3. Scale or repair cluster capacity when scheduling pressure is confirmed.
 4. Escalate for image registry or platform issues if the failure is external.
@@ -75,4 +78,5 @@ If action mode is **Review**, request approval before write actions.
   - at least one `orders-api` pod is `Running` and `Ready`
   - restart growth stops
   - the Sev1/Sev2 AKS alert condition clears
-- Document the evidence, root cause, mitigation, and follow-up actions in the incident report.
+- Document the evidence, root cause, mitigation, and follow-up actions in the
+  incident report.
