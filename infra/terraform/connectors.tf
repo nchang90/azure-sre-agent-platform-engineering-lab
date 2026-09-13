@@ -2,7 +2,8 @@ locals {
   resolved_app_insights_id     = var.app_insights_resource_id != "" ? var.app_insights_resource_id : (local.create_app_insights ? azurerm_application_insights.ai[0].id : "")
   resolved_app_insights_app_id = var.app_insights_app_id != "" ? var.app_insights_app_id : (local.create_app_insights ? azurerm_application_insights.ai[0].app_id : "")
   resolved_law_id              = var.law_resource_id != "" ? var.law_resource_id : azurerm_log_analytics_workspace.law.id
-  resolved_azure_monitor_id    = var.azure_monitor_resource_id != "" ? var.azure_monitor_resource_id : (local.scenario_value == "s3" ? azurerm_resource_group.agent.id : "/subscriptions/${data.azurerm_subscription.current.subscription_id}")
+  resolved_s3_monitor_scope_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  resolved_azure_monitor_id    = var.azure_monitor_resource_id != "" ? var.azure_monitor_resource_id : (local.scenario_value == "s3" ? local.resolved_s3_monitor_scope_id : "/subscriptions/${data.azurerm_subscription.current.subscription_id}")
 
   app_insights_resource_name  = basename(local.resolved_app_insights_id)
   log_analytics_resource_name = basename(local.resolved_law_id)
