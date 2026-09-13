@@ -259,6 +259,17 @@ variable "enable_azure_monitor_connector" {
   default     = false
 }
 
+variable "azure_monitor_resource_id" {
+  description = "Optional ARM resource ID for the Azure Monitor connector scope. Defaults to the S3 Log Analytics workspace when scenario = s3, otherwise the current subscription ID."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.azure_monitor_resource_id == "" || can(regex("^/subscriptions/[^/]+(/.*)?$", var.azure_monitor_resource_id))
+    error_message = "azure_monitor_resource_id must be empty or a valid ARM scope starting with /subscriptions/."
+  }
+}
+
 variable "azure_monitor_lookback_days" {
   description = "Lookback window in days for the Azure Monitor connector."
   type        = number

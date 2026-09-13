@@ -2,6 +2,7 @@ locals {
   resolved_app_insights_id     = var.app_insights_resource_id != "" ? var.app_insights_resource_id : (local.create_app_insights ? azurerm_application_insights.ai[0].id : "")
   resolved_app_insights_app_id = var.app_insights_app_id != "" ? var.app_insights_app_id : (local.create_app_insights ? azurerm_application_insights.ai[0].app_id : "")
   resolved_law_id              = var.law_resource_id != "" ? var.law_resource_id : azurerm_log_analytics_workspace.law.id
+  resolved_azure_monitor_id    = !var.enable_azure_monitor_connector ? "" : (var.azure_monitor_resource_id != "" ? var.azure_monitor_resource_id : (local.scenario_value == "s3" ? local.resolved_law_id : "/subscriptions/${data.azurerm_subscription.current.subscription_id}"))
 
   app_insights_resource_name  = basename(local.resolved_app_insights_id)
   log_analytics_resource_name = basename(local.resolved_law_id)
@@ -33,10 +34,24 @@ locals {
     }
   }
 
+  azure_monitor_connector = {
+    name = "azure-monitor"
+    properties = {
+      dataConnectorType = "AzureMonitor"
+      dataSource        = "azure-monitor"
+      extendedProperties = {
+        armResourceId = local.resolved_azure_monitor_id
+        lookbackDays  = var.azure_monitor_lookback_days
+      }
+      identity = "system"
+    }
+  }
+
   toggle_connectors = [
     for connector in [
       var.enable_app_insights_connector ? local.app_insights_connector : null,
       var.enable_log_analytics_connector ? local.log_analytics_connector : null,
+      var.enable_azure_monitor_connector ? local.azure_monitor_connector : null,
     ] : connector if connector != null
   ]
 
@@ -46,6 +61,7 @@ locals {
     for name, enabled in {
       app-insights  = var.enable_app_insights_connector
       log-analytics = var.enable_log_analytics_connector
+      azure-monitor = var.enable_azure_monitor_connector
     } : name if enabled
   ]
 
