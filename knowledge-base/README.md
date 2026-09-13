@@ -28,6 +28,7 @@ See [runbooks/](runbooks/) for actionable runbooks organized by service area:
 ## 🔗 How to Use
 
 1. **Incident happens** → Find relevant [runbook](runbooks/)
+   or the AKS quick-reference docs in this directory
 2. **Diagnose** → Run KQL queries, check logs
 3. **Remediate** → Follow remediation steps
 4. **Post-incident** → Fill [incident report](incident-report.md)
