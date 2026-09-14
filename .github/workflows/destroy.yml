@@ -66,6 +66,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform init
+        shell: bash
         run: |
           set +e
           output="$(terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars 2>&1)"
