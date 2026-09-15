@@ -17,8 +17,8 @@ locals {
   effective_ai_app_id   = local.create_app_insights ? azurerm_application_insights.ai[0].app_id : data.azurerm_application_insights.existing_ai[0].app_id
   effective_ai_conn_str = local.create_app_insights ? azurerm_application_insights.ai[0].connection_string : data.azurerm_application_insights.existing_ai[0].connection_string
 
-  sre_agent_reader_role_id = "a4b156ac-253f-4a1a-9851-96d62b71b047"
-  sre_agent_admin_role_id  = "e79298df-d852-4c6d-84f9-5d13249d1e55"
+  sre_agent_standard_user_role_id = "2d84a65a-63b2-4343-bbb6-31105d857bc1"
+  sre_agent_admin_role_id         = "e79298df-d852-4c6d-84f9-5d13249d1e55"
 
   scenario_value = lower(trimspace(var.scenario))
 
