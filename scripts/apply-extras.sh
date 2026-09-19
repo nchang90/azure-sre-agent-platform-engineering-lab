@@ -27,6 +27,8 @@ SCENARIO=""
 TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
+SCOPED_PROMPTS_JSON="[]"
+SCOPED_SUBAGENTS_JSON="[]"
 TOKEN=""
 
 # shellcheck source=scripts/catalog.sh
@@ -256,13 +258,14 @@ register_subagent() {
     || { warn "  $name: YAML conversion failed — $(cat "$TMP_DIR/err")"; return; }
 
   # Scenario guidance is attached by reference as common prompts, not pasted into
-  # each agent's instructions. The prompts themselves are uploaded in step 2.
-  if [[ ${#COMMON_PROMPT_NAMES[@]} -gt 0 ]]; then
-    jq --argjson prompts "$(printf '%s\n' "${COMMON_PROMPT_NAMES[@]}" | jq -R . | jq -sc .)" \
-      '.properties.commonPrompts = ((.properties.commonPrompts // []) + $prompts | unique)' \
-      "$body" >"$TMP_DIR/agent-with-prompts.json"
-    mv "$TMP_DIR/agent-with-prompts.json" "$body"
-  fi
+  # each agent's instructions. Handoffs are filtered to subagents this scenario
+  # actually registers, so an agent YAML can declare its full chain honestly
+  # without pointing at an agent cleanup_out_of_scope is about to delete.
+  jq --argjson prompts "$SCOPED_PROMPTS_JSON" --argjson registered "$SCOPED_SUBAGENTS_JSON" \
+    '.properties.commonPrompts = ((.properties.commonPrompts // []) + $prompts | unique)
+     | .properties.handoffs = [(.properties.handoffs // [])[] | select(IN($registered[]))]' \
+    "$body" >"$TMP_DIR/agent-scoped.json"
+  mv "$TMP_DIR/agent-scoped.json" "$body"
 
   code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
   if [[ "$code" == "400" ]] && workspace_mode_handoffs_unsupported; then
@@ -403,14 +406,8 @@ resolve_github_repository() {
 
 register_repo() {
   step "Connecting GitHub repository..."
-  local src="recipes/azmon-lawappinsights/config/repos/github-repo.yaml"
-  local repo staged name code
-
-  if [[ ! -f "$src" ]]; then
-    warn "  Repo config missing: $src"
-    echo
-    return
-  fi
+  local src repo staged name code
+  src="$(repo_path github-repo)"
 
   repo="$(resolve_github_repository || true)"
   if [[ -z "$repo" ]]; then
@@ -428,11 +425,8 @@ register_repo() {
   # Note: this is /api/v2/repos, NOT under /api/v2/extendedAgent.
   code="$(put_json_file "/api/v2/repos/${name}" "$TMP_DIR/repo.json")"
   report_result "$code" "Repo: $name -> $repo" "Repo $name"
-  case "$code" in
-    200|201|202|204|409)
-      log "  If the agent cannot read the repo, authorize GitHub once in the portal Repos blade."
-      ;;
-  esac
+  is_success_http "$code" \
+    && log "  If the agent cannot read the repo, authorize GitHub once in the portal Repos blade."
   echo
 }
 
@@ -480,6 +474,10 @@ upload_skills() {
 register_subagents() {
   step "Registering subagents..."
   local name
+
+  # Invariant for the whole run; building them per agent spawned four jq processes each.
+  SCOPED_PROMPTS_JSON="$(jq -nc '$ARGS.positional' --args "${COMMON_PROMPT_NAMES[@]}")"
+  SCOPED_SUBAGENTS_JSON="$(jq -nc '$ARGS.positional' --args "${SUBAGENT_NAMES[@]}")"
 
   for name in "${SUBAGENT_NAMES[@]}"; do
     register_subagent "$(subagent_path "$name")" "$name"
