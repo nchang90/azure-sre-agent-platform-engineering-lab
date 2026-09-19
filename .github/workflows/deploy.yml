@@ -1,4 +1,5 @@
 name: Deploy SRE Agent Lab
+run-name: Deploy SRE Agent Lab — ${{ inputs.environment || 'sbox' }} / ${{ inputs.runtime || 'containerapps' }} (${{ github.event_name == 'schedule' && 'scheduled' || github.actor }})
 
 on:
   workflow_dispatch:
