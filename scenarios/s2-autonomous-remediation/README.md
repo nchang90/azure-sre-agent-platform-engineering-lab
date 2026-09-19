@@ -102,7 +102,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 
 ## Incident Story
 
-A new `web-api` version is deployed to production. Soon after deployment:
+A new `orders-api` web API version is deployed to production. Soon after deployment:
 
 - App Service still reports **Running**
 - CPU and memory remain near baseline
@@ -135,7 +135,7 @@ S2 demonstrates the autonomous path:
 
 Production framing:
 
-`Client → Azure App Service → web-api → Azure SQL / external dependency → Application Insights`
+`Client → Azure App Service → orders-api → Azure SQL / external dependency → Application Insights`
 
 ---
 
