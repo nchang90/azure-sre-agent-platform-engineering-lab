@@ -8,6 +8,8 @@ on:
         type: choice
         options:
           - sbox
+          - demo
+          - dev
         default: sbox
       destroy:
         description: "tf_destroy"
@@ -34,7 +36,10 @@ jobs:
       matrix:
         environment: ${{ fromJSON(github.event_name == 'schedule' && '["demo","sbox"]' || format('["{0}"]', inputs.environment)) }}
     env:
-      TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Validate confirmation input
@@ -46,10 +51,10 @@ jobs:
           fi
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure CLI login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -64,4 +69,4 @@ jobs:
         run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -var-file=environments/${{ matrix.environment }}.tfvars
+        run: terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file=environments/${{ matrix.environment }}.tfvars

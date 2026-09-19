@@ -37,13 +37,13 @@ variable "access_level" {
 }
 
 variable "action_mode" {
-  description = "Review = human approval. Automatic = agent acts independently."
+  description = "Review = human approval. Autonomous = agent acts independently. ReadOnly = investigate without actions."
   type        = string
   default     = "Review"
 
   validation {
-    condition     = contains(["Review", "Automatic"], var.action_mode)
-    error_message = "action_mode must be Review or Automatic."
+    condition     = contains(["Review", "Autonomous", "ReadOnly"], var.action_mode)
+    error_message = "action_mode must be Review, Autonomous, or ReadOnly."
   }
 }
 
@@ -85,6 +85,17 @@ variable "tags" {
 variable "scenario" {
   description = "Scenario selector for lab behavior and runtime mapping (s1-s5)."
   type        = string
+}
+
+variable "runtime" {
+  description = "Application runtime for S2. Other scenarios retain their fixed runtime."
+  type        = string
+  default     = "containerapps"
+
+  validation {
+    condition     = contains(["containerapps", "webapp"], var.runtime)
+    error_message = "runtime must be containerapps or webapp."
+  }
 }
 
 variable "webapp_image" {
@@ -248,10 +259,15 @@ variable "enable_azure_monitor_connector" {
   default     = false
 }
 
-variable "enable_service_now_connector" {
-  description = "Configure ServiceNow as the incident platform during recipe extras."
-  type        = bool
-  default     = false
+variable "azure_monitor_resource_id" {
+  description = "Optional ARM resource ID for the Azure Monitor connector scope. Defaults to the S3 Log Analytics workspace when scenario = s3, otherwise the current subscription ID."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.azure_monitor_resource_id == "" || can(regex("^/subscriptions/[^/]+(/.*)?$", var.azure_monitor_resource_id))
+    error_message = "azure_monitor_resource_id must be empty or a valid ARM scope starting with /subscriptions/."
+  }
 }
 
 variable "azure_monitor_lookback_days" {
@@ -332,8 +348,8 @@ variable "admin_principal_ids" {
   default     = []
 }
 
-variable "reader_principal_ids" {
-  description = "Additional principal IDs granted SRE Agent Reader access."
+variable "standard_user_principal_ids" {
+  description = "Additional principal IDs granted SRE Agent Standard User data-plane access."
   type        = list(string)
   default     = []
 }

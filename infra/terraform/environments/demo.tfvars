@@ -23,7 +23,7 @@ admin_principal_ids = [
   "3a168e0b-7a73-4dd0-a4f8-80045502775b"
 ]
 
-reader_principal_ids = [
+standard_user_principal_ids = [
   "092b4414-2bb9-432d-abb2-9e407bf74125",
   "3a168e0b-7a73-4dd0-a4f8-80045502775b"
 ]
@@ -38,10 +38,7 @@ enable_vnet = false
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
+enable_azure_monitor_connector = true
 
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true
-
-enable_service_now_connector = true
-service_now_instance         = "https://dev411761.service-now.com"
-service_now_username         = "admin"

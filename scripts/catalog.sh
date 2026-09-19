@@ -1,8 +1,11 @@
 # shellcheck shell=bash
 ALL_SUBAGENT_NAMES=(
   aks-remediator
+  aks-triage-agent
   alert-investigator
+  incident-comms-agent
   incident-orchestrator
+  incident-summary-agent
   issue-triager
   pim-elevation
   triage-agent
@@ -11,6 +14,7 @@ ALL_SUBAGENT_NAMES=(
 # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
 ALL_RESPONSE_PLAN_NAMES=(
   aks-incidents
+  aks-pod-urgent
   aks-critical-errors
   all-incidents
   azmon-sev01
@@ -23,6 +27,9 @@ ALL_RESPONSE_PLAN_NAMES=(
 )
 
 ALL_KB_NAMES=(
+  aks-network-connectivity.md
+  aks-pod-failures.md
+  aks-resource-exhaustion.md
   github-issue-triage.md
   http-500-errors.md
   incident-report.md
@@ -32,6 +39,8 @@ ALL_KB_NAMES=(
 
 ALL_SKILL_NAMES=(
   aks-change-triage-rollback
+  azure-cost
+  azure-kubernetes
   containerapps-500-diagnostics
   containerapps-latency-diagnostics
   incident-orchestrator-coordination
@@ -63,7 +72,10 @@ subagent_path() {
   case "$1" in
     alert-investigator) echo "recipes/azmon-lawappinsights/agents/alert-investigator.yaml" ;;
     aks-remediator) echo "recipes/azmon-lawappinsights/agents/aks-remediator.yaml" ;;
+    aks-triage-agent) echo "recipes/alert-response-incident-operations/config/subagents/aks-triage-agent.yaml" ;;
+    incident-comms-agent) echo "recipes/alert-response-incident-operations/config/subagents/incident-comms-agent.yaml" ;;
     incident-orchestrator) echo "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml" ;;
+    incident-summary-agent) echo "recipes/alert-response-incident-operations/config/subagents/incident-summary-agent.yaml" ;;
     issue-triager) echo "recipes/azmon-lawappinsights/agents/issue-triager.yaml" ;;
     pim-elevation) echo "recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml" ;;
     triage-agent) echo "recipes/azmon-lawappinsights/agents/triage-agent.yaml" ;;
@@ -80,11 +92,6 @@ configure_catalog_scope() {
   case "$RUNTIME_STACK" in
     containerapps|aks|webapp|none) ;;
     *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
-  esac
-
-  case "$ENABLE_SERVICE_NOW_CONNECTOR" in
-    true|false) ;;
-    *) die "Unsupported enable_service_now_connector value '$ENABLE_SERVICE_NOW_CONNECTOR' in $TFVARS_FILE. Expected true or false." ;;
   esac
 
   case "$SCENARIO" in
@@ -105,7 +112,14 @@ configure_catalog_scope() {
       log "Skipping runtime subagents for runtime_stack=none."
       ;;
     webapp)
-      log "Skipping runtime subagents for runtime_stack=webapp."
+      if [[ "$SCENARIO" == "s2" ]]; then
+        log "Including App Service incident catalog for S2."
+        SUBAGENT_NAMES+=(
+          triage-agent
+        )
+      else
+        log "Skipping runtime subagents for runtime_stack=webapp."
+      fi
       ;;
     containerapps)
       log "Including Container Apps incident catalog from runtime_stack=containerapps."
@@ -123,20 +137,28 @@ configure_catalog_scope() {
 
   case "$SCENARIO" in
     s3)
-      log "Including S3 AKS ServiceNow incident catalog from scenario=s3."
-      if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
-        # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
-        RESPONSE_PLAN_NAMES=(
-          aks-incidents
-        )
-      fi
+      log "Including S3 high-severity AKS incident catalog from scenario=s3."
+      SUBAGENT_NAMES=(
+        aks-triage-agent
+        incident-summary-agent
+        incident-comms-agent
+      )
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      RESPONSE_PLAN_NAMES=(
+        aks-critical-errors
+      )
       KB_NAMES=(
+        aks-network-connectivity.md
+        aks-pod-failures.md
+        aks-resource-exhaustion.md
         incident-report.md
         on-call-handoff.md
         orders-architecture.md
       )
       SKILL_NAMES=(
         aks-change-triage-rollback
+        azure-cost
+        azure-kubernetes
         incident-orchestrator-coordination
         investigate-azure-alerts
       )
@@ -157,9 +179,14 @@ configure_catalog_scope() {
       SKILL_NAMES=(
         incident-orchestrator-coordination
         investigate-azure-alerts
-        containerapps-500-diagnostics
-        containerapps-latency-diagnostics
+        triage-app-errors
       )
+      if [[ "$RUNTIME_STACK" == "containerapps" ]]; then
+        SKILL_NAMES+=(
+          containerapps-500-diagnostics
+          containerapps-latency-diagnostics
+        )
+      fi
       ;;
     s4)
       log "Including S4 alert response issue-triage catalog from scenario=s4."

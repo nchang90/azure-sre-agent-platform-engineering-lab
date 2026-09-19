@@ -1,3 +1,10 @@
+resource "azurerm_role_assignment" "monitoring_contributor" {
+  scope              = data.azurerm_subscription.current.id
+  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/749f88d5-cbae-40b8-bcfc-e573ddc772fa"
+  principal_id       = local.effective_principal_id
+  principal_type     = "ServicePrincipal"
+}
+
 resource "azurerm_role_assignment" "monitoring_reader" {
   scope                = azurerm_resource_group.agent.id
   role_definition_name = "Monitoring Reader"
@@ -61,10 +68,10 @@ resource "azurerm_role_assignment" "uami_admin" {
   principal_type     = "ServicePrincipal"
 }
 
-resource "azurerm_role_assignment" "reader_principals" {
-  for_each           = var.deploy_sre_agent ? toset(var.reader_principal_ids) : toset([])
+resource "azurerm_role_assignment" "standard_user_principals" {
+  for_each           = var.deploy_sre_agent ? toset(var.standard_user_principal_ids) : toset([])
   scope              = azapi_resource.sre_agent[0].id
-  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.sre_agent_reader_role_id}"
+  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${local.sre_agent_standard_user_role_id}"
   principal_id       = each.value
 }
 

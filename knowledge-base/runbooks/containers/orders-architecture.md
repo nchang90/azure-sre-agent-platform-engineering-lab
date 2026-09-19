@@ -83,6 +83,10 @@ APP_URL="https://<orders-api-url>"
 # Announce the active change window (what the deploy pipeline normally does)
 curl -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 
+# For the S2 App Service demo, use the built-in chaos simulation
+# endpoint to break the service and trigger the incident.
+curl -X POST "$APP_URL/api/simulate/failure-rate/100"
+
 for i in {1..50}; do
   curl -X POST "$APP_URL/api/orders" \
     -H "Content-Type: application/json" \

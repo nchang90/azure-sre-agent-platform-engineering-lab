@@ -1,11 +1,29 @@
-Always follow the Azure SRE Agent lab incident flow: detect, triage, correlate, remediate, and summarize.
+Always follow the Azure SRE Agent lab incident flow: detect, triage, correlate, diagnose, remediate, verify, and summarize.
 
-For S2 autonomous remediation, treat Orders API 5xx spikes as the primary incident path. Use the S2 knowledge sources and skills before relying on general knowledge:
+For S2 AI web app production incidents, treat `/api/orders` 5xx spikes as the primary incident path where the frontend still loads but backend calls fail. Use the S2 knowledge sources and skills before relying on general knowledge:
 - incident-orchestrator-coordination
 - investigate-azure-alerts
+- triage-app-errors
+
+Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies (including Foundry/backend calls), runtime state (App Service or Container Apps), deployment history, and change-lookup context.
+
+For S2 incidents, detect and report these high-level issue categories:
+- HTTP 5xx spikes
+- high latency or request timeouts
+- dependency failures/timeouts
+- deployment/configuration regressions
+
+If runtime is Container Apps, additionally use:
 - containerapps-500-diagnostics
 - containerapps-latency-diagnostics
 
-Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, Log Analytics logs, Container Apps revision state, and the change-lookup service.
+For likely regression variants and taxonomy, use `knowledge-base/http-500-errors.md` as the source of truth.
 
-Prefer safe reversible actions first. In Review mode, request approval before write or remediation actions. Confirm recovery with the Orders API /health endpoint and telemetry before marking the incident resolved.
+Correlate the issue with recent deployments and revision/swap events. Clearly distinguish verified facts from hypotheses, and include:
+- customer and service impact
+- probable cause and supporting evidence
+- remediation actions proposed or taken
+- confidence level (`low`, `medium`, or `high`)
+- recommended next steps
+
+Prefer safe reversible actions first. In Review mode, request approval before write or remediation actions. Confirm recovery with `/health`, `/api/orders`, dependency telemetry, and stabilized 5xx rate before marking the incident resolved.

@@ -1,4 +1,4 @@
-resource_group_name  = "rg-backend-infra"
-storage_account_name = "terraformbackend90"
+resource_group_name  = "terraform-tfstate"
+storage_account_name = "terraformstatesboxprd"
 container_name       = "tfstate"
 key                  = "dev_azuresre.tfstate"
