@@ -99,24 +99,21 @@ for request in {1..30}; do
     --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
 done
 
-# Verify service after remediation (runtime=webapp)
+# Verify runtime state after remediation (runtime=webapp)
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
-curl --fail --silent --show-error "$APP_URL/health"
-curl --fail --silent --show-error \
-  -X POST "$APP_URL/api/orders" \
-  -H "Content-Type: application/json" \
-  --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
 
-# If runtime=containerapps, verify with:
+# Verify runtime state after remediation (runtime=containerapps)
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
   --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
   --output table
+
+# Shared recovery checks for either runtime
 curl --fail --silent --show-error "$APP_URL/health"
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/orders" \
