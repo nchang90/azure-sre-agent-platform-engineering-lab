@@ -118,13 +118,15 @@ curl --fail --silent --show-error "$APP_URL/health"
 ```bash
 # Simulate a deployment window correlation
 # Prerequisite check in deployed environment:
-# non-mutating probe: HTTP 404 => route unavailable, HTTP 405 => route exists
+# non-mutating probe:
+# - 404 => route unavailable
+# - 200/204/401/403/405 => route exists (behavior depends on runtime/auth policy)
 ACTIVE_CR_PROBE_STATUS="$(curl --silent --output /dev/null --write-out "%{http_code}" \
   -X GET "$APP_URL/api/simulate/active-cr/CHG0030001")"
 echo "active-cr probe HTTP $ACTIVE_CR_PROBE_STATUS"
 if [ "$ACTIVE_CR_PROBE_STATUS" = "404" ]; then
   echo "Skipping active change-correlation simulation; use deployment history + telemetry timestamps."
-elif [ "$ACTIVE_CR_PROBE_STATUS" = "405" ]; then
+elif [ "$ACTIVE_CR_PROBE_STATUS" = "200" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "204" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "401" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "403" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "405" ]; then
   curl --fail --silent --show-error \
     -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 else
