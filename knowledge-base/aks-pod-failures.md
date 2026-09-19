@@ -50,6 +50,8 @@ Follow the lab flow strictly:
 - Check the image reference and pull events:
   - `kubectl describe pod <pod-name> -n default | grep -A6 -E "Image:|Events"`
 - Verify the image tag exists and the cluster can pull it.
+- Expect deterministic AKS evidence in `KubeEvents` (`Failed`, `ErrImagePull`,
+  `ImagePullBackOff`) even when application logs are sparse or absent.
 
 ### Pending or unschedulable pods
 

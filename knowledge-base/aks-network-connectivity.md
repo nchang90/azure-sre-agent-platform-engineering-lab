@@ -41,9 +41,11 @@ Follow the lab flow strictly:
 - `kubectl get service orders-api -n default` returns `NotFound`.
 - The Sev1 `AKS orders-api service missing` alert should match this condition.
 
-### Selector mismatch
+### Selector mismatch / no endpoints
 
 - The `Service` exists, but `kubectl get endpoints orders-api -n default` is empty.
+- `orders-api` pods can still be `Running` and `Ready`, which makes this a good
+  investigation path when the app looks healthy but traffic is failing.
 - Compare `spec.selector` with deployment and pod labels for drift.
 
 ### Pod-to-service reachability issue
