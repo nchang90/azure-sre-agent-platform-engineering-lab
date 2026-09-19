@@ -133,11 +133,8 @@ else
   echo "Unexpected probe status; skipping active change-correlation simulation."
 fi
 
-# Use GitHub Copilot CLI to draft the App Service fault-injection command,
-# review the suggestion, then run the equivalent POST for /api/simulate/failure-rate/100.
-copilot
-# Then ask Copilot CLI:
-# Using APP_URL=$APP_URL, print a fail-fast curl command to break the App Service by POSTing to /api/simulate/failure-rate/100 for the S2 orders-api incident demo.
+# Use the built-in chaos simulation endpoint to break the App Service
+# and force /api/orders to return HTTP 500s.
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/failure-rate/100"
 
