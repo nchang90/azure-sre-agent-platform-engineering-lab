@@ -67,5 +67,6 @@ If action mode is **Review**, request approval before write actions.
 
 ## Detailed reference
 
-For expanded KQL/CLI procedures, see:
-- `knowledge-base/runbooks/containers/http-500-errors.md`
+Use these runtime-specific supplements only as needed:
+- `knowledge-base/runbooks/containers/http-500-errors.md` (Container Apps deep-dive commands and queries)
+- `knowledge-base/orders-architecture.md` (runtime-neutral incident correlation context)

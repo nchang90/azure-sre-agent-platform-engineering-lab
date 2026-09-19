@@ -4,8 +4,6 @@ For S2 web-api production deployment regressions, treat `/api/orders` 5xx spikes
 - incident-orchestrator-coordination
 - investigate-azure-alerts
 - triage-app-errors
-- containerapps-500-diagnostics
-- containerapps-latency-diagnostics
 
 Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies, runtime state (App Service or Container Apps), deployment history, and change-lookup context.
 
@@ -14,6 +12,10 @@ For S2 incidents, detect and report these high-level issue categories:
 - high latency or request timeouts
 - dependency failures/timeouts
 - deployment/configuration regressions
+
+If runtime is Container Apps, additionally use:
+- containerapps-500-diagnostics
+- containerapps-latency-diagnostics
 
 For every S2 incident, prioritize these likely regression variants:
 - bad application configuration
