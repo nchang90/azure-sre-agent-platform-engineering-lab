@@ -109,9 +109,11 @@ ACTIVE_CR_PROBE_STATUS="$(curl --silent --output /dev/null --write-out "%{http_c
 echo "active-cr probe HTTP $ACTIVE_CR_PROBE_STATUS"
 if [ "$ACTIVE_CR_PROBE_STATUS" = "404" ]; then
   echo "Skipping active change-correlation simulation; use deployment history + telemetry timestamps."
-else
+elif [ "$ACTIVE_CR_PROBE_STATUS" = "405" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "200" ]; then
   curl --fail --silent --show-error \
     -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
+else
+  echo "Unexpected probe status; skipping active change-correlation simulation."
 fi
 
 # Simulate a post-deployment regression impact on /api/orders
