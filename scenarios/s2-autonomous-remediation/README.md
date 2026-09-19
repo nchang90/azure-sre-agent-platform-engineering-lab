@@ -46,13 +46,18 @@ APP_FQDN="$(az webapp show \
   --output tsv)"
 APP_URL="https://$APP_FQDN"
 
-# Verify the app and API are healthy
+# Verify the app and API baseline
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
+curl --silent --output /dev/null \
+  --write-out "baseline /api/orders HTTP %{http_code}\n" \
+  -X POST "$APP_URL/api/orders" \
+  -H "Content-Type: application/json" \
+  --data '{"customerId":"baseline-user","sku":"BASELINE","quantity":1}'
 ```
 
 To run S2 on Container Apps instead, set `runtime=containerapps` and load the URL with:

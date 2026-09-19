@@ -6,7 +6,7 @@ Orders API incident triage and remediation.
 ## Core Components
 
 - `orders-api` (Azure App Service for S2 conference path, Container Apps supported): customer-facing Orders service.
-- `change-lookup` (Azure App Service or Container Apps): maps active/recent change requests.
+- `change-lookup` (Azure Container Apps): maps active/recent change requests.
 - Shared observability: Application Insights + Log Analytics.
 
 ## Incident Correlation Context

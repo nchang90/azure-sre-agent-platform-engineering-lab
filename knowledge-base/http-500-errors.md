@@ -7,13 +7,15 @@ Follow the flow: **detect → investigate → correlate → diagnose → remedia
 
 `Client → Azure App Service → orders-api → Azure SQL / external dependency → Application Insights`
 
-Expected symptom pattern:
+Expected symptom pattern (App Service conference path):
 - App Service still shows `Running`
 - CPU/memory remain normal
 - `/health` may still pass
 - `/api/orders` returns 500
 - exceptions and dependency failures rise
 - 5xx alert crosses threshold shortly after deployment
+
+Container Apps variant usually shows the same `/api/orders` failure pattern, but correlation evidence comes from revision/deployment events and Container Apps runtime logs.
 
 ## 1) Detect
 
