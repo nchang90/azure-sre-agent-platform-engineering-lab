@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: ${{ fromJSON(github.event_name == 'schedule' && '["demo","sbox"]' || format('["{0}"]', inputs.environment)) }}
+        environment: ${{ fromJSON(github.event_name == 'schedule' && '["sbox"]' || format('["{0}"]', inputs.environment)) }}
     env:
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
