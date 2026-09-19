@@ -1,4 +1,4 @@
-# S2 — AI Web App Production Incident (Autonomous Remediation)
+# Lab: S2 — AI Web App Production Incident (Autonomous Remediation)
 
 **Persona:** Platform / SRE  
 **Time:** ~15 minutes
@@ -6,11 +6,17 @@
 **Infrastructure:** Terraform
 **Recipe:** `azmon-lawappinsights`
 
+## Learning objectives
+
+In this lab, you will:
+
+- Reproduce a production incident where the frontend still loads but backend calls fail.
+- Investigate with Azure Monitor, Application Insights, Log Analytics, and deployment evidence.
+- Verify safe remediation and service recovery.
+
 ---
 
-## ⚡ Quick Start: 5-Minute Lab
-
-### Prerequisites & Setup
+## Prerequisites
 
 Set these values in `tfvars`:
 
@@ -23,7 +29,11 @@ enable_log_analytics_connector = true
 enable_sev01_incident_filter   = true
 ```
 
-Then deploy the environment:
+---
+
+## Exercise 1: Deploy and validate baseline
+
+### Task 1: Deploy the environment
 
 ```bash
 # The workflow reads sbox.tfvars, deploys Terraform and application images,
@@ -37,13 +47,13 @@ gh workflow run deploy.yml \
 gh run watch
 ```
 
-Deploy does four things (similar to Foundry app quick start style):
+Deployment does four things:
 1. Reads `sbox.tfvars` and applies Terraform
 2. Deploys the runtime workload (`orders-api`)
 3. Registers S2 agent extras via `apply-extras.sh`
 4. Enables autonomous incident handling for S2 response plan
 
-Then load the deployed backend API details:
+### Task 2: Load the backend endpoint and validate baseline
 
 ```bash
 ENVIRONMENT="sbox"
@@ -73,7 +83,9 @@ curl --silent --output /dev/null \
   --data '{"customerId":"baseline-user","sku":"BASELINE","quantity":1}'
 ```
 
-To run S2 on Container Apps instead, set `runtime=containerapps` and load the URL with:
+### Task 3 (optional): Use Container Apps runtime
+
+Set `runtime=containerapps` in deploy, then load the URL with:
 
 ```bash
 ENVIRONMENT="sbox"
@@ -96,10 +108,13 @@ az containerapp show \
 curl --fail --silent --show-error "$APP_URL/health"
 ```
 
-> **Caution:** `Autonomous` mode allows the agent to perform write actions. Use only
-> in the isolated lab resource group. Return to `Review` mode after the exercise.
+> **Caution:** `Autonomous` mode allows write actions. Use only in an isolated lab resource group.
 
-### Simulate production incident and observe (5 mins)
+---
+
+## Exercise 2: Trigger the incident and observe impact
+
+### Task 1: Introduce controlled backend regression
 ```bash
 # Simulate a deployment window correlation
 # Prerequisite check in deployed environment:
@@ -109,7 +124,7 @@ ACTIVE_CR_PROBE_STATUS="$(curl --silent --output /dev/null --write-out "%{http_c
 echo "active-cr probe HTTP $ACTIVE_CR_PROBE_STATUS"
 if [ "$ACTIVE_CR_PROBE_STATUS" = "404" ]; then
   echo "Skipping active change-correlation simulation; use deployment history + telemetry timestamps."
-elif [ "$ACTIVE_CR_PROBE_STATUS" = "405" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "200" ]; then
+elif [ "$ACTIVE_CR_PROBE_STATUS" = "405" ]; then
   curl --fail --silent --show-error \
     -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 else
@@ -163,7 +178,15 @@ curl --fail --silent --show-error \
 
 ---
 
-## Incident Story
+## Exercise 3: Investigate and remediate
+
+Use this lab incident flow:
+
+**Detect → Investigate → Correlate → Diagnose → Remediate → Verify**
+
+---
+
+## Scenario context
 
 Conference default: **App Service**.  
 Alternate runtime: **Container Apps** with the same `/api/orders` failure symptoms and runtime-specific telemetry correlation.
@@ -181,12 +204,11 @@ Soon after deployment:
 - 5xx rate crosses the alert threshold
 - deployment history aligns with incident start
 
-S2 demonstrates the autonomous path:
-**Detect → Investigate → Correlate → Diagnose → Remediate → Verify**.
+This lab demonstrates autonomous incident handling with evidence-driven remediation.
 
 ---
 
-## How It Works
+## Investigation path
 
 1. **Detect** → Azure Monitor incident opens on `web-api` 5xx threshold breach
 2. **Investigate** → Traverse evidence chain: Azure Monitor → App Service → Application Insights → web-api → deployment history
@@ -197,7 +219,7 @@ S2 demonstrates the autonomous path:
 
 ---
 
-## Architecture
+## Reference architecture
 
 <img src="../../images/s2-autonomous-remediation.svg" alt="S2 autonomous remediation workflow diagram" width="700" />
 
@@ -234,7 +256,7 @@ Additional variants:
 
 ---
 
-## UI Demo Sequence (Conference Friendly)
+## Exercise 4: UI demo sequence
 
 1. Open the dashboard and show normal UX.
 2. Introduce controlled backend regression.

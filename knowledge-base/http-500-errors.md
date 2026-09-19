@@ -5,7 +5,7 @@ Follow the flow: **detect → investigate → correlate → diagnose → remedia
 
 ## Architecture and incident shape
 
-`Client → Azure App Service → orders-api → Azure SQL / external dependency → Application Insights`
+`User → Web dashboard → Azure App Service orders-api → Azure SQL / external dependency → Application Insights`
 
 Expected symptom pattern (App Service conference path):
 - App Service still shows `Running`
