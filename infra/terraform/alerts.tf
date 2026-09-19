@@ -100,7 +100,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
   depends_on = [
-    azurerm_application_insights.ai,
+    azapi_resource.ai,
     azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_errors,
   ]
 
@@ -140,7 +140,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
   depends_on = [
-    azurerm_application_insights.ai,
+    azapi_resource.ai,
     azurerm_log_analytics_workspace.law,
     azurerm_monitor_scheduled_query_rules_alert_v2.orders_api_5xx,
   ]
@@ -605,7 +605,7 @@ resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
   name                = "failure-anomalies-ai-51a0c59340d39-sev2"
   resource_group_name = azurerm_resource_group.agent.name
   severity            = var.severity_threshold
-  scope_resource_ids  = [azurerm_application_insights.ai[0].id]
+  scope_resource_ids  = [azapi_resource.ai[0].id]
   detector_type       = "FailureAnomaliesDetector"
   frequency           = "PT1M"
   enabled             = true
