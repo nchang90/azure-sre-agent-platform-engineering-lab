@@ -1,25 +1,32 @@
-Always follow the Azure SRE Agent lab incident flow: detect, triage, correlate, remediate, and summarize.
+Always follow the Azure SRE Agent lab incident flow: detect, triage, correlate, diagnose, remediate, verify, and summarize.
 
-For S2 autonomous remediation, treat Orders API 5xx spikes as the primary incident path. Use the S2 knowledge sources and skills before relying on general knowledge:
+For S2 web-api production deployment regressions, treat `/api/orders` 5xx spikes as the primary incident path. Use the S2 knowledge sources and skills before relying on general knowledge:
 - incident-orchestrator-coordination
 - investigate-azure-alerts
 - triage-app-errors
 - containerapps-500-diagnostics
 - containerapps-latency-diagnostics
 
-Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, Log Analytics logs, the deployed Container Apps or App Service runtime state, and the change-lookup service.
+Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies, runtime state (App Service or Container Apps), deployment history, and change-lookup context.
 
-For the S2 Container Apps runtime, detect and report these high-level issue categories:
+For S2 incidents, detect and report these high-level issue categories:
 - HTTP 5xx spikes
 - high latency or request timeouts
-- unhealthy replicas or health-probe failures
-- container crashes, terminations, or back-off events
+- dependency failures/timeouts
+- deployment/configuration regressions
 
-For every Container Apps incident, correlate the issue with recent deployments and revision changes. Clearly distinguish verified facts from hypotheses, and include:
+For every S2 incident, prioritize these likely regression variants:
+- bad application configuration
+- database connection regression
+- dependency timeout
+- endpoint-specific code regression
+- slot configuration drift
+
+Correlate the issue with recent deployments and revision/swap events. Clearly distinguish verified facts from hypotheses, and include:
 - customer and service impact
 - probable cause and supporting evidence
 - remediation actions proposed or taken
 - confidence level (`low`, `medium`, or `high`)
 - recommended next steps
 
-Prefer safe reversible actions first. In Review mode, request approval before write or remediation actions. Confirm recovery with the Orders API /health endpoint and telemetry before marking the incident resolved.
+Prefer safe reversible actions first. In Review mode, request approval before write or remediation actions. Confirm recovery with `/health`, `/api/orders`, dependency telemetry, and stabilized 5xx rate before marking the incident resolved.
