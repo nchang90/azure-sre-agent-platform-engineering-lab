@@ -21,8 +21,8 @@ gh workflow run deploy.yml \
 gh run watch
 ```
 
-Once it completes, raise the incident with the Scenario A selector-drift
-variant.
+Once it completes, create or update the production incident and use the
+Scenario A selector-drift variant as the failure being investigated.
 
 ### Scenario A — Ready pods, broken service routing
 
@@ -52,7 +52,14 @@ the three S3 subagents from the recipe.
 ## Production-style incident trigger
 
 Use the scenario as a customer-impacting production outage rather than a simple
-AKS failure drill:
+AKS failure drill. The strongest demo flow is:
+
+```text
+Production incident -> ServiceNow -> HTTP trigger -> Azure SRE Agent -> AKS triage -> root cause -> ServiceNow update
+```
+
+Create the incident in ServiceNow first, then let the workflow call the Azure
+SRE Agent HTTP trigger with the incident context:
 
 - **Alert:** `Checkout API availability has dropped below 99%`
 - **Customer impact:** checkout requests intermittently fail or time out
@@ -61,15 +68,13 @@ AKS failure drill:
 - **Initial signals:** pods are still `Running` and `Ready`; node CPU and memory
   look normal; no obvious crash-loop exists
 
-Suggested operator prompt:
-
-> Investigate the Checkout API incident in AKS. Determine the likely root
-> cause, identify the affected resources and recent deployment, and recommend a
-> remediation. Do not make changes without approval.
+If you want to show the alert handoff path, set
+`webhook_bridge_trigger_url` so Azure Monitor or a ServiceNow workflow can post
+directly into the agent HTTP trigger endpoint.
 
 This keeps the scenario aligned to a realistic production flow: alert first,
-customer impact second, evidence-led triage third, and remediation only after
-the operator reviews the findings.
+customer impact second, ServiceNow incident creation third, evidence-led triage
+fourth, and reporting back to the incident record without remediation.
 
 ---
 
@@ -95,10 +100,10 @@ the same breadcrumb trail for the failure mode.
 | **AKS Cluster** | Runs orders-api microservice workload |
 | **Log Analytics** | Stores pod logs, node metrics, and events (`KubePodInventory`, `ContainerLogV2`, `KubeEvents`) |
 | **Application Insights** | Captures application traces and errors |
-| **Azure Monitor Connector** | Feeds the S3 Log Analytics-scoped Azure Monitor incidents into the Azure SRE Agent |
-| **Azure Monitor Alert** | Triggers on pod crash loop, critical workload loss, missing service, or node pressure |
-| **Azure Monitor Incident** | Created from the Sev1 AKS alert and owns the investigation lifecycle |
-| **ServiceNow Incident** | Existing active AKS incident receives the simulation context as a work note |
+| **Azure Monitor Connector** | Supplies AKS and telemetry evidence to the Azure SRE Agent |
+| **Azure Monitor Alert** | Provides the production signal for missing endpoints, workload loss, or node pressure |
+| **ServiceNow Incident** | Acts as the system of record for the customer-facing outage |
+| **HTTP Trigger** | Starts the Azure SRE Agent investigation from the ServiceNow workflow payload |
 | **Azure SRE Agent** | Coordinates the three incident-investigation subagents |
 
 ---
@@ -107,16 +112,17 @@ the same breadcrumb trail for the failure mode.
 
 1. **Deploy the broken service variant** → selector drift is introduced
 2. **Azure Monitor alerts** (2–5 min) → detects service-without-endpoints or related AKS failure signals via Log Analytics
-3. **Incident created** → The Sev1 AKS alert matches the `aks-critical-errors` response plan
-4. **Azure SRE Agent investigates** → Uses a three-subagent handoff chain
+3. **ServiceNow incident created or updated** → the operator opens the production incident for the outage
+4. **ServiceNow workflow calls the HTTP trigger** → incident metadata is sent to the Azure SRE Agent
+5. **Azure SRE Agent investigates** → Uses a three-subagent handoff chain
    - Examines `KubePodInventory` for pod state and restart counts
    - Checks `KubeServices` / endpoints for selector drift
    - Checks `KubeEvents` for recent apply or service-related evidence
    - Checks `ContainerLogV2` only to confirm the app itself is not crashing
    - Correlates the failure with the most recent rollout or change window
    - Queries `InsightsMetrics` for resource pressure (CPU, memory)
-   - Drafts the incident summary and operator update
-5. **Updates incidents** → The agent returns an evidence-backed Azure Monitor update, while the workflow records the simulation in the existing ServiceNow incident
+   - Drafts the incident summary and ServiceNow-ready operator update
+6. **Writes back the result** → the workflow posts the evidence-backed diagnosis into ServiceNow and keeps remediation manual
 
 ### Deterministic evidence paths
 
@@ -171,11 +177,11 @@ outputs into a three-agent Azure SRE Agent handoff chain.
 After the quick start:
 - Three S3 subagents are registered
 - The AKS triage agent can query monitoring evidence
-- A Sev1 AKS alert creates an Azure Monitor incident automatically
+- A Sev1 AKS alert still provides the investigation signal and evidence trail
 - Critical `orders-api` workload or service deletion also raises a Sev1 AKS alert
+- The ServiceNow workflow can call the Azure SRE Agent HTTP trigger with incident context
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
-- The newest active matching ServiceNow incident receives an S3 work note
-- The handoff chain completes in triage → summary → incident update order
+- The handoff chain completes in triage → summary → ServiceNow-ready report order
 - No PIR or remediation subagent is added
 
 ---

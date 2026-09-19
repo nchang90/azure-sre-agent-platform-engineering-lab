@@ -1,4 +1,5 @@
-For S3 high-severity Azure Monitor AKS incidents, start with aks-triage-agent.
+For S3 high-severity AKS incidents, start with aks-triage-agent after the
+ServiceNow workflow invokes the Azure SRE Agent HTTP trigger.
 Preserve the same
 incident conversation context through this handoff chain:
 
@@ -6,5 +7,5 @@ aks-triage-agent -> incident-summary-agent -> incident-comms-agent
 
 Each specialist must add only its assigned output, preserve prior evidence, and
 avoid claiming that remediation was executed. The final agent must return an
-operator-ready update for the active Azure SRE Agent incident, then return
-control to the main agent.
+operator-ready investigation result suitable for the originating ServiceNow
+incident or callback workflow, then return control to the main agent.
