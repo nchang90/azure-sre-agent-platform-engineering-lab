@@ -99,11 +99,19 @@ for request in {1..30}; do
     --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
 done
 
-# Verify service after remediation
+# Verify service after remediation (runtime=webapp)
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
   --query "{state:state,lastModified:lastModifiedTimeUtc}" \
+  --output table
+curl --fail --silent --show-error "$APP_URL/health"
+
+# If runtime=containerapps, verify with:
+az containerapp show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_NAME" \
+  --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
 ```
