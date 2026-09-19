@@ -203,6 +203,14 @@ Use this lab incident flow:
 
 **Detect → Investigate → Correlate → Diagnose → Remediate → Verify**
 
+The `rca-analysis` skill (`.github/skills/rca-analysis/SKILL.md`) backs the
+Correlate and Diagnose steps. It requires the agent to establish first-failure
+time from telemetry rather than alert-fire time, bracket that time against
+deployment history and the activity log, reconcile the `CHG0030001` id carried
+in the forced-failure detail, name the regression class and say which classes it
+ruled out, and render a numbered 5-Whys ladder separating the trigger from the
+latent cause. It is registered for `scenario=s2` by `scripts/catalog.sh`.
+
 ### Verify recovery
 
 Once the agent has remediated, confirm the runtime is healthy and the simulation is no
@@ -332,6 +340,8 @@ Additional variants:
 After the quick start:
 - ✅ Alert fires in 30–60 seconds
 - ✅ Agent correlates incident timing to recent deployment/change context
+- ✅ RCA names first-failure time, the correlated change, and the delta between them
+- ✅ RCA renders a numbered 5-Whys ladder with the trigger and latent cause stated separately
 - ✅ Application Insights shows request failures, exceptions, and dependency impact
 - ✅ Agent proposes or applies safe remediation
 - ✅ `/health` and `/api/orders` recover
