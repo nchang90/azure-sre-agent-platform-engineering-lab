@@ -17,12 +17,7 @@ If runtime is Container Apps, additionally use:
 - containerapps-500-diagnostics
 - containerapps-latency-diagnostics
 
-For every S2 incident, prioritize these likely regression variants:
-- bad application configuration
-- database connection regression
-- dependency timeout
-- endpoint-specific code regression
-- slot configuration drift
+For likely regression variants and taxonomy, use `knowledge-base/http-500-errors.md` as the source of truth.
 
 Correlate the issue with recent deployments and revision/swap events. Clearly distinguish verified facts from hypotheses, and include:
 - customer and service impact

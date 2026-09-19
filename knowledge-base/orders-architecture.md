@@ -13,8 +13,11 @@ Orders API incident triage and remediation.
 - Security and identity: Entra ID sign-in and access control.
 
 Dashboard URL source of truth for incident triage:
-- Use the deployed frontend endpoint published by your environment outputs/portal for the active demo environment.
-- If unavailable, use the conference operator's provided dashboard URL for this run.
+- Primary source: deployment outputs/portal for the active demo environment.
+- In this lab, backend runtime commands target `orders-api`; frontend URL discovery is separate from backend resource lookup.
+- If a dedicated dashboard Web App is deployed, discover it with:
+  - `az webapp list -g <resource-group> --query "[?starts_with(name, 'web-dashboard')].defaultHostName | [0]" -o tsv`
+- If no dedicated dashboard app exists in the environment, use the conference operator-provided dashboard URL.
 
 ## Incident Correlation Context
 

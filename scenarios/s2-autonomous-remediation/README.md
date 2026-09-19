@@ -100,14 +100,12 @@ curl --fail --silent --show-error "$APP_URL/health"
 ### Simulate production incident and observe (5 mins)
 ```bash
 # Simulate a deployment window correlation
-# Prerequisite: this demo build includes simulation routes in `src/orders-api/Program.cs`.
-# Quick check: this request should return HTTP 200 with `activeChangeRequest`.
-curl --fail --silent --show-error \
+# Prerequisite check in deployed environment:
+# HTTP 200 => simulation route is available
+# HTTP 404/405 => skip this step and correlate with deployment history + telemetry only
+curl --silent --output /dev/null \
+  --write-out "active-cr route HTTP %{http_code}\n" \
   -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
-# Expected response: {"activeChangeRequest":"CHG0030001"}
-# (supported in both webapp and containerapps runtimes)
-# If this route is unavailable in your build, skip this step and correlate using
-# deployment history + telemetry timestamps only.
 
 # Simulate a post-deployment regression impact on /api/orders
 curl --fail --silent --show-error \
