@@ -35,8 +35,17 @@ gh workflow run deploy.yml \
   -f apply=true
 
 gh run watch
+```
 
-# Load the deployed application details
+Deploy does four things (similar to Foundry app quick start style):
+1. Reads `sbox.tfvars` and applies Terraform
+2. Deploys the runtime workload (`orders-api`)
+3. Registers S2 agent extras via `apply-extras.sh`
+4. Enables autonomous incident handling for S2 response plan
+
+Then load the deployed application details:
+
+```bash
 RESOURCE_GROUP="rg-sre-lab-sbox"
 APP_NAME="orders-api"
 APP_FQDN="$(az webapp show \
@@ -99,14 +108,15 @@ for request in {1..30}; do
     --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
 done
 
-# Verify runtime state after remediation (runtime=webapp)
+# Verify runtime state after remediation (choose one)
+# Option A: runtime=webapp
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
 
-# Verify runtime state after remediation (runtime=containerapps)
+# Option B: runtime=containerapps
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
@@ -124,6 +134,9 @@ curl --fail --silent --show-error \
 ---
 
 ## Incident Story
+
+Conference default: **App Service**.  
+Alternate runtime: **Container Apps** with the same `/api/orders` failure symptoms and runtime-specific telemetry correlation.
 
 A new `orders-api` web API version is deployed to production. Soon after deployment:
 
