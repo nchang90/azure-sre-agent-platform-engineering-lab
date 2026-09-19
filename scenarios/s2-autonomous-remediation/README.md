@@ -115,26 +115,49 @@ curl --fail --silent --show-error "$APP_URL/health"
 ## Exercise 2: Trigger the incident and observe impact
 
 ### Task 1: Use GitHub Copilot CLI to introduce a controlled backend regression
-```bash
-# Simulate a deployment window correlation
-# Prerequisite check in deployed environment:
-# non-mutating probe:
-# - 404 => route unavailable
-# - 200/204/401/403/405 => route exists (behavior depends on runtime/auth policy)
-ACTIVE_CR_PROBE_STATUS="$(curl --silent --output /dev/null --write-out "%{http_code}" \
-  -X GET "$APP_URL/api/simulate/active-cr/CHG0030001")"
-echo "active-cr probe HTTP $ACTIVE_CR_PROBE_STATUS"
-if [ "$ACTIVE_CR_PROBE_STATUS" = "404" ]; then
-  echo "Skipping active change-correlation simulation; use deployment history + telemetry timestamps."
-elif [ "$ACTIVE_CR_PROBE_STATUS" = "200" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "204" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "401" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "403" ] || [ "$ACTIVE_CR_PROBE_STATUS" = "405" ]; then
-  curl --fail --silent --show-error \
-    -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
-else
-  echo "Unexpected probe status; skipping active change-correlation simulation."
-fi
 
-# Use the built-in chaos simulation endpoint to break the App Service
-# and force /api/orders to return HTTP 500s.
+The regression is driven by the `orders-api` simulation endpoints, which are part of
+the deployed image. Let Copilot CLI draft and run the calls so the demo shows an
+operator working in natural language rather than pasting curl.
+
+Copilot needs the backend URL, so export it first (Exercise 1 already set `APP_URL`):
+
+```bash
+echo "$APP_URL"
+```
+
+Interactive — Copilot proposes each command and waits for your approval:
+
+```bash
+copilot -i "Against the orders-api at $APP_URL, POST to /api/simulate/active-cr/CHG0030001 \
+to mark an active change window, then POST to /api/simulate/failure-rate/100 so /api/orders \
+starts returning HTTP 500. Then send 30 POSTs to /api/orders with a JSON body of \
+{\"customerId\":\"lab-user\",\"sku\":\"S2-DEMO\",\"quantity\":1} and print each status code."
+```
+
+> **Why these two calls:** `active-cr` stamps a change-request id into the forced 500
+> response detail, which is the evidence the agent correlates against deployment history
+> in Exercise 3. `failure-rate/100` is deterministic — the App Service stays **Running**
+> and `/health` keeps passing, so the incident presents as a backend-only regression.
+
+Scripted — non-interactive mode requires `--allow-all-tools`, so use it only in the
+isolated lab resource group:
+
+```bash
+copilot -p "Against the orders-api at $APP_URL, POST /api/simulate/active-cr/CHG0030001, \
+then POST /api/simulate/failure-rate/100, then send 30 POSTs to /api/orders and report \
+how many returned 500." --allow-all-tools
+```
+
+<details>
+<summary>Fallback: run the same calls directly with curl</summary>
+
+```bash
+# Mark the change window so forced 500s carry a correlatable CR id
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
+
+# Break the backend: force /api/orders to return HTTP 500
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/failure-rate/100"
 
@@ -146,8 +169,46 @@ for request in {1..30}; do
     -H "Content-Type: application/json" \
     --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
 done
+```
 
-# Verify runtime state after remediation
+</details>
+
+### Task 2: Confirm the incident signature
+
+The alert rule `alert-orders-api-5xx` queries the Application Insights `requests` table
+for `orders-api` 5xx responses, so the failing requests above are what arms it. Confirm
+the regression is backend-only:
+
+```bash
+# App Service still reports Running and /health still passes
+curl --fail --silent --show-error "$APP_URL/health"
+
+# /api/orders is the only thing failing
+curl --silent --output /dev/null \
+  --write-out "/api/orders during incident: HTTP %{http_code}\n" \
+  -X POST "$APP_URL/api/orders" \
+  -H "Content-Type: application/json" \
+  --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
+```
+
+> **Do not** use `az webapp stop` to trigger this scenario. A stopped app emits no
+> Application Insights request telemetry, so `alert-orders-api-5xx` never fires and the
+> agent has nothing to investigate.
+
+---
+
+## Exercise 3: Investigate and remediate
+
+Use this lab incident flow:
+
+**Detect → Investigate → Correlate → Diagnose → Remediate → Verify**
+
+### Verify recovery
+
+Once the agent has remediated, confirm the runtime is healthy and the simulation is no
+longer forcing failures.
+
+```bash
 RUNTIME="${RUNTIME:-webapp}"  # set to containerapps when using that runtime
 if [ "$RUNTIME" = "webapp" ]; then
   BACKEND_WEBAPP_NAME="$(az webapp list \
@@ -179,13 +240,8 @@ curl --fail --silent --show-error \
   --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
 ```
 
----
-
-## Exercise 3: Investigate and remediate
-
-Use this lab incident flow:
-
-**Detect → Investigate → Correlate → Diagnose → Remediate → Verify**
+Both curls exit non-zero while the incident is still active — that is the signal
+remediation has not completed yet.
 
 ---
 
