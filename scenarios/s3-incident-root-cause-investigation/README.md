@@ -49,11 +49,36 @@ the three S3 subagents from the recipe.
 
 ---
 
+## Production-style incident trigger
+
+Use the scenario as a customer-impacting production outage rather than a simple
+AKS failure drill:
+
+- **Alert:** `Checkout API availability has dropped below 99%`
+- **Customer impact:** checkout requests intermittently fail or time out
+- **Recent change:** a new `orders-api` deployment was rolled out shortly before
+  the alert
+- **Initial signals:** pods are still `Running` and `Ready`; node CPU and memory
+  look normal; no obvious crash-loop exists
+
+Suggested operator prompt:
+
+> Investigate the Checkout API incident in AKS. Determine the likely root
+> cause, identify the affected resources and recent deployment, and recommend a
+> remediation. Do not make changes without approval.
+
+This keeps the scenario aligned to a realistic production flow: alert first,
+customer impact second, evidence-led triage third, and remediation only after
+the operator reviews the findings.
+
+---
+
 ## Story
 
-A new deployment hits AKS and the `orders-api` workload regresses. The Azure
-SRE Agent uses three focused subagents based on Lee's structure: AKS triage,
-incident summary, and operator communications.
+A new deployment hits AKS and the `orders-api` workload regresses in a way that
+looks healthy from the pod view but breaks live traffic. The Azure SRE Agent
+uses three focused subagents based on Lee's structure: AKS triage, incident
+summary, and operator communications.
 
 - **Scenario A root-cause angle:** the deployment introduces Kubernetes service
   selector drift, so traffic no longer reaches healthy pods.
@@ -88,8 +113,8 @@ the same breadcrumb trail for the failure mode.
    - Checks `KubeServices` / endpoints for selector drift
    - Checks `KubeEvents` for recent apply or service-related evidence
    - Checks `ContainerLogV2` only to confirm the app itself is not crashing
+   - Correlates the failure with the most recent rollout or change window
    - Queries `InsightsMetrics` for resource pressure (CPU, memory)
-   - Correlates recent deployment and configuration changes
    - Drafts the incident summary and operator update
 5. **Updates incidents** → The agent returns an evidence-backed Azure Monitor update, while the workflow records the simulation in the existing ServiceNow incident
 
@@ -100,6 +125,24 @@ the same breadcrumb trail for the failure mode.
 3. `kubectl get endpoints orders-api -n default` returns no endpoints
 4. Azure Monitor fires `AKS orders-api service has no endpoints`
 5. The agent concludes the failure is routing/configuration drift, not a broken pod
+
+### Expected investigation output
+
+For the demo to feel production-like, the final incident update should say:
+
+- what customers saw: elevated checkout failures or timeouts
+- what stayed healthy: AKS nodes and `orders-api` pods
+- what actually broke: the `orders-api` `Service` selector no longer matched the
+  healthy pods, leaving zero endpoints
+- which resources were affected: the `orders-api` deployment and `orders-api`
+  service in the `default` namespace
+- which change is implicated: the most recent rollout that introduced selector
+  drift
+- what to do next: restore the healthy service selector or reapply the healthy
+  manifest after operator approval
+
+This gives the triage, summary, and communications subagents a realistic
+production incident narrative to follow.
 
 ---
 
