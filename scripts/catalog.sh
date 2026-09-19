@@ -53,15 +53,20 @@ ALL_SKILL_NAMES=(
 
 # The single source of truth for which scenarios exist and what runtime each
 # targets. apply-extras.sh resolves the runtime from here, so adding a scenario
-# is one row rather than edits across three files.
-declare -A SCENARIO_RUNTIME=(
-  [s1]=containerapps
-  [s2]=containerapps
-  [s3]=aks
-  [s4]=webapp
-  [s5]=none
-  [s6]=containerapps
-)
+# is one line rather than edits across three files. Deliberately a case rather
+# than an associative array: those need bash 4, and this has to run on macOS too.
+ALL_SCENARIOS="s1 s2 s3 s4 s5 s6"
+
+scenario_runtime() {
+  case "$1" in
+    s1|s2) echo containerapps ;;
+    s3)    echo aks ;;
+    s4)    echo webapp ;;
+    s5)    echo none ;;
+    s6)    echo containerapps ;;
+    *)     return 1 ;;
+  esac
+}
 
 ALL_TOOL_NAMES=(
   UpdateServiceNowIncident
@@ -141,8 +146,8 @@ configure_catalog_scope() {
     *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
   esac
 
-  if [[ -n "$SCENARIO" && -z "${SCENARIO_RUNTIME[$SCENARIO]:-}" ]]; then
-    die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: ${!SCENARIO_RUNTIME[*]}"
+  if [[ -n "$SCENARIO" ]] && ! scenario_runtime "$SCENARIO" >/dev/null; then
+    die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: $ALL_SCENARIOS"
   fi
 
   SUBAGENT_NAMES=(
