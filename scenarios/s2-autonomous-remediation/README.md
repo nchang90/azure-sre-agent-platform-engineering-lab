@@ -114,7 +114,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 
 ## Exercise 2: Trigger the incident and observe impact
 
-### Task 1: Introduce controlled backend regression
+### Task 1: Use GitHub Copilot CLI to introduce a controlled backend regression
 ```bash
 # Simulate a deployment window correlation
 # Prerequisite check in deployed environment:
@@ -133,9 +133,10 @@ else
   echo "Unexpected probe status; skipping active change-correlation simulation."
 fi
 
-# Simulate a post-deployment regression impact on /api/orders
-curl --fail --silent --show-error \
-  -X POST "$APP_URL/api/simulate/failure-rate/100"
+# Use GitHub Copilot CLI to draft the App Service fault-injection command,
+# review the suggestion, then run the generated POST for /api/simulate/failure-rate/100.
+gh copilot suggest -t shell \
+  "Using APP_URL=$APP_URL, print a curl command that breaks the S2 orders-api App Service by POSTing to /api/simulate/failure-rate/100 with fail-fast flags."
 
 # Generate failed requests so the 5xx alert threshold is reached
 for request in {1..30}; do
@@ -285,7 +286,8 @@ After the quick start:
 ## Cleanup
 
 ```bash
-# Restore the runtime simulation if the agent has not already remediated it
+# Restore the runtime simulation if the agent has not already remediated it.
+# You can use GitHub Copilot CLI to draft the reset command the same way.
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/reset"
 

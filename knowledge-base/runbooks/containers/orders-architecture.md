@@ -83,6 +83,11 @@ APP_URL="https://<orders-api-url>"
 # Announce the active change window (what the deploy pipeline normally does)
 curl -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 
+# For the S2 App Service demo, use GitHub Copilot CLI to draft the
+# fail-fast curl command, review it, then run the generated POST.
+gh copilot suggest -t shell \
+  "Using APP_URL=$APP_URL, print a curl command that POSTs to /api/simulate/failure-rate/100 so I can trigger the S2 orders-api incident on App Service."
+
 for i in {1..50}; do
   curl -X POST "$APP_URL/api/orders" \
     -H "Content-Type: application/json" \
