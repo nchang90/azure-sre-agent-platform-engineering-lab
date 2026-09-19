@@ -45,7 +45,7 @@ ENVIRONMENT selects matching Terraform files:
 The selected tfvars file scopes the catalog:
   all environments   -> all skills and scenario-scoped knowledge-base docs
   all scenarios      -> one shared incident response plan
-  scenario = s1|s2|s3|s4|s5 -> primary scenario selector
+  scenario = s1..s6        -> primary scenario selector
   runtime scope is derived from scenario: s1/s2=containerapps, s3=aks, s4=webapp, s5=none
 
 Examples:
@@ -90,8 +90,9 @@ tfvar_bool() {
 }
 
 resolve_runtime_stack() {
-  local scenario="$1" runtime="${SCENARIO_RUNTIME[$1]:-}"
-  [[ -n "$runtime" ]] || die "Unsupported scenario '$scenario' in $TFVARS_FILE. Expected one of: ${!SCENARIO_RUNTIME[*]}"
+  local runtime
+  runtime="$(scenario_runtime "$1")" \
+    || die "Unsupported scenario '$1' in $TFVARS_FILE. Expected one of: $ALL_SCENARIOS"
   printf '%s\n' "$runtime"
 }
 
@@ -449,8 +450,11 @@ drop_servicenow_from_scope() {
 upload_tools() {
   step "Uploading custom tools..."
 
+  # Scenarios other than S3 default to the full skill list, which would otherwise
+  # ship servicenow-incident-update with none of the tools it drives.
   if [[ ${#TOOL_NAMES[@]} -eq 0 ]]; then
     log "  No custom tools in scope."
+    drop_servicenow_from_scope
     echo
     return
   fi
