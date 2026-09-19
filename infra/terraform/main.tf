@@ -13,9 +13,9 @@ locals {
   effective_principal_id = local.create_identity ? azurerm_user_assigned_identity.agent[0].principal_id : data.azurerm_user_assigned_identity.existing[0].principal_id
 
   create_app_insights   = var.existing_agent_app_insights_id == ""
-  effective_ai_id       = local.create_app_insights ? azurerm_application_insights.ai[0].id : data.azurerm_application_insights.existing_ai[0].id
-  effective_ai_app_id   = local.create_app_insights ? azurerm_application_insights.ai[0].app_id : data.azurerm_application_insights.existing_ai[0].app_id
-  effective_ai_conn_str = local.create_app_insights ? azurerm_application_insights.ai[0].connection_string : data.azurerm_application_insights.existing_ai[0].connection_string
+  effective_ai_id       = local.create_app_insights ? azapi_resource.ai[0].id : data.azurerm_application_insights.existing_ai[0].id
+  effective_ai_app_id   = local.create_app_insights ? azapi_resource.ai[0].output.properties.AppId : data.azurerm_application_insights.existing_ai[0].app_id
+  effective_ai_conn_str = local.create_app_insights ? azapi_resource.ai[0].output.properties.ConnectionString : data.azurerm_application_insights.existing_ai[0].connection_string
 
   sre_agent_standard_user_role_id = "2d84a65a-63b2-4343-bbb6-31105d857bc1"
   sre_agent_admin_role_id         = "e79298df-d852-4c6d-84f9-5d13249d1e55"
@@ -58,14 +58,28 @@ resource "azurerm_log_analytics_workspace" "law" {
   tags                = var.tags
 }
 
-resource "azurerm_application_insights" "ai" {
-  count               = local.create_app_insights ? 1 : 0
-  name                = "ai-${local.suffix}"
-  resource_group_name = azurerm_resource_group.agent.name
-  location            = var.location
-  application_type    = "web"
-  workspace_id        = azurerm_log_analytics_workspace.law.id
-  tags                = var.tags
+resource "azapi_resource" "ai" {
+  count                     = local.create_app_insights ? 1 : 0
+  schema_validation_enabled = false
+  type                      = "Microsoft.Insights/components@2020-02-02"
+  name                      = "ai-${local.suffix}"
+  location                  = var.location
+  parent_id                 = azurerm_resource_group.agent.id
+  tags                      = var.tags
+
+  response_export_values = [
+    "properties.AppId",
+    "properties.ConnectionString",
+  ]
+
+  body = {
+    kind = "web"
+    properties = {
+      Application_Type    = "web"
+      Request_Source      = "SreAgent"
+      WorkspaceResourceId = azurerm_log_analytics_workspace.law.id
+    }
+  }
 }
 
 data "azurerm_application_insights" "existing_ai" {

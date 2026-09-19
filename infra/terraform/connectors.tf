@@ -1,6 +1,6 @@
 locals {
-  resolved_app_insights_id     = var.app_insights_resource_id != "" ? var.app_insights_resource_id : (local.create_app_insights ? azurerm_application_insights.ai[0].id : "")
-  resolved_app_insights_app_id = var.app_insights_app_id != "" ? var.app_insights_app_id : (local.create_app_insights ? azurerm_application_insights.ai[0].app_id : "")
+  resolved_app_insights_id     = var.app_insights_resource_id != "" ? var.app_insights_resource_id : (local.create_app_insights ? azapi_resource.ai[0].id : "")
+  resolved_app_insights_app_id = var.app_insights_app_id != "" ? var.app_insights_app_id : (local.create_app_insights ? azapi_resource.ai[0].output.properties.AppId : "")
   resolved_law_id              = var.law_resource_id != "" ? var.law_resource_id : azurerm_log_analytics_workspace.law.id
   resolved_azure_monitor_id    = !var.enable_azure_monitor_connector ? "" : (var.azure_monitor_resource_id != "" ? var.azure_monitor_resource_id : (local.scenario_value == "s3" ? local.resolved_law_id : "/subscriptions/${data.azurerm_subscription.current.subscription_id}"))
 
