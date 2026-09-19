@@ -106,6 +106,10 @@ az webapp show \
   --query "{state:state,lastModified:lastModifiedTimeUtc}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/orders" \
+  -H "Content-Type: application/json" \
+  --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
 
 # If runtime=containerapps, verify with:
 az containerapp show \
@@ -114,6 +118,10 @@ az containerapp show \
   --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/orders" \
+  -H "Content-Type: application/json" \
+  --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
 ```
 
 ---
