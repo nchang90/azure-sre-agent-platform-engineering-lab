@@ -26,6 +26,17 @@ SKILL_TOOLS = {
         "QueryLogAnalyticsByWorkspaceId",
         "QueryAppInsightsByResourceId",
     ],
+    "azure-cost": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "GetAzCliHelp",
+    ],
+    "azure-kubernetes": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "RunAzCliWriteCommands",
+        "GetAzCliHelp",
+    ],
     "containerapps-500-diagnostics": [
         "SearchMemory",
         "RunAzCliReadCommands",
