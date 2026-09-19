@@ -11,6 +11,7 @@ Expected symptom pattern (App Service conference path):
 - App Service still shows `Running`
 - CPU/memory remain normal
 - `/health` may still pass
+- frontend/dashboard still loads
 - `/api/orders` returns 500
 - exceptions and dependency failures rise
 - 5xx alert crosses threshold shortly after deployment
@@ -25,6 +26,7 @@ Container Apps variant usually shows the same `/api/orders` failure pattern, but
 ## 2) Investigate
 
 - Check endpoint health and blast radius:
+  - frontend page load succeeds while backend action fails
   - `GET /health`
   - `POST /api/orders`
 - Review telemetry in App Insights:

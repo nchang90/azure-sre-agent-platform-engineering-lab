@@ -1,11 +1,11 @@
 Always follow the Azure SRE Agent lab incident flow: detect, triage, correlate, diagnose, remediate, verify, and summarize.
 
-For S2 web-api production deployment regressions, treat `/api/orders` 5xx spikes as the primary incident path. Use the S2 knowledge sources and skills before relying on general knowledge:
+For S2 AI web app production incidents, treat `/api/orders` 5xx spikes as the primary incident path where the frontend still loads but backend calls fail. Use the S2 knowledge sources and skills before relying on general knowledge:
 - incident-orchestrator-coordination
 - investigate-azure-alerts
 - triage-app-errors
 
-Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies, runtime state (App Service or Container Apps), deployment history, and change-lookup context.
+Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies (including Foundry/backend calls), runtime state (App Service or Container Apps), deployment history, and change-lookup context.
 
 For S2 incidents, detect and report these high-level issue categories:
 - HTTP 5xx spikes

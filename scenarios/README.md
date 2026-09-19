@@ -1,7 +1,7 @@
 # Scenarios
 
 - [S1 Detect & Triage](./s1-detect-triage/)
-- [S2 Web API Deployment Regression (Autonomous Remediation)](./s2-autonomous-remediation/)
+- [S2 AI Web App Production Incident (Autonomous Remediation)](./s2-autonomous-remediation/)
 - [S3 Incident Root Cause Investigation](./s3-incident-root-cause-investigation/)
 - [S4 Alert Response and Incident Operations](./s4-alert-response-incident-operations/)
 - [S5 PIM Elevation Audit & Alignment](./s5-pim-elevation-audit/README.md)
@@ -21,7 +21,7 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 | Scenario | Recommended tfvars | Required apply-extras step | Optional step |
 |---|---|---|---|
 | S1 Detect and triage | N/A (uses `azd`/Bicep) | `azd env new s1-demo` then `azd provision` | `azd env get-values` |
-| S2 Web API production deployment regression | `environments/sbox.tfvars` | `bash scripts/apply-extras.sh sbox` | Configure GitHub in Azure SRE Agent portal (only if needed) |
+| S2 AI Web App production incident | `environments/sbox.tfvars` | `bash scripts/apply-extras.sh sbox` | Configure GitHub in Azure SRE Agent portal (only if needed) |
 | S3 AKS incident remediation and HTTP trigger | `environments/demo.tfvars` (or another S3 tfvars with `enable_azure_monitor_connector = true`) | `bash scripts/apply-extras.sh <environment>` | Set `webhook_bridge_trigger_url` to show the Action Group to HTTP trigger path |
 | S4 Alert response and incident operations | Any tfvars with `scenario = "s4"` and monitoring connectors | `bash scripts/apply-extras.sh <environment>` | Configure GitHub or ITSM connectors when creating follow-up records |
 | S5 PIM elevation audit | Any tfvars with `scenario = "s5"` | `bash scripts/apply-extras.sh <environment>` | Configure Entra audit data access |

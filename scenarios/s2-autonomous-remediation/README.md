@@ -1,4 +1,4 @@
-# S2 — Web API Production Deployment Regression (Autonomous Remediation)
+# S2 — AI Web App Production Incident (Autonomous Remediation)
 
 **Persona:** Platform / SRE  
 **Time:** ~15 minutes
@@ -89,7 +89,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 > **Caution:** `Autonomous` mode allows the agent to perform write actions. Use only
 > in the isolated lab resource group. Return to `Review` mode after the exercise.
 
-### Simulate production-style regression and observe (5 mins)
+### Simulate production incident and observe (5 mins)
 ```bash
 # Simulate a deployment window correlation
 curl --fail --silent --show-error \
@@ -138,7 +138,9 @@ curl --fail --silent --show-error \
 Conference default: **App Service**.  
 Alternate runtime: **Container Apps** with the same `/api/orders` failure symptoms and runtime-specific telemetry correlation.
 
-A new `orders-api` web API version is deployed to production. Soon after deployment:
+A new `orders-api` backend version is deployed to production.
+The UI dashboard still loads, but backend calls start failing.
+Soon after deployment:
 
 - App Service still reports **Running**
 - CPU and memory remain near baseline
@@ -156,12 +158,12 @@ S2 demonstrates the autonomous path:
 
 ## How It Works
 
-1. **Detect** → Azure Monitor incident opens on `/api/orders` 5xx spike
-2. **Investigate** → Query failed requests, exceptions, and dependencies in App Insights
+1. **Detect** → Azure Monitor incident opens on `web-api` 5xx threshold breach
+2. **Investigate** → Traverse evidence chain: Azure Monitor → App Service → Application Insights → web-api → deployment history
 3. **Correlate** → Align first-failure time with recent deployment/change window
 4. **Diagnose** → Identify likely regression class
-5. **Remediate** → Apply the safest reversible remediation for confirmed cause
-6. **Verify** → Confirm `/health`, `/api/orders`, dependency success, and 5xx recovery
+5. **Remediate** → Apply safest reversible remediation for confirmed cause
+6. **Verify** → Confirm dashboard backend calls recover, `/api/orders` succeeds, and 5xx returns to baseline
 
 ---
 
@@ -171,7 +173,17 @@ S2 demonstrates the autonomous path:
 
 Production framing:
 
-`Client → Azure App Service → orders-api → Azure SQL / external dependency → Application Insights`
+`User → Web App (dashboard) → web-api → Foundry Agent`
+
+Operational overlays:
+- Entra ID for sign-in and access control
+- Application Insights + Log Analytics for request, exception, and dependency telemetry
+- Azure Monitor alerting for backend 5xx thresholds
+- Deployment history and change context for incident correlation
+
+Backend dependency chain remains:
+
+`Client/UI → App Service web-api → Azure SQL / external dependency → Application Insights`
 
 ---
 
@@ -189,6 +201,18 @@ Additional variants:
 - **C. Dependency timeout** — downstream dependency latency causes request timeouts and cascading 5xx.
 - **D. Code regression** — endpoint-specific exception introduced by new release.
 - **E. Slot configuration drift** — swap leaves production missing/incorrect settings present in staging.
+
+---
+
+## UI Demo Sequence (Conference Friendly)
+
+1. Open the dashboard and show normal UX.
+2. Introduce controlled backend regression.
+3. Show frontend still renders while backend actions fail.
+4. Show Azure Monitor incident firing on `web-api` 5xx.
+5. Show SRE Agent investigation trail across telemetry + deployment evidence.
+6. Optionally delegate backend diagnosis to a specialist sub-agent.
+7. Apply safe remediation and refresh dashboard to confirm recovery.
 
 ---
 
