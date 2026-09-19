@@ -101,6 +101,8 @@ curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 # Expected response: {"activeChangeRequest":"CHG0030001"}
 # (supported in both webapp and containerapps runtimes)
+# If this route is unavailable in your build, skip this step and correlate using
+# deployment history + telemetry timestamps only.
 
 # Simulate a post-deployment regression impact on /api/orders
 curl --fail --silent --show-error \
