@@ -67,6 +67,12 @@ jobs:
       - name: Install Python dependencies
         run: pip install pyyaml
 
+      - name: Normalize runtime for dev quota constraints
+        if: env.ENVIRONMENT == 'dev' && env.RUNTIME == 'webapp'
+        run: |
+          echo "RUNTIME=containerapps" >> "$GITHUB_ENV"
+          echo "::notice::Runtime 'webapp' was overridden to 'containerapps' for dev to avoid App Service B1 quota failures."
+
       - name: Terraform init
         run: terraform -chdir=infra/terraform init -backend-config=backend/${{ env.ENVIRONMENT }}.backend.tfvars
 
