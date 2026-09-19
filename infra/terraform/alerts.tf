@@ -600,20 +600,15 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_node_cpu_pressure
 }
 
 
-resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
-  count               = local.create_app_insights ? 1 : 0
-  name                = "failure-anomalies-ai-51a0c59340d39-sev2"
-  resource_group_name = azurerm_resource_group.agent.name
-  severity            = var.severity_threshold
-  scope_resource_ids  = [azurerm_application_insights.ai[0].id]
-  detector_type       = "FailureAnomaliesDetector"
-  frequency           = "PT1M"
-  enabled             = true
-
-  action_group {
-    ids = [azurerm_monitor_action_group.ai_smart_detection.id]
-  }
-}
+# Failure Anomalies is NOT managed here on purpose.
+#
+# Azure auto-provisions a "Failure Anomalies - <component>" FailureAnomaliesDetector
+# rule for every Application Insights component, and the platform allows only one
+# such rule per component. Declaring our own always fails:
+#   - a differently-named rule -> 409 ScopeInUse
+#   - an identically-named rule -> "already exists, must be imported"
+# Detection is covered by the scheduled query alerts above, which route to
+# azurerm_monitor_action_group.ai_smart_detection.
 
 
 resource "azurerm_monitor_action_group" "ai_smart_detection" {
