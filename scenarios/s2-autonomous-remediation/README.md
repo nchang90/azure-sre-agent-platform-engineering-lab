@@ -101,7 +101,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 ```bash
 # Simulate a deployment window correlation
 # Prerequisite: this demo build includes simulation routes in `src/orders-api/Program.cs`.
-# Quick check (expect HTTP 200): POST "$APP_URL/api/simulate/reset"
+# Quick check: this request should return HTTP 200 with `activeChangeRequest`.
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 # Expected response: {"activeChangeRequest":"CHG0030001"}
