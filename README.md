@@ -1,12 +1,8 @@
 # Azure SRE Agent - Platform Engineering Lab
 
-Hands-on Azure SRE Agent lab with six progressive scenarios: detection and triage, web-api deployment-regression remediation, AKS multi-agent investigation, alert operations, PIM elevation audit, and Front Door incident response.
+Hands-on Azure SRE Agent lab with six progressive incident scenarios.
 
-## Prerequisites
-
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (`brew install azure-cli`)
-- [Terraform 1.5+](https://developer.hashicorp.com/terraform/install) (`brew install terraform`)
-- An identity able to create role assignments at the target scopes (Owner or User Access Administrator) — see [`infra/terraform/rbac.tf`](infra/terraform/rbac.tf).
+**Prerequisites:** [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), [Terraform 1.5+](https://developer.hashicorp.com/terraform/install), and an identity that can create role assignments at the target scopes (Owner or User Access Administrator) — see [`infra/terraform/rbac.tf`](infra/terraform/rbac.tf).
 
 ## Scenarios
 
@@ -30,23 +26,7 @@ Steps and tfvars guidance: [scenarios/README.md](scenarios/README.md).
 
 State lives in the `tfstate` container of the `terraformstatesboxprd` storage account (`terraform-tfstate` resource group), one key per environment — see [`infra/terraform/backend/`](infra/terraform/backend/).
 
-### Workflow authentication
-
-Workflows use workload identity federation — no client secrets. The user-assigned identity `uami-github` (`terraform-tfstate` resource group) holds `Contributor` and `User Access Administrator` at subscription scope, with a federated credential pinned to `repo:nchang90/azure-sre-agent-platform-engineering-lab:ref:refs/heads/main` (issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`), so only runs on `main` can obtain a token.
-
-Both `azure/login@v3` and Terraform use it: `ARM_USE_OIDC=true` plus `ARM_CLIENT_ID`/`ARM_TENANT_ID`/`ARM_SUBSCRIPTION_ID` cover the `azurerm` and `azapi` providers *and* the state backend, so Terraform never falls back to a CLI token that cannot be refreshed mid-`apply`. Workflows declare `permissions: id-token: write`; repository secrets are `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
-
-To add a branch or environment, create another federated credential rather than loosening the subject:
-
-```bash
-az identity federated-credential create \
-  --name github-<branch> \
-  --identity-name uami-github \
-  --resource-group terraform-tfstate \
-  --issuer https://token.actions.githubusercontent.com \
-  --subject "repo:nchang90/azure-sre-agent-platform-engineering-lab:ref:refs/heads/<branch>" \
-  --audiences api://AzureADTokenExchange
-```
+Workflows authenticate with workload identity federation, no client secrets: the `uami-github` identity is pinned to `refs/heads/main`, and `ARM_USE_OIDC=true` plus `ARM_CLIENT_ID`/`ARM_TENANT_ID`/`ARM_SUBSCRIPTION_ID` covers both the providers and the state backend. To add a branch, add another federated credential rather than loosening the subject.
 
 ## Layout
 
