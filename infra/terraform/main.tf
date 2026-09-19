@@ -20,10 +20,11 @@ locals {
   sre_agent_standard_user_role_id = "2d84a65a-63b2-4343-bbb6-31105d857bc1"
   sre_agent_admin_role_id         = "e79298df-d852-4c6d-84f9-5d13249d1e55"
 
-  scenario_value = lower(trimspace(var.scenario))
+  scenario_value    = lower(trimspace(var.scenario))
+  effective_runtime = var.runtime != "" ? var.runtime : (local.scenario_value == "s2" ? "webapp" : "")
 
-  apps_enabled    = local.scenario_value == "s1" || (local.scenario_value == "s2" && var.runtime == "containerapps")
-  webapps_enabled = local.scenario_value == "s4" || (local.scenario_value == "s2" && var.runtime == "webapp")
+  apps_enabled    = local.scenario_value == "s1" || (local.scenario_value == "s2" && local.effective_runtime == "containerapps")
+  webapps_enabled = local.scenario_value == "s4" || (local.scenario_value == "s2" && local.effective_runtime == "webapp")
   aks_enabled     = local.scenario_value == "s3"
   images_enabled  = local.apps_enabled || local.webapps_enabled
 }

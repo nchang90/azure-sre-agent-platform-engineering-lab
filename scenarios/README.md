@@ -16,7 +16,7 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 - Every scenario uses the shared `all-incidents` response plan.
 - The `demo` Terraform environment enables Azure SRE Agent workspace egress through a delegated VNet subnet.
 - `scenario = "s1"|"s2"|"s3"|"s4"|"s5"` is the primary scenario selector.
-- Runtime scope is derived from scenario: `s1/s2 -> containerapps`, `s3 -> aks`, `s4 -> webapp`, `s5 -> none` (monitoring-only).
+- Runtime scope is fixed for `s1 -> containerapps`, `s3 -> aks`, `s4 -> webapp`, and `s5 -> none`; S2 dynamically follows the deployed Terraform `runtime_stack` (`webapp` or `containerapps`).
 
 | Scenario | Recommended tfvars | Required apply-extras step | Optional step |
 |---|---|---|---|

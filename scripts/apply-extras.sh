@@ -46,7 +46,8 @@ The selected tfvars file scopes the catalog:
   all environments   -> all skills and scenario-scoped knowledge-base docs
   all scenarios      -> one shared incident response plan
   scenario = s1..s6        -> primary scenario selector
-  runtime scope is derived from scenario: s1/s2=containerapps, s3=aks, s4=webapp, s5=none
+  S2 runtime         -> deployed Terraform runtime_stack (webapp or containerapps)
+  fixed runtimes     -> s1=containerapps, s3=aks, s4=webapp, s5=none
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -90,9 +91,23 @@ tfvar_bool() {
 }
 
 resolve_runtime_stack() {
-  local runtime
-  runtime="$(scenario_runtime "$1")" \
-    || die "Unsupported scenario '$1' in $TFVARS_FILE. Expected one of: $ALL_SCENARIOS"
+  local scenario="$1" runtime=""
+
+  if [[ -n "${RUNTIME_STACK_OVERRIDE:-}" ]]; then
+    printf '%s\n' "$RUNTIME_STACK_OVERRIDE"
+    return
+  fi
+
+  if [[ "$scenario" == "s2" ]]; then
+    runtime="$(terraform -chdir=infra/terraform output -raw runtime_stack 2>/dev/null | tr -d '\r' || true)"
+    if [[ "$runtime" == "webapp" || "$runtime" == "containerapps" ]]; then
+      printf '%s\n' "$runtime"
+      return
+    fi
+  fi
+
+  runtime="${runtime:-$(scenario_runtime "$scenario")}" \
+    || die "Unsupported scenario '$scenario' in $TFVARS_FILE. Expected one of: $ALL_SCENARIOS"
   printf '%s\n' "$runtime"
 }
 
@@ -108,7 +123,8 @@ configure_environment() {
   log "Selecting Terraform environment: $ENVIRONMENT"
   SCENARIO="$(tfvar scenario | tr '[:upper:]' '[:lower:]')"
   [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, or s5)."
-  RUNTIME_STACK="${RUNTIME_STACK_OVERRIDE:-$(resolve_runtime_stack "$SCENARIO")}"
+  terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
+  RUNTIME_STACK="$(resolve_runtime_stack "$SCENARIO")"
   case "$RUNTIME_STACK" in
     containerapps|aks|webapp|none) ;;
     *) die "Unsupported runtime stack override: $RUNTIME_STACK" ;;
@@ -120,7 +136,6 @@ configure_environment() {
     aks) log "Detected runtime scope: AKS" ;;
     webapp) log "Detected runtime scope: App Service" ;;
   esac
-  terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
 }
 
 load_context_from_terraform() {

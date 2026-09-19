@@ -27,11 +27,6 @@ spec:
     Use ExecutePythonCode to plot metrics charts when useful.
   handoff_description: Performs log and metrics triage and returns structured technical findings
   agent_type: Autonomous
-  skills:
-    - name: containerapps-500-diagnostics
-      path: .github/skills/containerapps-500-diagnostics/SKILL.md
-    - name: containerapps-latency-diagnostics
-      path: .github/skills/containerapps-latency-diagnostics/SKILL.md
   tools:
     - SearchMemory
     - RunAzCliReadCommands
