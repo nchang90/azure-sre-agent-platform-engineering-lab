@@ -19,10 +19,6 @@ PYTHON="${PYTHON:-python3}"
 
 ENVIRONMENT=""
 SCENARIO=""
-ENABLE_SERVICE_NOW_CONNECTOR="false"
-SERVICE_NOW_INSTANCE=""
-SERVICE_NOW_USERNAME=""
-SERVICE_NOW_PASSWORD=""
 TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
@@ -45,7 +41,6 @@ The selected tfvars file scopes the catalog:
   all scenarios      -> one shared incident response plan
   scenario = s1|s2|s3|s4|s5 -> primary scenario selector
   runtime scope is derived from scenario: s1/s2=containerapps, s3=aks, s4=webapp, s5=none
-  enable_service_now_connector = true -> ServiceNow incident platform
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -121,18 +116,18 @@ configure_environment() {
   log "Selecting Terraform environment: $ENVIRONMENT"
   SCENARIO="$(tfvar scenario | tr '[:upper:]' '[:lower:]')"
   [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, or s5)."
-  RUNTIME_STACK="$(resolve_runtime_stack "$SCENARIO")"
-  ENABLE_SERVICE_NOW_CONNECTOR="$(tfvar_bool enable_service_now_connector false)"
-  SERVICE_NOW_INSTANCE="$(tfvar service_now_instance)"
-  SERVICE_NOW_USERNAME="$(tfvar service_now_username)"
-  SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-${SERVICENOW_PASSWORD:-}}"
+  RUNTIME_STACK="${RUNTIME_STACK_OVERRIDE:-$(resolve_runtime_stack "$SCENARIO")}"
+  case "$RUNTIME_STACK" in
+    containerapps|aks|webapp|none) ;;
+    *) die "Unsupported runtime stack override: $RUNTIME_STACK" ;;
+  esac
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
   case "$RUNTIME_STACK" in
     none) log "Detected runtime scope: none (monitoring-only mode)" ;;
     containerapps) log "Detected runtime scope: Container Apps" ;;
     aks) log "Detected runtime scope: AKS" ;;
+    webapp) log "Detected runtime scope: App Service" ;;
   esac
-  log "Detected incident platform: $( [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]] && echo "ServiceNow" || echo "AzMonitor" )"
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
 }
 
@@ -251,6 +246,19 @@ contains() {
   return 1
 }
 
+workspace_mode_handoffs_unsupported() {
+  [[ -s "$RESP" ]] && grep -q "New agent-to-agent handoffs are not supported in workspace mode" "$RESP"
+}
+
+remove_agent_handoffs_for_workspace_mode() {
+  local body="$1"
+  jq '
+    .properties.handoffs = [] |
+    .properties.instructions = ((.properties.instructions // "") + "\n\nWorkspace mode fallback: agent-to-agent handoffs are unavailable in this environment. Complete any downstream handoff responsibilities yourself and return the final output expected from this workflow.")
+  ' "$body" >"$TMP_DIR/agent-workspace-fallback.json"
+  mv "$TMP_DIR/agent-workspace-fallback.json" "$body"
+}
+
 register_subagent() {
   local yaml_path="$1" name="$2"
   local body="$TMP_DIR/agent.json" code
@@ -266,6 +274,11 @@ register_subagent() {
   fi
 
   code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
+  if [[ "$code" == "400" ]] && workspace_mode_handoffs_unsupported; then
+    warn "  $name does not support handoffs in workspace mode; retrying without handoffs."
+    remove_agent_handoffs_for_workspace_mode "$body"
+    code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
+  fi
   report_result "$code" "Registered: $name" "$name"
 }
 
@@ -315,29 +328,9 @@ configure_incident_platform() {
   local platform_type="AzMonitor"
   local connection_name="azmonitor"
 
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
-    platform_type="ServiceNow"
-    connection_name="servicenow"
-
-    [[ -n "$SERVICE_NOW_INSTANCE" ]] || die "service_now_instance is required when enable_service_now_connector=true"
-    [[ -n "$SERVICE_NOW_USERNAME" ]] || die "service_now_username is required when enable_service_now_connector=true"
-    [[ -n "$SERVICE_NOW_PASSWORD" ]] || die "TF_VAR_service_now_password or SERVICENOW_PASSWORD is required when enable_service_now_connector=true"
-  fi
-
   log "Configuring incident platform: $platform_type"
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
-    jq -n \
-      --arg type "$platform_type" \
-      --arg connectionName "$connection_name" \
-      --arg connectionUrl "$SERVICE_NOW_INSTANCE" \
-      --arg endpoint "$SERVICE_NOW_INSTANCE" \
-      --arg username "$SERVICE_NOW_USERNAME" \
-      --arg password "$SERVICE_NOW_PASSWORD" \
-      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName, connectionUrl:$connectionUrl, connectionKey:({endpoint:$endpoint, username:$username, password:$password} | tojson)}}}' >"$patch_file"
-  else
-    jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
-      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
-  fi
+  jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
+    '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
 
   if az rest --method PATCH \
     --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
@@ -393,14 +386,10 @@ register_subagents() {
 
 create_response_plans() {
   log "Step 4/4: Creating response plans..."
-  local plan incident_platform_dir="azure-monitor"
-
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
-    incident_platform_dir="servicenow"
-  fi
+  local plan
 
   for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
-    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/${incident_platform_dir}/incident-filters/${plan}.yaml"
+    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/azure-monitor/incident-filters/${plan}.yaml"
   done
   echo
 }

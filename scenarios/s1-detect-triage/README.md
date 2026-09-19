@@ -90,7 +90,7 @@ curl -X POST "$APP_URL/api/simulate/reset"
 ## Next: What Comes After S1
 
 - **S2 — Autonomous Remediation**: Break the app at runtime (no code/infrastructure changes)
-- **S3 — AKS Root Cause**: ServiceNow integration + Kubernetes incident investigation
+- **S3 — AKS Root Cause**: High-severity Azure Monitor incidents + Kubernetes investigation
 - **S4 — Alert Response**: Operator-ready monitoring and incident creation workflows
 
 ---

@@ -108,7 +108,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
   display_name            = "Orders API HTTP 5xx spike"
   severity                = 1
   enabled                 = true
-  evaluation_frequency    = "PT1M"
+  evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
   auto_mitigation_enabled = true
   skip_query_validation   = true
@@ -134,7 +134,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
 }
 
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
-  count               = local.apps_enabled ? 1 : 0
+  count               = local.apps_enabled || (local.scenario_value == "s2" && local.webapps_enabled) ? 1 : 0
   name                = "alert-orders-api-latency"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
@@ -174,9 +174,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_latency" {
   }
 }
 
-resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_crashloop_oom" {
   count               = local.aks_enabled ? 1 : 0
-  name                = "alert-aks-pod-crashloop"
+  name                = "alert-aks-crashloop-oom"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
@@ -185,8 +185,48 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "AKS: pods are crash looping or backing off."
-  display_name            = "AKS pod crash loop detected"
+  description             = "AKS: a container in any namespace reports CrashLoopBackOff, OOMKilled, image-pull, or startup errors."
+  display_name            = "AKS - CrashLoop/OOM detected"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT1M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    query = <<-KQL
+      KubePodInventory
+      | where TimeGenerated > ago(2m)
+      | where ClusterName startswith "aks-"
+      | summarize arg_max(TimeGenerated, *) by ContainerName
+      | where ContainerStatusReason in~ ("CrashLoopBackOff", "OOMKilled", "Error", "ImagePullBackOff", "ErrImagePull", "CreateContainerConfigError", "ContainerCannotRun")
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Count"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unavailable" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-orders-api-unavailable"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: the critical orders-api workload has no running healthy pods."
+  display_name            = "AKS orders-api workload unavailable"
   severity                = 1
   enabled                 = true
   evaluation_frequency    = "PT5M"
@@ -199,19 +239,35 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
     query = <<-KQL
       let Pods = union isfuzzy=true
         (KubePodInventory
-          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Name = tostring(column_ifexists("Name", "")), ContainerStatusReason = tostring(column_ifexists("ContainerStatusReason", ""))),
-        (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, ContainerStatusReason:string)[]);
-      Pods
-      | where TimeGenerated > ago(5m)
-      | where ClusterName startswith "aks-"
-      | where ContainerStatusReason in ("CrashLoopBackOff", "Error", "ContainerCannotRun", "ImagePullBackOff", "ErrImagePull")
-      | summarize AffectedPods = dcount(Name)
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Namespace = tostring(column_ifexists("Namespace", "")), Name = tostring(column_ifexists("Name", "")), ContainerName = tostring(column_ifexists("ContainerName", "")), PodStatus = tostring(column_ifexists("PodStatus", "")), ContainerStatus = tostring(column_ifexists("ContainerStatus", "")), ContainerStatusReason = tostring(column_ifexists("ContainerStatusReason", "")), PodRestartCount = tolong(column_ifexists("PodRestartCount", 0)), PodLabel = tostring(column_ifexists("PodLabel", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Namespace:string, Name:string, ContainerName:string, PodStatus:string, ContainerStatus:string, ContainerStatusReason:string, PodRestartCount:long, PodLabel:string)[]);
+      let Events = union isfuzzy=true
+        (KubeEvents
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Name = tostring(column_ifexists("Name", "")), Reason = tostring(column_ifexists("Reason", "")), Message = tostring(column_ifexists("Message", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, Reason:string, Message:string)[]);
+      let ClusterPods = Pods
+        | where TimeGenerated > ago(5m)
+        | where ClusterName startswith "aks-";
+      let LatestBatch = toscalar(ClusterPods | summarize max(TimeGenerated));
+      let ProbeFailing = Events
+        | where TimeGenerated > ago(3m)
+        | where ClusterName startswith "aks-" and Name startswith "orders-api-"
+        | where Reason == "Unhealthy" and Message has "Readiness probe failed"
+        | distinct Name;
+      ClusterPods
+      | where Name startswith "orders-api-"
+      | summarize arg_max(TimeGenerated, PodStatus, ContainerStatus, ContainerStatusReason) by Namespace, Name, ContainerName
+      | where TimeGenerated >= LatestBatch - 30s
+      | summarize UnhealthyContainers = countif(not(PodStatus == "Running" and ((ContainerStatus == "running" and isempty(ContainerStatusReason)) or (ContainerStatus == "terminated" and ContainerStatusReason == "Completed")))) by Namespace, Name
+      | where UnhealthyContainers == 0
+      | where Name !in (ProbeFailing)
+      | summarize ReadyPods = count()
     KQL
 
-    operator                = "GreaterThan"
-    threshold               = 0
+    operator                = "LessThan"
+    threshold               = 1
     time_aggregation_method = "Maximum"
-    metric_measure_column   = "AffectedPods"
+    metric_measure_column   = "ReadyPods"
   }
 
   action {
@@ -219,9 +275,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_crashloop" {
   }
 }
 
-resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_service_missing" {
   count               = local.aks_enabled ? 1 : 0
-  name                = "alert-aks-pods-not-ready"
+  name                = "alert-aks-orders-api-service-missing"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
@@ -230,9 +286,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "AKS: one or more pods are not ready."
-  display_name            = "AKS pods not ready"
-  severity                = 2
+  description             = "AKS: the critical orders-api Kubernetes service is missing from the cluster."
+  display_name            = "AKS orders-api service missing"
+  severity                = 1
   enabled                 = true
   evaluation_frequency    = "PT5M"
   window_duration         = "PT5M"
@@ -242,21 +298,254 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pods_not_ready" {
 
   criteria {
     query = <<-KQL
+      let Services = union isfuzzy=true
+        (KubeServices
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Namespace = tostring(column_ifexists("Namespace", "")), ServiceName = tostring(column_ifexists("ServiceName", column_ifexists("Name", ""))), SelectorLabels = tostring(column_ifexists("SelectorLabels", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Namespace:string, ServiceName:string, SelectorLabels:string)[]);
+      let ClusterServices = Services
+        | where TimeGenerated > ago(5m)
+        | where ClusterName startswith "aks-";
+      let LatestBatch = toscalar(ClusterServices | summarize max(TimeGenerated));
+      ClusterServices
+      | where TimeGenerated >= LatestBatch - 30s
+      | where ServiceName == "orders-api"
+      | summarize MatchingServices = count()
+      | extend MatchingServices = coalesce(MatchingServices, 0)
+    KQL
+
+    operator                = "LessThan"
+    threshold               = 1
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "MatchingServices"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unhealthy" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-orders-api-unhealthy"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: one or more orders-api pods are not running, failing probes, stuck (e.g. ErrImagePull), or restarting."
+  display_name            = "AKS orders-api workload unhealthy"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT10M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    # A pod counts as unhealthy when it still exists, has been unhealthy for at
+    # least two inventory snapshots (~2 min, so normal rollouts don't fire),
+    # restarted within the window, or is failing readiness/liveness probes.
+    query = <<-KQL
       let Pods = union isfuzzy=true
         (KubePodInventory
-          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Name = tostring(column_ifexists("Name", "")), PodStatus = tostring(column_ifexists("PodStatus", "")), ContainerReady = tostring(column_ifexists("ContainerReady", ""))),
-        (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, PodStatus:string, ContainerReady:string)[]);
-      Pods
-      | where TimeGenerated > ago(5m)
-      | where ClusterName startswith "aks-"
-      | where PodStatus !in ("Running", "Succeeded") or tolower(ContainerReady) == "false"
-      | summarize AffectedPods = dcount(Name)
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Namespace = tostring(column_ifexists("Namespace", "")), Name = tostring(column_ifexists("Name", "")), ContainerName = tostring(column_ifexists("ContainerName", "")), PodStatus = tostring(column_ifexists("PodStatus", "")), ContainerStatus = tostring(column_ifexists("ContainerStatus", "")), ContainerStatusReason = tostring(column_ifexists("ContainerStatusReason", "")), PodRestartCount = tolong(column_ifexists("PodRestartCount", 0)), PodLabel = tostring(column_ifexists("PodLabel", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Namespace:string, Name:string, ContainerName:string, PodStatus:string, ContainerStatus:string, ContainerStatusReason:string, PodRestartCount:long, PodLabel:string)[]);
+      let Events = union isfuzzy=true
+        (KubeEvents
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Name = tostring(column_ifexists("Name", "")), Reason = tostring(column_ifexists("Reason", "")), Message = tostring(column_ifexists("Message", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Name:string, Reason:string, Message:string)[]);
+      let ClusterPods = Pods
+        | where TimeGenerated > ago(10m)
+        | where ClusterName startswith "aks-";
+      let LatestBatch = toscalar(ClusterPods | summarize max(TimeGenerated));
+      let ProbeFailing = Events
+        | where TimeGenerated > ago(5m)
+        | where ClusterName startswith "aks-" and Name startswith "orders-api-"
+        | where Reason == "Unhealthy"
+        | distinct Name
+        | extend ProbeFailed = 1;
+      ClusterPods
+      | where Name startswith "orders-api-"
+      | extend Unhealthy = PodStatus != "Terminating" and not(PodStatus == "Running" and ((ContainerStatus == "running" and isempty(ContainerStatusReason)) or (ContainerStatus == "terminated" and ContainerStatusReason == "Completed")))
+      | summarize LastSeen = max(TimeGenerated), UnhealthySnapshots = dcountif(TimeGenerated, Unhealthy), LatestUnhealthy = countif(Unhealthy and TimeGenerated >= LatestBatch - 30s), RestartDelta = max(PodRestartCount) - min(PodRestartCount) by Name
+      | where LastSeen >= LatestBatch - 30s
+      | join kind=leftouter ProbeFailing on Name
+      | summarize UnhealthyPods = countif((LatestUnhealthy > 0 and UnhealthySnapshots >= 2) or RestartDelta > 0 or coalesce(ProbeFailed, 0) == 1)
+      | extend UnhealthyPods = coalesce(UnhealthyPods, 0)
     KQL
 
     operator                = "GreaterThan"
     threshold               = 0
     time_aggregation_method = "Maximum"
-    metric_measure_column   = "AffectedPods"
+    metric_measure_column   = "UnhealthyPods"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_service_no_endpoints" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-orders-api-service-no-endpoints"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: an orders-api service selects no healthy pods although healthy orders-api pods run in its namespace (selector or label mismatch)."
+  display_name            = "AKS orders-api service has no endpoints"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT5M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    # Fires only while healthy orders-api pods exist, so a full outage is left
+    # to alert-aks-orders-api-unavailable instead of raising a duplicate incident.
+    query = <<-KQL
+      let Services = union isfuzzy=true
+        (KubeServices
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Namespace = tostring(column_ifexists("Namespace", "")), ServiceName = tostring(column_ifexists("ServiceName", column_ifexists("Name", ""))), SelectorLabels = tostring(column_ifexists("SelectorLabels", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Namespace:string, ServiceName:string, SelectorLabels:string)[]);
+      let Pods = union isfuzzy=true
+        (KubePodInventory
+          | project TimeGenerated, ClusterName = tostring(column_ifexists("ClusterName", "")), Namespace = tostring(column_ifexists("Namespace", "")), Name = tostring(column_ifexists("Name", "")), ContainerName = tostring(column_ifexists("ContainerName", "")), PodStatus = tostring(column_ifexists("PodStatus", "")), ContainerStatus = tostring(column_ifexists("ContainerStatus", "")), ContainerStatusReason = tostring(column_ifexists("ContainerStatusReason", "")), PodRestartCount = tolong(column_ifexists("PodRestartCount", 0)), PodLabel = tostring(column_ifexists("PodLabel", ""))),
+        (datatable(TimeGenerated:datetime, ClusterName:string, Namespace:string, Name:string, ContainerName:string, PodStatus:string, ContainerStatus:string, ContainerStatusReason:string, PodRestartCount:long, PodLabel:string)[]);
+      let Selector = Services
+        | where TimeGenerated > ago(5m)
+        | where ClusterName startswith "aks-" and ServiceName == "orders-api"
+        | summarize arg_max(TimeGenerated, SelectorLabels) by Namespace
+        | extend Parsed = parse_json(SelectorLabels)
+        | mv-expand Item = iff(gettype(Parsed) == "array", Parsed, pack_array(Parsed))
+        | mv-expand SelKey = bag_keys(Item) to typeof(string)
+        | where isnotempty(SelKey)
+        | project Namespace, SelKey, SelValue = tostring(Item[SelKey]);
+      let SelectorKeys = Selector | summarize SelectorKeys = count() by Namespace;
+      let ClusterPods = Pods
+        | where TimeGenerated > ago(5m)
+        | where ClusterName startswith "aks-";
+      let LatestBatch = toscalar(ClusterPods | summarize max(TimeGenerated));
+      let ReadyPods = ClusterPods
+        | summarize arg_max(TimeGenerated, PodStatus, ContainerStatus, ContainerStatusReason, PodLabel) by Namespace, Name, ContainerName
+        | where TimeGenerated >= LatestBatch - 30s
+        | summarize UnhealthyContainers = countif(not(PodStatus == "Running" and ((ContainerStatus == "running" and isempty(ContainerStatusReason)) or (ContainerStatus == "terminated" and ContainerStatusReason == "Completed")))), PodLabel = take_any(PodLabel) by Namespace, Name
+        | where UnhealthyContainers == 0;
+      let Endpoints = ReadyPods
+        | extend Parsed = parse_json(PodLabel)
+        | mv-expand Item = iff(gettype(Parsed) == "array", Parsed, pack_array(Parsed))
+        | mv-expand LabelKey = bag_keys(Item) to typeof(string)
+        | extend LabelValue = tostring(Item[LabelKey])
+        | join kind=inner Selector on $left.Namespace == $right.Namespace, $left.LabelKey == $right.SelKey, $left.LabelValue == $right.SelValue
+        | summarize MatchedKeys = dcount(LabelKey) by Namespace, Name
+        | join kind=inner SelectorKeys on Namespace
+        | where MatchedKeys == SelectorKeys
+        | summarize Endpoints = dcount(Name) by Namespace;
+      let HealthyOrdersPods = ReadyPods
+        | where Name startswith "orders-api-"
+        | summarize HealthyOrdersPods = count() by Namespace;
+      SelectorKeys
+      | join kind=inner HealthyOrdersPods on Namespace
+      | join kind=leftouter Endpoints on Namespace
+      | summarize ServicesWithoutEndpoints = countif(coalesce(Endpoints, 0) == 0)
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Maximum"
+    metric_measure_column   = "ServicesWithoutEndpoints"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_failures" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-pod-failures"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: a pod in any namespace is Failed or Pending, or a container is stuck waiting."
+  display_name            = "AKS - Failed or pending pods"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT1M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    query = <<-KQL
+      KubePodInventory
+      | where TimeGenerated > ago(2m)
+      | where ClusterName startswith "aks-"
+      | summarize arg_max(TimeGenerated, *) by ContainerName
+      | where PodStatus in ("Failed", "Pending") or ContainerStatus =~ "waiting"
+      // Normal pod start-up states, not failures.
+      | where ContainerStatusReason !in ("ContainerCreating", "PodInitializing")
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Count"
+  }
+
+  action {
+    action_groups = [azurerm_monitor_action_group.ai_smart_detection.id]
+  }
+}
+
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_pod_restarts" {
+  count               = local.aks_enabled ? 1 : 0
+  name                = "alert-aks-pod-restarts"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.agent.name
+  tags                = var.tags
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+    azurerm_log_analytics_workspace.law,
+  ]
+
+  description             = "AKS: a container restart count increased in any namespace in the last 5 minutes."
+  display_name            = "AKS - Pod restart spike"
+  severity                = 1
+  enabled                 = true
+  evaluation_frequency    = "PT1M"
+  window_duration         = "PT5M"
+  auto_mitigation_enabled = true
+  skip_query_validation   = true
+  scopes                  = [azurerm_log_analytics_workspace.law.id]
+
+  criteria {
+    query = <<-KQL
+      KubePodInventory
+      | where TimeGenerated > ago(5m)
+      | where ClusterName startswith "aks-"
+      | summarize FirstRestartCount = min(ContainerRestartCount), LastRestartCount = max(ContainerRestartCount) by ContainerName
+      | where LastRestartCount > FirstRestartCount
+    KQL
+
+    operator                = "GreaterThan"
+    threshold               = 0
+    time_aggregation_method = "Count"
   }
 
   action {

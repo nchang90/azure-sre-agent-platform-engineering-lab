@@ -11,6 +11,13 @@ on:
           - sbox
           - dev
         default: sbox
+      runtime:
+        description: "S2 application runtime"
+        type: choice
+        options:
+          - containerapps
+          - webapp
+        default: containerapps
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -19,10 +26,6 @@ on:
         description: "Run Terraform apply"
         type: boolean
         default: true
-      simulate_aks_incident:
-        description: "Deploy a broken AKS pod and create a ServiceNow incident"
-        type: boolean
-        default: false
 
   schedule:
     - cron: "0 10 * * *"
@@ -36,14 +39,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
-      TF_VAR_service_now_password: ${{ secrets.SERVICENOW_PASSWORD }}
+      RUNTIME: ${{ inputs.runtime || 'containerapps' }}
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure CLI login
-        uses: azure/login@v2.1.0
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -67,115 +74,9 @@ jobs:
         run: terraform -chdir=infra/terraform validate
 
       - name: Terraform plan
-        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars
+        if: github.event_name == 'schedule' || inputs.plan || inputs.apply
+        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars -var="runtime=${RUNTIME}"
 
-      - name: Terraform apply
-        run: terraform -chdir=infra/terraform apply -auto-approve tfplan
-
-      - name: Apply recipe extras
-        shell: bash
-        run: bash scripts/apply-extras.sh "${ENVIRONMENT}"
-
-      - name: Deploy AKS workload
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
-          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
-
-          AKS_NAME="$(read_tf aks_name)"
-          if [[ -z "$AKS_NAME" ]]; then
-            echo "AKS stack is disabled for this environment; skipping AKS workload deployment."
-            exit 0
-          fi
-
-          AGENT_ID="$(read_tf agent_id)"
-          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
-
-          az aks get-credentials \
-            --resource-group "$RG" \
-            --name "$AKS_NAME" \
-            --admin \
-            --overwrite-existing
-
-          kubectl apply -f infra/k8s/orders-api.yaml
-          if ! kubectl rollout status deployment/orders-api --namespace default --timeout=180s; then
-            kubectl get pods --namespace default -l app=orders-api -o wide
-            kubectl describe deployment/orders-api --namespace default
-            kubectl describe pods --namespace default -l app=orders-api
-            bash scripts/create-servicenow-incident.sh \
-              "${ENVIRONMENT}" \
-              "AKS orders-api rollout failed in ${ENVIRONMENT}" \
-              "The GitHub Actions deployment connected to AKS cluster ${AKS_NAME} in resource group ${RG}, applied infra/k8s/orders-api.yaml, and deployment/orders-api did not become available within 180 seconds. Review the workflow pod describe output for scheduling, image pull, quota, or readiness details."
-            exit 1
-          fi
-
-          if [[ "${{ inputs.simulate_aks_incident || false }}" == "true" ]]; then
-            echo "Simulating AKS incident with broken orders-api image..."
-            kubectl apply -f infra/k8s/orders-api-broken.yaml
-
-            if kubectl rollout status deployment/orders-api --namespace default --timeout=120s; then
-              echo "Broken AKS incident simulation unexpectedly rolled out successfully."
-              exit 1
-            fi
-
-            kubectl get pods --namespace default -l app=orders-api -o wide
-            kubectl describe deployment/orders-api --namespace default
-            kubectl describe pods --namespace default -l app=orders-api
-
-            bash scripts/create-servicenow-incident.sh \
-              "${ENVIRONMENT}" \
-              "AKS orders-api broken pod in ${ENVIRONMENT}" \
-              "The GitHub Actions deployment intentionally applied infra/k8s/orders-api-broken.yaml to AKS cluster ${AKS_NAME} in resource group ${RG}. The orders-api deployment did not roll out because the pod image is intentionally broken. This incident has priority 2 and title contains AKS, so it should match the snow-aks-incidents response plan and appear on the Azure SRE Agent incidents page after ServiceNow ingestion."
-          fi
-
-      - name: Build and update application images
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TF_OUT="$(terraform -chdir=infra/terraform output -json)"
-          read_tf() { echo "$TF_OUT" | jq -r ".${1}.value // empty"; }
-
-          ACR_NAME="$(read_tf acr_name)"
-          if [[ -z "$ACR_NAME" ]]; then
-            echo "Container Apps stack is disabled for this environment; skipping image build and app updates."
-            exit 0
-          fi
-
-          ACR_LOGIN_SERVER="$(read_tf acr_login_server)"
-          ORDERS_API_NAME="$(read_tf orders_api_name)"
-          CHANGE_LOOKUP_NAME="$(read_tf change_lookup_name)"
-          RUNTIME_STACK="$(read_tf runtime_stack)"
-          AGENT_ID="$(read_tf agent_id)"
-          RG="$(echo "$AGENT_ID" | cut -d/ -f5)"
-
-          echo "Building images in ACR: $ACR_NAME"
-
-          az acr build --registry "$ACR_NAME" --image orders-api:latest src/orders-api/
-          az acr build --registry "$ACR_NAME" --image change-lookup:latest src/change-lookup/
-
-          case "$RUNTIME_STACK" in
-            containerapps)
-              echo "Updating Container Apps..."
-              az containerapp update \
-                --name "$ORDERS_API_NAME" \
-                --resource-group "$RG" \
-                --image "$ACR_LOGIN_SERVER/orders-api:latest" \
-                --output none
-              az containerapp update \
-                --name "$CHANGE_LOOKUP_NAME" \
-                --resource-group "$RG" \
-                --image "$ACR_LOGIN_SERVER/change-lookup:latest" \
-                --output none
-              ;;
-            webapp)
-              echo "Restarting App Service apps to pull the new images..."
-              az webapp restart --resource-group "$RG" --name "$ORDERS_API_NAME"
-              az webapp restart --resource-group "$RG" --name "$CHANGE_LOOKUP_NAME"
-              ;;
-            *)
-              echo "No image-based runtime update is required for $RUNTIME_STACK."
-              ;;
-          esac
+      - name: Deploy
+        if: github.event_name == 'schedule' || inputs.apply
+        run: bash scripts/deploy.sh "${ENVIRONMENT}" tfplan

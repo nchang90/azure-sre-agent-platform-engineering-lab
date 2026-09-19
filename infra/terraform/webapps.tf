@@ -40,7 +40,7 @@ resource "azurerm_linux_web_app" "orders_api" {
 
   app_settings = {
     APPLICATIONINSIGHTS_CONNECTION_STRING = local.effective_ai_conn_str
-    WEBSITES_PORT                         = tostring(var.webapp_port)
+    WEBSITES_PORT                         = tostring(local.scenario_value == "s2" ? 8080 : var.webapp_port)
   }
 }
 
@@ -71,6 +71,6 @@ resource "azurerm_linux_web_app" "change_lookup" {
 
   app_settings = {
     APPLICATIONINSIGHTS_CONNECTION_STRING = local.effective_ai_conn_str
-    WEBSITES_PORT                         = tostring(var.webapp_port)
+    WEBSITES_PORT                         = tostring(local.scenario_value == "s2" ? 8080 : var.webapp_port)
   }
 }

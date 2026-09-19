@@ -1,0 +1,14 @@
+metadata:
+  name: aks-critical-errors
+spec:
+  name: AKS Critical Incident Response
+  incidentPlatform: AzMonitor
+  isEnabled: true
+  priorities:
+  - Sev0
+  - Sev1
+  titleContains: AKS
+  handlingAgent: aks-triage-agent
+  agentMode: autonomous
+  deepInvestigationEnabled: true
+  maxAutomatedInvestigationAttempts: 3

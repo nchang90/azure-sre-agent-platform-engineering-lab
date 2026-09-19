@@ -138,7 +138,7 @@ az containerapp scale \
 
 **You've completed all 6 scenarios!**
 - S1–S2 cover core incident detection and autonomous remediation
-- S3 covers AKS root cause investigation with ServiceNow
+- S3 covers high-severity AKS incident creation and root cause investigation
 - S4 covers operator workflows
 - S5 covers compliance auditing
 - S6 covers CDN-layer incident response
