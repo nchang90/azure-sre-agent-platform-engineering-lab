@@ -134,9 +134,11 @@ else
 fi
 
 # Use GitHub Copilot CLI to draft the App Service fault-injection command,
-# review the suggestion, then run the generated POST for /api/simulate/failure-rate/100.
+# review the suggestion, then run the equivalent POST for /api/simulate/failure-rate/100.
 gh copilot suggest -t shell \
   "Using APP_URL=$APP_URL, print a curl command that breaks the S2 orders-api App Service by POSTing to /api/simulate/failure-rate/100 with fail-fast flags."
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/simulate/failure-rate/100"
 
 # Generate failed requests so the 5xx alert threshold is reached
 for request in {1..30}; do
