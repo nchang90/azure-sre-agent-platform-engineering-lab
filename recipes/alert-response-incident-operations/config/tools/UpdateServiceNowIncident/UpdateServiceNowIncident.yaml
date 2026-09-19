@@ -1,0 +1,101 @@
+api_version: azuresre.ai/v2
+kind: ExtendedAgentTool
+metadata:
+  name: UpdateServiceNowIncident
+spec:
+  type: PythonTool
+  connector: ''
+  toolMode: Auto
+  description: |-
+    Post an investigation update to an EXISTING ServiceNow incident as a work note. Takes the
+    incident number (e.g. INC0010001) and resolves its sys_id, or accepts a sys_id directly.
+    Returns the incident number, sys_id, and a clickable portal `link` — always surface the
+    incident as `[<number>](<link>)`, never the bare number. This tool never creates an incident,
+    never changes incident state, and never closes or resolves a record: it only appends notes.
+  functionCode: |-
+    import requests
+
+    # Injected at apply time from the gitignored .servicenow.env (the PythonTool sandbox cannot
+    # read env vars, so credentials must be literal here). Committed source keeps the
+    # substitution placeholders and is never a secret.
+    SERVICENOW_URL = "@@SERVICENOW_URL@@"
+    SERVICENOW_USER = "@@SERVICENOW_USER@@"
+    SERVICENOW_PASS = "@@SERVICENOW_PASS@@"
+
+    def main(work_note: str, incident_number: str = "", sys_id: str = "", additional_comments: str = "") -> dict:
+        if not (SERVICENOW_URL and SERVICENOW_USER and SERVICENOW_PASS):
+            return {"success": False, "error": "ServiceNow credentials not configured (SERVICENOW_URL/USER/PASS)."}
+        if not (incident_number or sys_id):
+            return {"success": False, "error": "Provide either incident_number or sys_id."}
+        if not work_note.strip():
+            return {"success": False, "error": "work_note must not be empty."}
+        auth = (SERVICENOW_USER, SERVICENOW_PASS)
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        try:
+            target_sys_id = sys_id
+            if not target_sys_id:
+                lookup = requests.get(
+                    f"{SERVICENOW_URL}/api/now/table/incident",
+                    auth=auth,
+                    headers=headers,
+                    params={
+                        "sysparm_query": f"number={incident_number}",
+                        "sysparm_fields": "sys_id,number,state",
+                        "sysparm_limit": 1,
+                    },
+                    timeout=20
+                )
+                lookup.raise_for_status()
+                matches = lookup.json().get("result", [])
+                if not matches:
+                    return {"success": False, "error": f"No ServiceNow incident found with number {incident_number}."}
+                target_sys_id = matches[0].get("sys_id", "")
+
+            # Only note fields are ever written. State, assignment and close fields are
+            # deliberately omitted so an agent update can never resolve an incident.
+            payload = {"work_notes": work_note}
+            if additional_comments.strip():
+                payload["comments"] = additional_comments
+
+            response = requests.patch(
+                f"{SERVICENOW_URL}/api/now/table/incident/{target_sys_id}",
+                auth=auth,
+                headers=headers,
+                json=payload,
+                timeout=20
+            )
+            response.raise_for_status()
+            result = response.json().get("result", {})
+            number = result.get("number", incident_number)
+            link = f"{SERVICENOW_URL}/nav_to.do?uri=incident.do?sys_id={target_sys_id}"
+            return {
+                "success": True,
+                "number": number,
+                "sys_id": target_sys_id,
+                "state": result.get("state", ""),
+                "link": link,
+                "message": f"Work note added to incident {number}. Clickable link: {link}"
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+  timeoutSeconds: 240
+  dependencies:
+  - requests
+  authScopes:
+  parameters:
+  - name: work_note
+    type: string
+    description: "string:The investigation update to append as a work note (internal, operator-visible)"
+    required: true
+  - name: incident_number
+    type: string
+    description: "string:Incident number to update (e.g. 'INC0010001'). Required unless sys_id is given."
+    required: false
+  - name: sys_id
+    type: string
+    description: "string:sys_id of the incident, if already known — skips the number lookup"
+    required: false
+  - name: additional_comments
+    type: string
+    description: "string:Optional customer-visible comment. Leave empty unless the update is intended for the caller."
+    required: false

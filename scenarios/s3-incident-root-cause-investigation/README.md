@@ -182,6 +182,8 @@ After the quick start:
 - The ServiceNow workflow can call the Azure SRE Agent HTTP trigger with incident context
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
 - The handoff chain completes in triage → summary → ServiceNow-ready report order
+- The `rca-analysis` and `evidence-before-after` skills are registered for `scenario=s3`
+- The final update renders a numbered 5-Whys ladder and a Service-endpoint state delta
 - No PIR or remediation subagent is added
 
 ---
@@ -198,6 +200,8 @@ After the quick start:
 | Alert rules | `infra/terraform/alerts.tf` |
 | AKS configuration | `infra/terraform/aks.tf` |
 | Knowledge base docs | `knowledge-base/` (runbooks, incident templates) |
+| RCA narrative skill | `.github/skills/rca-analysis/SKILL.md` |
+| Before/after evidence skill | `.github/skills/evidence-before-after/SKILL.md` |
 | S3 AKS runbooks | `knowledge-base/aks-*.md` |
 
 ---

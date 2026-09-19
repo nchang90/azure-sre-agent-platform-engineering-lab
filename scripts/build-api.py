@@ -4,6 +4,7 @@
 Modes:
     build-api.py agent FILE.yaml         -> prints the extendedAgent envelope to stdout
     build-api.py skill SKILL.md OUT.json  -> writes the skill envelope to OUT, prints name
+    build-api.py tool FILE.yaml OUT.json  -> writes the tool envelope to OUT, prints name
     build-api.py incident-platform FILE.yaml -> prints normalized incident platform spec JSON
     build-api.py incident-filter FILE.yaml -> prints normalized response plan JSON
 
@@ -12,6 +13,9 @@ Agent envelope (PUT {agentEndpoint}/api/v2/extendedAgent/agents/{name}):
 
 Skill envelope (PUT {agentEndpoint}/api/v2/extendedAgent/skills/{name}):
     { name, type: "Skill", properties: { description, tools, skillContent } }
+
+Tool envelope (PUT {agentEndpoint}/api/v2/extendedAgent/tools/{name}):
+    { name, type: "Tool", tags: [], properties: <spec verbatim> }
 """
 import json
 import os
@@ -55,6 +59,14 @@ SKILL_TOOLS = {
         "QueryAppInsightsByResourceId",
         "ExecutePythonCode",
     ],
+    "evidence-before-after": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "GetAzCliHelp",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "ExecutePythonCode",
+    ],
     "incident-orchestrator-coordination": [
         "SearchMemory",
     ],
@@ -63,6 +75,14 @@ SKILL_TOOLS = {
         "RunAzCliReadCommands",
         "QueryAppInsightsUsingAppId",
         "QueryLogAnalyticsByWorkspaceId",
+    ],
+    "rca-analysis": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "GetAzCliHelp",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "ExecutePythonCode",
     ],
     "triage-app-errors": [
         "SearchMemory",
@@ -134,6 +154,55 @@ def build_skill(src, out):
     print(name)
 
 
+# Credentials are substituted into the tool body at apply time. The PythonTool
+# sandbox cannot read environment variables, so they must be literal in functionCode;
+# committed sources keep @@...@@ placeholders and are never secrets.
+TOOL_PLACEHOLDERS = (
+    "SERVICENOW_URL",
+    "SERVICENOW_USER",
+    "SERVICENOW_PASS",
+)
+
+
+def build_tool(src, out):
+    import yaml  # imported lazily so `skill` mode has no YAML dependency
+
+    with open(src, "r", encoding="utf-8") as f:
+        raw = f.read()
+
+    missing = []
+    for key in TOOL_PLACEHOLDERS:
+        token = "@@%s@@" % key
+        if token not in raw:
+            continue
+        value = os.environ.get(key, "")
+        if not value:
+            missing.append(key)
+            continue
+        raw = raw.replace(token, value)
+    if missing:
+        sys.exit("missing credentials for %s: %s" % (src, ", ".join(missing)))
+
+    doc = yaml.safe_load(raw) or {}
+    meta = doc.get("metadata") or {}
+    spec = doc.get("spec") or {}
+
+    name = meta.get("name") or doc.get("name")
+    if not name:
+        sys.exit("missing metadata.name")
+    if not spec:
+        sys.exit("missing spec")
+
+    envelope = {"name": name, "type": "Tool", "tags": [], "properties": spec}
+    out_dir = os.path.dirname(out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(envelope, f)
+    os.chmod(out, 0o600)
+    print(name)
+
+
 def build_incident_platform(path):
     import yaml  # imported lazily so non-YAML modes stay lightweight
 
@@ -195,12 +264,20 @@ def main(argv):
         build_agent(argv[2])
     elif mode == "skill" and len(argv) >= 4:
         build_skill(argv[2], argv[3])
+    elif mode == "tool" and len(argv) >= 4:
+        build_tool(argv[2], argv[3])
     elif mode == "incident-platform" and len(argv) >= 3:
         build_incident_platform(argv[2])
     elif mode == "incident-filter" and len(argv) >= 3:
         build_incident_filter(argv[2])
     else:
-        sys.exit("Usage: build-api.py agent FILE.yaml | build-api.py skill SKILL.md OUT.json | build-api.py incident-platform FILE.yaml | build-api.py incident-filter FILE.yaml")
+        sys.exit(
+            "Usage: build-api.py agent FILE.yaml"
+            " | build-api.py skill SKILL.md OUT.json"
+            " | build-api.py tool FILE.yaml OUT.json"
+            " | build-api.py incident-platform FILE.yaml"
+            " | build-api.py incident-filter FILE.yaml"
+        )
 
 
 if __name__ == "__main__":

@@ -43,8 +43,10 @@ ALL_SKILL_NAMES=(
   azure-kubernetes
   containerapps-500-diagnostics
   containerapps-latency-diagnostics
+  evidence-before-after
   incident-orchestrator-coordination
   investigate-azure-alerts
+  rca-analysis
   triage-app-errors
 )
 
@@ -159,8 +161,10 @@ configure_catalog_scope() {
         aks-change-triage-rollback
         azure-cost
         azure-kubernetes
+        evidence-before-after
         incident-orchestrator-coordination
         investigate-azure-alerts
+        rca-analysis
       )
       ;;
     s2)
@@ -179,6 +183,7 @@ configure_catalog_scope() {
       SKILL_NAMES=(
         incident-orchestrator-coordination
         investigate-azure-alerts
+        rca-analysis
         triage-app-errors
       )
       if [[ "$RUNTIME_STACK" == "containerapps" ]]; then
