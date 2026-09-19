@@ -1,0 +1,20 @@
+# Scenario-scoped guidance for S4. Mirrors s3-aks-incident.yaml: same handoff
+# chain discipline, different triage head and different originating record.
+metadata:
+  name: s4-alert-response
+spec:
+  prompt: |
+    For S4 alert response and incident operations, start with alert-investigator when an
+    Azure Monitor availability or 5xx alert fires for orders-api on App Service. Preserve
+    the same incident conversation context through this handoff chain:
+
+    alert-investigator -> incident-summary-agent -> incident-comms-agent
+
+    Each specialist must add only its assigned output, preserve prior evidence, and avoid
+    claiming that remediation was executed. S4 runs in Review mode with Low access: propose
+    actions, never apply them.
+
+    The final agent must return an operator-ready incident summary carrying impact, timeline,
+    suspected cause with its evidence, owner and next action, suitable for the operator to
+    escalate to engineering or to close once recovery is confirmed. Then return control to
+    the main agent.

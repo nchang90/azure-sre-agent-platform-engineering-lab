@@ -1,0 +1,13 @@
+# Connects this repository to the agent so it can correlate an incident with the
+# commits, PRs and workflow runs that caused it — the evidence S2's Correlate step
+# needs. The agent reads it through the FindConnectedGitHubRepo tool.
+#
+# {{githubRepo}} is substituted at apply time by scripts/apply-extras.sh from, in
+# order: GITHUB_REPOSITORY (set automatically in GitHub Actions), then the origin
+# remote. Short "owner/repo" is normalized to a full URL by the API client.
+name: github-repo
+spec:
+  url: "{{githubRepo}}"
+  type: github
+  branch: main
+  description: Connected GitHub repository for deployment and change correlation

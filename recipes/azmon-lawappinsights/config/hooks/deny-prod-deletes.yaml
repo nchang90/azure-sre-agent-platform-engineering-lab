@@ -1,0 +1,14 @@
+# Denies destructive actions against production-named resources outright.
+metadata:
+  name: deny-prod-deletes
+spec:
+  eventType: PreToolUse
+  hook:
+    type: prompt
+    prompt: >-
+      If the action deletes or removes a resource whose name or resource id contains
+      'prod' or 'prd', deny it and explain why. Otherwise allow. Deletion is never a
+      valid remediation in this lab.
+    matcher: ^(RunAzCliWriteCommands|delete_.*|remove_.*)$
+  permissionDecision: deny
+  enabled: true

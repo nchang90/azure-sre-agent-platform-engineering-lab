@@ -4,7 +4,7 @@
 **Time:** ~15 minutes
 **Runtime:** Azure App Service
 **Infrastructure:** Terraform
-**Recipe:** `azmon-lawappinsights`
+**Recipe:** `alert-response-incident-operations` (subagent chain) + `azmon-lawappinsights` (connectors, skills, response plans)
 
 ---
 
@@ -77,6 +77,25 @@ Operator receives an availability alert for the orders-api service. The SRE Agen
 4. **Summarizes** → Produces incident summary with impact, timeline, suspected cause, owner, next action
 5. **Operator decides** → Escalate to engineering or close if recovered
 
+### Handoff chain
+
+Steps 2–4 run as the `alert-response-incident-operations` three-agent chain — the
+same chain S3 uses, with the AKS triage head swapped for `alert-investigator`:
+
+```text
+S3:  aks-triage-agent   -> incident-summary-agent -> incident-comms-agent
+S4:  alert-investigator -> incident-summary-agent -> incident-comms-agent
+```
+
+`incident-summary-agent` produces the executive summary and status;
+`incident-comms-agent` produces the operator-ready update you escalate or close
+with. Both carry only `SearchMemory` and are forbidden from remediating, which
+matches S4's `access_level = Low` / `action_mode = Review` posture.
+
+`issue-triager` still runs alongside the chain for `[Customer Issue]` GitHub
+triage. It depends on the connected repository that `scripts/apply-extras.sh`
+registers — see [`config/repos/`](../../recipes/azmon-lawappinsights/config/repos/).
+
 ---
 
 ## Architecture
@@ -92,6 +111,8 @@ After the quick start:
 - ✅ SRE Agent investigates automatically
 - ✅ Application Insights shows failed requests + exceptions + traces
 - ✅ Incident summary generated with evidence links
+- ✅ The handoff chain completes in investigate → summary → operator-update order
+- ✅ Neither chain agent claims a remediation was performed
 - ✅ Operator can confirm recovery state
 - ✅ Incident record ready for escalation
 

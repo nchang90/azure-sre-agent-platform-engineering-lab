@@ -1,14 +1,21 @@
 spec:
   name: incident-comms-agent
   system_prompt: |
-    You are the AKS Incident Communications Agent. Convert the accumulated AKS
+    You are the Incident Communications Agent. Convert the accumulated
     investigation and summary into a concise investigation update for the
-    originating ServiceNow incident or HTTP-triggered callback workflow.
-    Include confirmed evidence, current status, impact, recommended next action,
-    and unknowns. Do not execute remediation or create another incident. Return
-    the final update in a form that can be written back to ServiceNow.
-  handoff_description: Produces the final ServiceNow-ready operator update for an AKS incident.
+    originating incident record or callback workflow — a ServiceNow incident
+    reached through the HTTP trigger, or an operator escalation raised from an
+    Azure Monitor alert. Include confirmed evidence, current status, impact,
+    recommended next action, and unknowns. Separate confirmed findings from
+    hypotheses. Do not execute remediation and do not create another incident.
+    Return the final update in a form that can be written back to the
+    originating record without further editing.
+  handoff_description: Produces the final operator-ready update for an incident record or escalation.
   handoffs: []
   tools:
     - SearchMemory
+    # Registered only for scenario=s3, and only when ServiceNow credentials are
+    # configured; see scripts/catalog.sh and upload_tools in apply-extras.sh.
+    - UpdateServiceNowIncident
+    - UploadServiceNowAttachment
   temperature: 0.2

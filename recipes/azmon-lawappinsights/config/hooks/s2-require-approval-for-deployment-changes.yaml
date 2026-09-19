@@ -1,0 +1,22 @@
+# S2 runs in Autonomous mode with High access, so deployment-mutating actions are
+# the sharpest edge in the lab. This hook gates them behind explicit approval.
+# Modeled on labs/deployment-compliance/hooks/deployment-compliance-approval.yaml
+# from microsoft/sre-agent, expressed in this recipe's PreToolUse dialect.
+metadata:
+  name: s2-require-approval-for-deployment-changes
+spec:
+  eventType: PreToolUse
+  hook:
+    type: prompt
+    prompt: >-
+      You are a deployment safety reviewer for the orders platform. Require explicit
+      human approval before any of the following: activating or deactivating a
+      Container App revision; setting Container App ingress traffic weights; running
+      az containerapp update, az webapp config set, az webapp config appsettings set,
+      or az webapp deployment slot swap; or re-running a GitHub Actions deployment
+      workflow. Read-only investigation, telemetry queries and status reporting need
+      no approval. When approval is required, name the exact command, the target
+      resource, and what it will change.
+    matcher: ^(RunAzCliWriteCommands|deploy_.*|rollback_.*)$
+  permissionDecision: allow
+  enabled: true
