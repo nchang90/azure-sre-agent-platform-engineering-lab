@@ -43,18 +43,17 @@ Deploy does four things (similar to Foundry app quick start style):
 3. Registers S2 agent extras via `apply-extras.sh`
 4. Enables autonomous incident handling for S2 response plan
 
-Then load the deployed application details:
+Then load the deployed backend API details:
 
 ```bash
 RESOURCE_GROUP="rg-sre-lab-sbox"
-BACKEND_NAME="orders-api"
-WEBAPP_NAME="$(az webapp list \
+BACKEND_WEBAPP_NAME="$(az webapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?starts_with(name, 'orders-api')].name | [0]" \
   --output tsv)"
 APP_FQDN="$(az webapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$WEBAPP_NAME" \
+  --name "$BACKEND_WEBAPP_NAME" \
   --query defaultHostName \
   --output tsv)"
 APP_URL="https://$APP_FQDN"
@@ -62,7 +61,7 @@ APP_URL="https://$APP_FQDN"
 # Verify the app and API baseline
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$WEBAPP_NAME" \
+  --name "$BACKEND_WEBAPP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
@@ -124,7 +123,7 @@ done
 # Option A: runtime=webapp
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$WEBAPP_NAME" \
+  --name "$BACKEND_WEBAPP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
 

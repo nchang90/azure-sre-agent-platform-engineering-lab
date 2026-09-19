@@ -15,9 +15,7 @@ Orders API incident triage and remediation.
 Dashboard URL source of truth for incident triage:
 - Primary source: deployment outputs/portal for the active demo environment.
 - In this lab, backend runtime commands target `orders-api`; frontend URL discovery is separate from backend resource lookup.
-- If a dedicated dashboard Web App is deployed, discover it with:
-  - `az webapp list -g <resource-group> --query "[?starts_with(name, 'web-dashboard')].defaultHostName | [0]" -o tsv`
-- If no dedicated dashboard app exists in the environment, use the conference operator-provided dashboard URL.
+- If no frontend URL is published in outputs, use the conference operator-provided dashboard URL for that run.
 
 ## Incident Correlation Context
 
