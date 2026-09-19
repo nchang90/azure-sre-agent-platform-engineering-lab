@@ -1,5 +1,5 @@
 name: Deploy SRE Agent Lab
-run-name: Deploy SRE Agent Lab — ${{ inputs.environment || 'sbox' }} / ${{ inputs.runtime || 'containerapps' }}
+run-name: Deploy SRE Agent Lab — ${{ inputs.environment }}
 on:
   workflow_dispatch:
     inputs:
