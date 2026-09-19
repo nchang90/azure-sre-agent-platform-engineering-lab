@@ -157,6 +157,8 @@ configure_catalog_scope() {
       )
       SKILL_NAMES=(
         aks-change-triage-rollback
+        azure-cost
+        azure-kubernetes
         incident-orchestrator-coordination
         investigate-azure-alerts
       )
