@@ -33,7 +33,8 @@ Expected symptom pattern:
 ## 3) Correlate
 
 - Align first-failure time with:
-  - recent App Service deployments, swaps, or revision changes
+  - recent App Service deployments or slot swaps
+  - recent Container Apps revision/deployment changes (when runtime=containerapps)
   - active change request context from `change-lookup`
   - dependency degradation windows
 - Keep facts separate from hypotheses.

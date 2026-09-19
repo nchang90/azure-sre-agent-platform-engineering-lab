@@ -53,6 +53,10 @@ az webapp show \
   --query "{state:state,host:defaultHostName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error \
+  -X POST "$APP_URL/api/orders" \
+  -H "Content-Type: application/json" \
+  --data '{"customerId":"warmup-user","sku":"WARMUP","quantity":1}'
 ```
 
 To run S2 on Container Apps instead, set `runtime=containerapps` and load the URL with:
@@ -64,6 +68,11 @@ APP_FQDN="$(az containerapp show \
   --query properties.configuration.ingress.fqdn \
   --output tsv)"
 APP_URL="https://$APP_FQDN"
+az containerapp show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_NAME" \
+  --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
+  --output table
 curl --fail --silent --show-error "$APP_URL/health"
 ```
 
