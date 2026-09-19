@@ -59,7 +59,8 @@ ALL_SCENARIOS="s1 s2 s3 s4 s5 s6"
 
 scenario_runtime() {
   case "$1" in
-    s1|s2) echo containerapps ;;
+    s1)    echo containerapps ;;
+    s2)    echo webapp ;;
     s3)    echo aks ;;
     s4)    echo webapp ;;
     s5)    echo none ;;
@@ -116,7 +117,14 @@ catalog_path() {
 knowledge_base_path() { catalog_path knowledge-base "knowledge-base/$1"; }
 skill_path()          { catalog_path skill ".github/skills/$1/SKILL.md"; }
 hook_path()           { catalog_path hook "recipes/azmon-lawappinsights/config/hooks/$1.yaml"; }
-common_prompt_path()  { catalog_path "common prompt" "recipes/azmon-lawappinsights/config/common-prompts/$1.yaml"; }
+common_prompt_path() {
+  local name="$1"
+  if [[ "$name" == "s2-orders-api-runtime" ]]; then
+    catalog_path "common prompt" "recipes/azmon-lawappinsights/config/common-prompts/${name}-${RUNTIME_STACK}.yaml"
+    return
+  fi
+  catalog_path "common prompt" "recipes/azmon-lawappinsights/config/common-prompts/$name.yaml"
+}
 repo_path()           { catalog_path repo "recipes/azmon-lawappinsights/config/repos/$1.yaml"; }
 tool_path()           { catalog_path tool "recipes/alert-response-incident-operations/config/tools/$1/$1.yaml"; }
 

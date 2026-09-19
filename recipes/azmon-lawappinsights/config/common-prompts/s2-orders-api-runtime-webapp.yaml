@@ -1,0 +1,22 @@
+# App Service guidance selected dynamically for an S2 webapp deployment.
+metadata:
+  name: s2-orders-api-runtime
+spec:
+  prompt: |
+    For S2 incidents, the deployed orders-api runtime is Azure App Service. Investigate
+    only the Linux Web Apps that host orders-api and change-lookup; do not search for or
+    require Azure Container Apps resources.
+
+    Follow the incident flow: detect, triage, correlate, diagnose, remediate, verify, and
+    summarize. Treat `/api/orders` 5xx spikes as the primary incident path where the app
+    remains Running and `/health` succeeds while backend requests fail.
+
+    Use incident-orchestrator-coordination, investigate-azure-alerts, triage-app-errors,
+    the S2 knowledge sources, Application Insights, Log Analytics, App Service state,
+    deployment history, and change-lookup context before relying on general knowledge.
+    Correlate first-failure time with deployments and change requests, distinguish facts
+    from hypotheses, and prefer reversible remediation.
+
+    Report customer impact, supporting evidence, probable cause, actions proposed or
+    taken, confidence, and next steps. Verify recovery using App Service state, `/health`,
+    `/api/orders`, dependency telemetry, and stabilized 5xx rates before resolving.

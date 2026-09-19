@@ -8,7 +8,7 @@ by reference.
 | Was | Now |
 |-----|-----|
 | `default.txt` | `config/common-prompts/investigation-guidelines.yaml` |
-| `s2.txt` | `config/common-prompts/s2-orders-api-runtime.yaml` |
+| `s2.txt` | `config/common-prompts/s2-orders-api-runtime-{webapp,containerapps}.yaml` |
 | `s3.txt` | `config/common-prompts/s3-aks-incident.yaml` |
 | — | `config/common-prompts/safety-rules.yaml` (new; applies in every scenario) |
 

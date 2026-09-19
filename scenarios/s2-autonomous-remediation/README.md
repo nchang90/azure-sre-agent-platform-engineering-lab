@@ -50,7 +50,7 @@ gh run watch
 Deployment does four things:
 1. Reads `sbox.tfvars` and applies Terraform
 2. Deploys the runtime workload (`orders-api`)
-3. Registers S2 agent extras via `apply-extras.sh` — knowledge base, common
+3. Registers runtime-scoped S2 agent extras via `apply-extras.sh` — knowledge base, common
    prompts, hooks, the GitHub repo connection, skills, subagents and the
    response plan
 4. Enables autonomous incident handling for S2 response plan
@@ -60,6 +60,10 @@ commits and workflow runs behind it, via the `FindConnectedGitHubRepo` tool. The
 repository is resolved from `GITHUB_REPOSITORY` in Actions, or the `origin`
 remote locally. A first-time connection may need a one-off GitHub authorization
 in the portal's Repos blade; the rest of the catalog applies either way.
+
+`apply-extras.sh` reads Terraform's deployed `runtime_stack`, so Web App runs
+receive App Service guidance and Container Apps runs receive Container Apps
+guidance. The workflow defaults to `webapp`.
 
 ### Task 2: Load the backend endpoint and validate baseline
 

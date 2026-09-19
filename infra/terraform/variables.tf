@@ -88,13 +88,13 @@ variable "scenario" {
 }
 
 variable "runtime" {
-  description = "Application runtime for S2. Other scenarios retain their fixed runtime."
+  description = "Optional S2 application runtime override. Leave empty to use the App Service default."
   type        = string
-  default     = "containerapps"
+  default     = ""
 
   validation {
-    condition     = contains(["containerapps", "webapp"], var.runtime)
-    error_message = "runtime must be containerapps or webapp."
+    condition     = var.runtime == "" || contains(["containerapps", "webapp"], var.runtime)
+    error_message = "runtime must be empty, containerapps, or webapp."
   }
 }
 

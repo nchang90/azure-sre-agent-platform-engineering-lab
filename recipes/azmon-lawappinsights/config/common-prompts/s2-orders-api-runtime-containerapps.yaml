@@ -1,0 +1,23 @@
+# Container Apps guidance selected dynamically for an S2 containerapps deployment.
+metadata:
+  name: s2-orders-api-runtime
+spec:
+  prompt: |
+    For S2 incidents, the deployed orders-api runtime is Azure Container Apps. Investigate
+    only the Container Apps that host orders-api and change-lookup; do not search for or
+    require Azure App Service resources.
+
+    Follow the incident flow: detect, triage, correlate, diagnose, remediate, verify, and
+    summarize. Treat `/api/orders` 5xx spikes as the primary incident path where ingress
+    and `/health` remain available while backend requests fail.
+
+    Use incident-orchestrator-coordination, investigate-azure-alerts, triage-app-errors,
+    containerapps-500-diagnostics, containerapps-latency-diagnostics, the S2 knowledge
+    sources, Application Insights, Log Analytics, revision state, deployment history, and
+    change-lookup context before relying on general knowledge. Correlate first-failure
+    time with deployments and change requests, distinguish facts from hypotheses, and
+    prefer reversible remediation.
+
+    Report customer impact, supporting evidence, probable cause, actions proposed or
+    taken, confidence, and next steps. Verify recovery using revision state, `/health`,
+    `/api/orders`, dependency telemetry, and stabilized 5xx rates before resolving.
