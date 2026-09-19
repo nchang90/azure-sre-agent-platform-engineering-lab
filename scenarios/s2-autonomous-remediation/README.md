@@ -103,7 +103,7 @@ done
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_NAME" \
-  --query "{state:state,lastModified:lastModifiedTimeUtc}" \
+  --query "{state:state,host:defaultHostName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
 curl --fail --silent --show-error \
