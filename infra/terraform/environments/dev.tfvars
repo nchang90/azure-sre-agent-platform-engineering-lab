@@ -1,6 +1,6 @@
 agent_name               = "sre-agent-dev"
 resource_group_name      = "rg-sre-lab-dev"
-location                 = "eastus2"
+location                 = "swedencentral"
 target_resource_groups   = []
 scenario                 = "s2"
 access_level             = "High"
