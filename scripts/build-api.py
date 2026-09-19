@@ -5,6 +5,9 @@ Modes:
     build-api.py agent FILE.yaml         -> prints the extendedAgent envelope to stdout
     build-api.py skill SKILL.md OUT.json  -> writes the skill envelope to OUT, prints name
     build-api.py tool FILE.yaml OUT.json  -> writes the tool envelope to OUT, prints name
+    build-api.py hook FILE.yaml OUT.json  -> writes the hook envelope to OUT, prints name
+    build-api.py common-prompt FILE.yaml OUT.json -> writes the prompt envelope, prints name
+    build-api.py repo FILE.yaml OUT.json  -> writes the repo envelope to OUT, prints name
     build-api.py incident-platform FILE.yaml -> prints normalized incident platform spec JSON
     build-api.py incident-filter FILE.yaml -> prints normalized response plan JSON
 
@@ -16,11 +19,32 @@ Skill envelope (PUT {agentEndpoint}/api/v2/extendedAgent/skills/{name}):
 
 Tool envelope (PUT {agentEndpoint}/api/v2/extendedAgent/tools/{name}):
     { name, type: "Tool", tags: [], properties: <spec verbatim> }
+
+Hook envelope (PUT {agentEndpoint}/api/v2/extendedAgent/hooks/{name}):
+    { name, type: "GlobalHook", tags: [], properties: <spec verbatim> }
+
+Common prompt envelope (PUT {agentEndpoint}/api/v2/extendedAgent/commonprompts/{name}):
+    { name, type: "CommonPrompt", tags: [], properties: <spec verbatim> }
+
+Repo envelope (PUT {agentEndpoint}/api/v2/repos/{name}) -- note: NOT under
+extendedAgent, and its properties are normalized rather than passed verbatim:
+    { name, type: "CodeRepo", properties: { url, type: "GitHub"|"AzureDevOps", ... } }
 """
 import json
 import os
 import re
 import sys
+
+# Shared grants. Several skills differ only by an extra tool, so name the common
+# set once rather than repeating it per skill.
+READ_ONLY_DIAGNOSTICS = [
+    "SearchMemory",
+    "RunAzCliReadCommands",
+    "GetAzCliHelp",
+    "QueryLogAnalyticsByWorkspaceId",
+    "QueryAppInsightsByResourceId",
+    "ExecutePythonCode",
+]
 
 SKILL_TOOLS = {
     "aks-change-triage-rollback": [
@@ -59,14 +83,7 @@ SKILL_TOOLS = {
         "QueryAppInsightsByResourceId",
         "ExecutePythonCode",
     ],
-    "evidence-before-after": [
-        "SearchMemory",
-        "RunAzCliReadCommands",
-        "GetAzCliHelp",
-        "QueryLogAnalyticsByWorkspaceId",
-        "QueryAppInsightsByResourceId",
-        "ExecutePythonCode",
-    ],
+    "evidence-before-after": READ_ONLY_DIAGNOSTICS,
     "incident-orchestrator-coordination": [
         "SearchMemory",
     ],
@@ -76,13 +93,11 @@ SKILL_TOOLS = {
         "QueryAppInsightsUsingAppId",
         "QueryLogAnalyticsByWorkspaceId",
     ],
-    "rca-analysis": [
+    "rca-analysis": READ_ONLY_DIAGNOSTICS + ["FindConnectedGitHubRepo"],
+    "servicenow-incident-update": [
         "SearchMemory",
-        "RunAzCliReadCommands",
-        "GetAzCliHelp",
-        "QueryLogAnalyticsByWorkspaceId",
-        "QueryAppInsightsByResourceId",
-        "ExecutePythonCode",
+        "UpdateServiceNowIncident",
+        "UploadServiceNowAttachment",
     ],
     "triage-app-errors": [
         "SearchMemory",
@@ -203,6 +218,83 @@ def build_tool(src, out):
     print(name)
 
 
+def _load_yaml(path):
+    import yaml  # imported lazily so `skill` mode has no YAML dependency
+
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _write_envelope(envelope, out):
+    out_dir = os.path.dirname(out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(envelope, f)
+    print(envelope["name"])
+
+
+def _build_spec_envelope(src, out, type_name):
+    """Hooks and common prompts share one shape: spec passed through verbatim."""
+    doc = _load_yaml(src)
+    meta = doc.get("metadata") or {}
+    spec = doc.get("spec") or {}
+
+    name = meta.get("name") or doc.get("name")
+    if not name:
+        sys.exit("missing metadata.name in %s" % src)
+    if not spec:
+        sys.exit("missing spec in %s" % src)
+
+    _write_envelope(
+        {"name": name, "type": type_name, "tags": [], "properties": spec}, out
+    )
+
+
+def build_hook(src, out):
+    _build_spec_envelope(src, out, "GlobalHook")
+
+
+def build_common_prompt(src, out):
+    _build_spec_envelope(src, out, "CommonPrompt")
+
+
+# spec.type in the YAML is a short lab-side name; the API expects the View enum.
+REPO_TYPES = {
+    "ado": "AzureDevOps",
+    "azuredevops": "AzureDevOps",
+    "azure-devops": "AzureDevOps",
+}
+
+
+def build_repo(src, out):
+    doc = _load_yaml(src)
+    meta = doc.get("metadata") or {}
+    spec = doc.get("spec") or {}
+
+    name = meta.get("name") or doc.get("name")
+    if not name:
+        sys.exit("missing name in %s" % src)
+
+    url = (spec.get("url") or "").strip()
+    if not url or url.startswith("{{"):
+        sys.exit("repo url not substituted in %s (got %r)" % (src, url))
+    # Short "owner/repo" is not a valid URL to the API; normalize it.
+    if not url.startswith("http") and "/" in url:
+        url = "https://github.com/" + url
+
+    properties = {
+        "url": url,
+        "type": REPO_TYPES.get((spec.get("type") or "github").lower(), "GitHub"),
+    }
+    for key in ("description", "branch"):
+        value = spec.get(key)
+        if value:
+            properties[key] = value
+
+    _write_envelope({"name": name, "type": "CodeRepo", "properties": properties}, out)
+
+
 def build_incident_platform(path):
     import yaml  # imported lazily so non-YAML modes stay lightweight
 
@@ -266,6 +358,12 @@ def main(argv):
         build_skill(argv[2], argv[3])
     elif mode == "tool" and len(argv) >= 4:
         build_tool(argv[2], argv[3])
+    elif mode == "hook" and len(argv) >= 4:
+        build_hook(argv[2], argv[3])
+    elif mode == "common-prompt" and len(argv) >= 4:
+        build_common_prompt(argv[2], argv[3])
+    elif mode == "repo" and len(argv) >= 4:
+        build_repo(argv[2], argv[3])
     elif mode == "incident-platform" and len(argv) >= 3:
         build_incident_platform(argv[2])
     elif mode == "incident-filter" and len(argv) >= 3:
@@ -275,6 +373,9 @@ def main(argv):
             "Usage: build-api.py agent FILE.yaml"
             " | build-api.py skill SKILL.md OUT.json"
             " | build-api.py tool FILE.yaml OUT.json"
+            " | build-api.py hook FILE.yaml OUT.json"
+            " | build-api.py common-prompt FILE.yaml OUT.json"
+            " | build-api.py repo FILE.yaml OUT.json"
             " | build-api.py incident-platform FILE.yaml"
             " | build-api.py incident-filter FILE.yaml"
         )

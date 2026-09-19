@@ -122,7 +122,28 @@ the same breadcrumb trail for the failure mode.
    - Correlates the failure with the most recent rollout or change window
    - Queries `InsightsMetrics` for resource pressure (CPU, memory)
    - Drafts the incident summary and ServiceNow-ready operator update
-6. **Writes back the result** → the workflow posts the evidence-backed diagnosis into ServiceNow and keeps remediation manual
+6. **Writes back the result** → `incident-comms-agent` posts the evidence-backed
+   diagnosis onto the originating incident as a work note and attaches the RCA,
+   using the `UpdateServiceNowIncident` and `UploadServiceNowAttachment` tools.
+   Remediation stays manual.
+
+### ServiceNow write-back
+
+The write-back is governed by the `servicenow-incident-update` skill, which is the
+single owner of ServiceNow write operations. The two tools are deliberately
+narrow: `UpdateServiceNowIncident` writes `work_notes` (and `comments` only when
+asked) and never touches state, assignment or close fields, so an agent update
+can never resolve an incident.
+
+Credentials come from `SERVICENOW_URL` / `SERVICENOW_USER` / `SERVICENOW_PASS` —
+see [`.servicenow.env.sample`](../../.servicenow.env.sample). The PythonTool
+sandbox cannot read environment variables, so `scripts/apply-extras.sh`
+substitutes them into the tool body at apply time; use a dedicated integration
+user scoped to the incident table.
+
+If those variables are unset, the tools **and** the skill are skipped with a
+warning and the rest of the catalog still applies — S3 then behaves as it did
+before, composing the update for a human to post.
 
 ### Deterministic evidence paths
 
@@ -183,6 +204,8 @@ After the quick start:
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
 - The handoff chain completes in triage → summary → ServiceNow-ready report order
 - The `rca-analysis` and `evidence-before-after` skills are registered for `scenario=s3`
+- With ServiceNow credentials set, both write-back tools register and the work note lands on the incident
+- Without them, the tools and `servicenow-incident-update` are skipped and the rest still applies
 - The final update renders a numbered 5-Whys ladder and a Service-endpoint state delta
 - No PIR or remediation subagent is added
 
@@ -201,6 +224,8 @@ After the quick start:
 | AKS configuration | `infra/terraform/aks.tf` |
 | Knowledge base docs | `knowledge-base/` (runbooks, incident templates) |
 | RCA narrative skill | `.github/skills/rca-analysis/SKILL.md` |
+| ServiceNow write-back skill | `.github/skills/servicenow-incident-update/SKILL.md` |
+| ServiceNow tools | `recipes/alert-response-incident-operations/config/tools/` |
 | Before/after evidence skill | `.github/skills/evidence-before-after/SKILL.md` |
 | S3 AKS runbooks | `knowledge-base/aks-*.md` |
 

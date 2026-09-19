@@ -1,0 +1,16 @@
+# Requires human approval before the agent restarts or scales a resource.
+# Matchers cover this lab's write tool (RunAzCliWriteCommands) as well as the
+# verb-prefixed tool names used by the upstream template recipe.
+metadata:
+  name: require-approval-for-restarts
+spec:
+  eventType: PreToolUse
+  hook:
+    type: prompt
+    prompt: >-
+      If this action will restart, scale, or recycle a resource, require human approval
+      before proceeding. State the exact command and the target resource in the approval
+      request.
+    matcher: ^(RunAzCliWriteCommands|restart_.*|scale_.*)$
+  permissionDecision: allow
+  enabled: true

@@ -23,7 +23,6 @@ TFVARS_FILE=""
 AGENT_ID=""
 AGENT_ENDPOINT=""
 TOKEN=""
-CUSTOM_INSTRUCTIONS_FILE=""
 
 # shellcheck source=scripts/catalog.sh
 source "$SCRIPT_DIR/catalog.sh"
@@ -266,11 +265,13 @@ register_subagent() {
   "$PYTHON" "$SCRIPT_DIR/build-api.py" agent "$yaml_path" >"$body" 2>"$TMP_DIR/err" \
     || { warn "  $name: YAML conversion failed — $(cat "$TMP_DIR/err")"; return; }
 
-  if [[ -f "$CUSTOM_INSTRUCTIONS_FILE" ]]; then
-    jq --rawfile instructions "$CUSTOM_INSTRUCTIONS_FILE" \
-      '.properties.instructions = ((.properties.instructions // "") + "\n\n" + $instructions)' \
-      "$body" >"$TMP_DIR/agent-with-instructions.json"
-    mv "$TMP_DIR/agent-with-instructions.json" "$body"
+  # Scenario guidance is attached by reference as common prompts, not pasted into
+  # each agent's instructions. The prompts themselves are uploaded in step 2.
+  if [[ ${#COMMON_PROMPT_NAMES[@]} -gt 0 ]]; then
+    jq --argjson prompts "$(printf '%s\n' "${COMMON_PROMPT_NAMES[@]}" | jq -R . | jq -sc .)" \
+      '.properties.commonPrompts = ((.properties.commonPrompts // []) + $prompts | unique)' \
+      "$body" >"$TMP_DIR/agent-with-prompts.json"
+    mv "$TMP_DIR/agent-with-prompts.json" "$body"
   fi
 
   code="$(put_json_file "/api/v2/extendedAgent/agents/$name" "$body")"
@@ -345,7 +346,7 @@ configure_incident_platform() {
 }
 
 upload_knowledge_base() {
-  log "Step 1/4: Uploading knowledge base..."
+  log "Step 1/8: Uploading knowledge base..."
   local upload names name f code
   upload=(-F triggerIndexing=true)
   names=""
@@ -361,8 +362,135 @@ upload_knowledge_base() {
   echo
 }
 
+upload_common_prompts() {
+  log "Step 2/8: Uploading common prompts..."
+  local f name code
+
+  for name in "${COMMON_PROMPT_NAMES[@]}"; do
+    f="$(common_prompt_path "$name")"
+    name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" common-prompt "$f" "$TMP_DIR/prompt.json")" \
+      || { warn "  $name: YAML conversion failed"; continue; }
+    code="$(put_json_file "/api/v2/extendedAgent/commonprompts/${name}" "$TMP_DIR/prompt.json")"
+    report_result "$code" "Common prompt: $name" "Common prompt $name"
+  done
+  echo
+}
+
+upload_hooks() {
+  log "Step 3/8: Uploading hooks..."
+  local f name code
+
+  for name in "${HOOK_NAMES[@]}"; do
+    f="$(hook_path "$name")"
+    name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" hook "$f" "$TMP_DIR/hook.json")" \
+      || { warn "  $name: YAML conversion failed"; continue; }
+    code="$(put_json_file "/api/v2/extendedAgent/hooks/${name}" "$TMP_DIR/hook.json")"
+    report_result "$code" "Hook: $name" "Hook $name"
+  done
+  echo
+}
+
+# Resolve the repository to connect: GITHUB_REPOSITORY is set automatically in
+# GitHub Actions; fall back to the origin remote for local runs.
+resolve_github_repository() {
+  if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+    echo "$GITHUB_REPOSITORY"
+    return 0
+  fi
+  local origin
+  origin="$(git config --get remote.origin.url 2>/dev/null || true)"
+  [[ -n "$origin" ]] || return 1
+  origin="${origin%.git}"
+  origin="${origin#git@github.com:}"
+  origin="${origin#https://github.com/}"
+  echo "$origin"
+}
+
+register_repo() {
+  log "Step 4/8: Connecting GitHub repository..."
+  local src="recipes/azmon-lawappinsights/config/repos/github-repo.yaml"
+  local repo staged name code
+
+  if [[ ! -f "$src" ]]; then
+    warn "  Repo config missing: $src"
+    echo
+    return
+  fi
+
+  repo="$(resolve_github_repository || true)"
+  if [[ -z "$repo" ]]; then
+    warn "  Could not resolve a repository (set GITHUB_REPOSITORY or add an origin remote); skipping."
+    echo
+    return
+  fi
+
+  staged="$TMP_DIR/github-repo.yaml"
+  sed "s|{{githubRepo}}|${repo}|g" "$src" >"$staged"
+
+  name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" repo "$staged" "$TMP_DIR/repo.json")" \
+    || { warn "  Repo conversion failed"; echo; return; }
+
+  # Note: this is /api/v2/repos, NOT under /api/v2/extendedAgent.
+  code="$(put_json_file "/api/v2/repos/${name}" "$TMP_DIR/repo.json")"
+  report_result "$code" "Repo: $name -> $repo" "Repo $name"
+  case "$code" in
+    200|201|202|204|409)
+      log "  If the agent cannot read the repo, authorize GitHub once in the portal Repos blade."
+      ;;
+  esac
+  echo
+}
+
+# The ServiceNow write-back tools carry literal credentials (the PythonTool
+# sandbox cannot read env vars). Without them, drop both the tools and the skill
+# that drives them rather than registering a skill whose tools do not exist.
+servicenow_configured() {
+  [[ -n "${SERVICENOW_URL:-}" && -n "${SERVICENOW_USER:-}" && -n "${SERVICENOW_PASS:-}" ]]
+}
+
+drop_servicenow_from_scope() {
+  local kept=() name
+  for name in "${SKILL_NAMES[@]}"; do
+    [[ "$name" == "servicenow-incident-update" ]] || kept+=("$name")
+  done
+  SKILL_NAMES=("${kept[@]}")
+  TOOL_NAMES=()
+}
+
+upload_tools() {
+  log "Step 5/8: Uploading custom tools..."
+  local f name code
+
+  if [[ ${#TOOL_NAMES[@]} -eq 0 ]]; then
+    log "  No custom tools in scope."
+    echo
+    return
+  fi
+
+  if ! servicenow_configured; then
+    warn "  SERVICENOW_URL/USER/PASS not set — skipping ServiceNow tools and the servicenow-incident-update skill."
+    warn "  See .servicenow.env.sample."
+    drop_servicenow_from_scope
+    echo
+    return
+  fi
+
+  for name in "${TOOL_NAMES[@]}"; do
+    f="$(tool_path "$name")"
+    if ! "$PYTHON" "$SCRIPT_DIR/build-api.py" tool "$f" "$TMP_DIR/tool.json" >/dev/null 2>"$TMP_DIR/err"; then
+      warn "  $name: tool conversion failed — $(cat "$TMP_DIR/err")"
+      continue
+    fi
+    code="$(put_json_file "/api/v2/extendedAgent/tools/${name}" "$TMP_DIR/tool.json")"
+    report_result "$code" "Tool: $name" "Tool $name"
+  done
+  # The staged envelope holds live credentials; do not leave it on disk.
+  rm -f "$TMP_DIR/tool.json"
+  echo
+}
+
 upload_skills() {
-  log "Step 2/4: Uploading skills..."
+  log "Step 6/8: Uploading skills..."
   local f name code
 
   for name in "${SKILL_NAMES[@]}"; do
@@ -375,7 +503,7 @@ upload_skills() {
 }
 
 register_subagents() {
-  log "Step 3/4: Registering subagents..."
+  log "Step 7/8: Registering subagents..."
   local name
 
   for name in "${SUBAGENT_NAMES[@]}"; do
@@ -385,7 +513,7 @@ register_subagents() {
 }
 
 create_response_plans() {
-  log "Step 4/4: Creating response plans..."
+  log "Step 8/8: Creating response plans..."
   local plan
 
   for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
@@ -404,6 +532,13 @@ main() {
   ok "Agent: $AGENT_ENDPOINT"
   auth
   upload_knowledge_base
+  upload_common_prompts
+  cleanup_out_of_scope "Common prompt" "/api/v2/extendedAgent/commonprompts" ALL_COMMON_PROMPT_NAMES COMMON_PROMPT_NAMES
+  upload_hooks
+  cleanup_out_of_scope "Hook" "/api/v2/extendedAgent/hooks" ALL_HOOK_NAMES HOOK_NAMES
+  register_repo
+  upload_tools
+  cleanup_out_of_scope "Tool" "/api/v2/extendedAgent/tools" ALL_TOOL_NAMES TOOL_NAMES
   upload_skills
   cleanup_out_of_scope "Skill" "/api/v2/extendedAgent/skills" ALL_SKILL_NAMES SKILL_NAMES
   register_subagents

@@ -50,8 +50,16 @@ gh run watch
 Deployment does four things:
 1. Reads `sbox.tfvars` and applies Terraform
 2. Deploys the runtime workload (`orders-api`)
-3. Registers S2 agent extras via `apply-extras.sh`
+3. Registers S2 agent extras via `apply-extras.sh` — knowledge base, common
+   prompts, hooks, the GitHub repo connection, skills, subagents and the
+   response plan
 4. Enables autonomous incident handling for S2 response plan
+
+The repo connection is what lets the agent correlate the incident with the
+commits and workflow runs behind it, via the `FindConnectedGitHubRepo` tool. The
+repository is resolved from `GITHUB_REPOSITORY` in Actions, or the `origin`
+remote locally. A first-time connection may need a one-off GitHub authorization
+in the portal's Repos blade; the rest of the catalog applies either way.
 
 ### Task 2: Load the backend endpoint and validate baseline
 
@@ -109,6 +117,20 @@ curl --fail --silent --show-error "$APP_URL/health"
 ```
 
 > **Caution:** `Autonomous` mode allows write actions. Use only in an isolated lab resource group.
+
+### Guardrails applied for S2
+
+`scripts/apply-extras.sh` registers three `PreToolUse` hooks before the agent can act:
+
+| Hook | Effect |
+|------|--------|
+| `deny-prod-deletes` | Denies deletes/removes against resources named `prod` or `prd` |
+| `require-approval-for-restarts` | Requires human approval to restart, scale or recycle a resource |
+| `s2-require-approval-for-deployment-changes` | Requires approval for revision activate/deactivate, ingress traffic changes, `az containerapp update`, `az webapp config set`, `az webapp config appsettings set`, slot swaps, and deployment workflow re-runs |
+
+The first two apply in every scenario; the third is added only for `scenario=s2`,
+because S2 is the scenario that combines `Autonomous` mode with `High` access.
+Definitions live in [`recipes/azmon-lawappinsights/config/hooks/`](../../recipes/azmon-lawappinsights/config/hooks/).
 
 ---
 

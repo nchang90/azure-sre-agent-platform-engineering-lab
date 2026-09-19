@@ -47,16 +47,42 @@ ALL_SKILL_NAMES=(
   incident-orchestrator-coordination
   investigate-azure-alerts
   rca-analysis
+  servicenow-incident-update
   triage-app-errors
+)
+
+ALL_TOOL_NAMES=(
+  UpdateServiceNowIncident
+  UploadServiceNowAttachment
+)
+
+ALL_HOOK_NAMES=(
+  deny-prod-deletes
+  require-approval-for-restarts
+  s2-require-approval-for-deployment-changes
+)
+
+ALL_COMMON_PROMPT_NAMES=(
+  investigation-guidelines
+  s2-orders-api-runtime
+  s3-aks-incident
+  s4-alert-response
+  safety-rules
 )
 
 KB_NAMES=("${ALL_KB_NAMES[@]}")
 SKILL_NAMES=("${ALL_SKILL_NAMES[@]}")
+TOOL_NAMES=("${ALL_TOOL_NAMES[@]}")
+HOOK_NAMES=("${ALL_HOOK_NAMES[@]}")
+# Lab-wide prompts apply in every scenario; scenario-scoped ones are added below.
+COMMON_PROMPT_NAMES=(
+  investigation-guidelines
+  safety-rules
+)
 SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
 )
-CUSTOM_INSTRUCTIONS_FILE="recipes/azmon-lawappinsights/custom-instructions/default.txt"
 
 knowledge_base_path() {
   local name="$1"
@@ -68,6 +94,27 @@ skill_path() {
   local name="$1"
   [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
   echo ".github/skills/$name/SKILL.md"
+}
+
+tool_path() {
+  local name="$1"
+  local f="recipes/alert-response-incident-operations/config/tools/$name/$name.yaml"
+  [[ -f "$f" ]] || die "Missing tool catalog entry: $name"
+  echo "$f"
+}
+
+hook_path() {
+  local name="$1"
+  local f="recipes/azmon-lawappinsights/config/hooks/$name.yaml"
+  [[ -f "$f" ]] || die "Missing hook catalog entry: $name"
+  echo "$f"
+}
+
+common_prompt_path() {
+  local name="$1"
+  local f="recipes/azmon-lawappinsights/config/common-prompts/$name.yaml"
+  [[ -f "$f" ]] || die "Missing common prompt catalog entry: $name"
+  echo "$f"
 }
 
 subagent_path() {
@@ -97,8 +144,8 @@ configure_catalog_scope() {
   esac
 
   case "$SCENARIO" in
-    ""|s1|s2|s3|s4|s5) ;;
-    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s1, s2, s3, s4, s5." ;;
+    ""|s1|s2|s3|s4|s5|s6) ;;
+    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s1, s2, s3, s4, s5, s6." ;;
   esac
 
   SUBAGENT_NAMES=(
@@ -107,6 +154,17 @@ configure_catalog_scope() {
   )
   RESPONSE_PLAN_NAMES=(
     all-incidents
+  )
+  # Custom PythonTools are opt-in per scenario; only S3 writes back to ServiceNow.
+  TOOL_NAMES=()
+  # Global guardrails apply in every scenario; S2 adds a deployment-specific one.
+  HOOK_NAMES=(
+    deny-prod-deletes
+    require-approval-for-restarts
+  )
+  COMMON_PROMPT_NAMES=(
+    investigation-guidelines
+    safety-rules
   )
 
   case "$RUNTIME_STACK" in
@@ -165,6 +223,17 @@ configure_catalog_scope() {
         incident-orchestrator-coordination
         investigate-azure-alerts
         rca-analysis
+        servicenow-incident-update
+      )
+      # S3 is the only scenario that writes back to an incident record.
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      TOOL_NAMES=(
+        UpdateServiceNowIncident
+        UploadServiceNowAttachment
+      )
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      COMMON_PROMPT_NAMES+=(
+        s3-aks-incident
       )
       ;;
     s2)
@@ -192,11 +261,28 @@ configure_catalog_scope() {
           containerapps-latency-diagnostics
         )
       fi
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      COMMON_PROMPT_NAMES+=(
+        s2-orders-api-runtime
+      )
+      # S2 runs Autonomous with High access, so deployment writes need a gate.
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      HOOK_NAMES+=(
+        s2-require-approval-for-deployment-changes
+      )
       ;;
     s4)
-      log "Including S4 alert response issue-triage catalog from scenario=s4."
+      log "Including S4 alert response incident-operations catalog from scenario=s4."
+      # S4 reuses the alert-response-incident-operations handoff chain, swapping
+      # the AKS triage head for alert-investigator (already in the base set).
       SUBAGENT_NAMES+=(
+        incident-summary-agent
+        incident-comms-agent
         issue-triager
+      )
+      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
+      COMMON_PROMPT_NAMES+=(
+        s4-alert-response
       )
       ;;
     s5)
@@ -210,11 +296,6 @@ configure_catalog_scope() {
       ;;
   esac
 
-  local scenario_instructions="recipes/azmon-lawappinsights/custom-instructions/${SCENARIO}.txt"
-  if [[ -n "$SCENARIO" && -f "$scenario_instructions" ]]; then
-    CUSTOM_INSTRUCTIONS_FILE="$scenario_instructions"
-    log "Including scenario custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
-  else
-    log "Including default custom instructions: $CUSTOM_INSTRUCTIONS_FILE"
-  fi
+  log "Common prompts: ${COMMON_PROMPT_NAMES[*]}"
+  log "Hooks: ${HOOK_NAMES[*]}"
 }
