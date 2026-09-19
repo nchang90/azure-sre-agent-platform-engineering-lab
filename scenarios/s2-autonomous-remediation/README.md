@@ -47,10 +47,14 @@ Then load the deployed application details:
 
 ```bash
 RESOURCE_GROUP="rg-sre-lab-sbox"
-APP_NAME="orders-api"
+BACKEND_NAME="orders-api"
+WEBAPP_NAME="$(az webapp list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[?starts_with(name, 'orders-api')].name | [0]" \
+  --output tsv)"
 APP_FQDN="$(az webapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$APP_NAME" \
+  --name "$WEBAPP_NAME" \
   --query defaultHostName \
   --output tsv)"
 APP_URL="https://$APP_FQDN"
@@ -58,7 +62,7 @@ APP_URL="https://$APP_FQDN"
 # Verify the app and API baseline
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$APP_NAME" \
+  --name "$WEBAPP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
@@ -72,15 +76,16 @@ curl --silent --output /dev/null \
 To run S2 on Container Apps instead, set `runtime=containerapps` and load the URL with:
 
 ```bash
+CONTAINERAPP_NAME="$BACKEND_NAME"
 APP_FQDN="$(az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$APP_NAME" \
+  --name "$CONTAINERAPP_NAME" \
   --query properties.configuration.ingress.fqdn \
   --output tsv)"
 APP_URL="https://$APP_FQDN"
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$APP_NAME" \
+  --name "$CONTAINERAPP_NAME" \
   --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
   --output table
 curl --fail --silent --show-error "$APP_URL/health"
@@ -94,6 +99,8 @@ curl --fail --silent --show-error "$APP_URL/health"
 # Simulate a deployment window correlation
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
+# Expected response: {"activeChangeRequest":"CHG0030001"}
+# (supported in both webapp and containerapps runtimes)
 
 # Simulate a post-deployment regression impact on /api/orders
 curl --fail --silent --show-error \
@@ -112,14 +119,15 @@ done
 # Option A: runtime=webapp
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$APP_NAME" \
+  --name "$WEBAPP_NAME" \
   --query "{state:state,host:defaultHostName}" \
   --output table
 
 # Option B: runtime=containerapps
+CONTAINERAPP_NAME="${CONTAINERAPP_NAME:-orders-api}"
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$APP_NAME" \
+  --name "$CONTAINERAPP_NAME" \
   --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
   --output table
 

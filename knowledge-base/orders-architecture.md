@@ -12,6 +12,10 @@ Orders API incident triage and remediation.
 - Shared observability: Application Insights + Log Analytics.
 - Security and identity: Entra ID sign-in and access control.
 
+Dashboard URL source of truth for incident triage:
+- Use the deployed frontend endpoint published by your environment outputs/portal for the active demo environment.
+- If unavailable, use the conference operator's provided dashboard URL for this run.
+
 ## Incident Correlation Context
 
 When investigating 5xx incidents:
