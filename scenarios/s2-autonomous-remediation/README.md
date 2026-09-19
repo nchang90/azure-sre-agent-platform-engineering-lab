@@ -76,7 +76,10 @@ curl --silent --output /dev/null \
 To run S2 on Container Apps instead, set `runtime=containerapps` and load the URL with:
 
 ```bash
-CONTAINERAPP_NAME="$BACKEND_NAME"
+CONTAINERAPP_NAME="$(az containerapp list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[?starts_with(name, 'orders-api')].name | [0]" \
+  --output tsv)"
 APP_FQDN="$(az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CONTAINERAPP_NAME" \
@@ -128,7 +131,10 @@ az webapp show \
   --output table
 
 # Option B: runtime=containerapps
-CONTAINERAPP_NAME="${CONTAINERAPP_NAME:-${BACKEND_NAME:-orders-api}}"
+CONTAINERAPP_NAME="${CONTAINERAPP_NAME:-$(az containerapp list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[?starts_with(name, 'orders-api')].name | [0]" \
+  --output tsv)}"
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CONTAINERAPP_NAME" \
