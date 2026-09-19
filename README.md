@@ -1,6 +1,6 @@
 # Azure SRE Agent - Platform Engineering Lab
 
-Hands-on Azure SRE Agent lab with five progressive scenarios: detection and triage, autonomous remediation, issue triage, enterprise guardrails/connectors, and PIM elevation audit.
+Hands-on Azure SRE Agent lab with five progressive scenarios: detection and triage, web-api deployment-regression remediation, AKS multi-agent investigation, issue triage, and PIM elevation audit.
 
 ## Prerequisites
 
@@ -86,8 +86,8 @@ Terraform state lives in the `tfstate` container of the `terraformstatesboxprd` 
 | Scenario | Status | Purpose |
 |----------|--------|---------|
 | [S1 - Detect and triage](scenarios/s1-detect-triage/README.md) | Complete | Trigger a 5xx incident and investigate in review mode. |
-| [S2 - Autonomous remediation](scenarios/s2-autonomous-remediation/README.md) | Complete | Break the running app and watch the agent detect, investigate, and remediate. |
-| [S3 - Incident root cause investigation](scenarios/s3-incident-root-cause-investigation/README.md) | Complete | Investigate AKS regressions through a ServiceNow and HTTP-triggered incident workflow. |
+| [S2 - AI Web App production incident remediation](scenarios/s2-autonomous-remediation/README.md) | Complete | Investigate frontend-ok/backend-failing post-deployment `/api/orders` 500s and safely restore service. |
+| [S3 - AKS multi-agent root-cause investigation](scenarios/s3-incident-root-cause-investigation/README.md) | Complete | Delegate AKS routing/state investigation to specialist subagents and synthesize findings. |
 | [S4 - Alert Response & Incident Operations](scenarios/s4-alert-response-incident-operations/README.md) | Complete | Validate monitoring, alert routing, telemetry, and escalation. |
 | [S5 - PIM Elevation Audit](scenarios/s5-pim-elevation-audit/README.md) | Complete | Audit Entra PIM activations and correlate Azure Activity. |
 
