@@ -46,7 +46,8 @@ Deploy does four things (similar to Foundry app quick start style):
 Then load the deployed backend API details:
 
 ```bash
-RESOURCE_GROUP="rg-sre-lab-sbox"
+ENVIRONMENT="sbox"
+RESOURCE_GROUP="rg-sre-lab-$ENVIRONMENT"
 BACKEND_WEBAPP_NAME="$(az webapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?starts_with(name, 'orders-api')].name | [0]" \
@@ -75,6 +76,8 @@ curl --silent --output /dev/null \
 To run S2 on Container Apps instead, set `runtime=containerapps` and load the URL with:
 
 ```bash
+ENVIRONMENT="sbox"
+RESOURCE_GROUP="rg-sre-lab-$ENVIRONMENT"
 CONTAINERAPP_NAME="$(az containerapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?starts_with(name, 'orders-api')].name | [0]" \
@@ -121,6 +124,10 @@ done
 
 # Verify runtime state after remediation (choose one)
 # Option A: runtime=webapp
+BACKEND_WEBAPP_NAME="$(az webapp list \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "[?starts_with(name, 'orders-api')].name | [0]" \
+  --output tsv)"
 az webapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$BACKEND_WEBAPP_NAME" \
@@ -128,10 +135,10 @@ az webapp show \
   --output table
 
 # Option B: runtime=containerapps
-CONTAINERAPP_NAME="${CONTAINERAPP_NAME:-$(az containerapp list \
+CONTAINERAPP_NAME="$(az containerapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?starts_with(name, 'orders-api')].name | [0]" \
-  --output tsv)}"
+  --output tsv)"
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CONTAINERAPP_NAME" \
