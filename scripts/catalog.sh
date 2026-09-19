@@ -39,6 +39,8 @@ ALL_KB_NAMES=(
 
 ALL_SKILL_NAMES=(
   aks-change-triage-rollback
+  azure-cost
+  azure-kubernetes
   containerapps-500-diagnostics
   containerapps-latency-diagnostics
   incident-orchestrator-coordination
@@ -155,6 +157,8 @@ configure_catalog_scope() {
       )
       SKILL_NAMES=(
         aks-change-triage-rollback
+        azure-cost
+        azure-kubernetes
         incident-orchestrator-coordination
         investigate-azure-alerts
       )
