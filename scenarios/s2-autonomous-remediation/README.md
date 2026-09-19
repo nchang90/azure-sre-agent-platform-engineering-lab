@@ -127,28 +127,29 @@ for request in {1..30}; do
     --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
 done
 
-# Verify runtime state after remediation (choose one)
-# Option A: runtime=webapp
-BACKEND_WEBAPP_NAME="$(az webapp list \
-  --resource-group "$RESOURCE_GROUP" \
-  --query "[?starts_with(name, 'orders-api')].name | [0]" \
-  --output tsv)"
-az webapp show \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$BACKEND_WEBAPP_NAME" \
-  --query "{state:state,host:defaultHostName}" \
-  --output table
-
-# Option B: runtime=containerapps
-CONTAINERAPP_NAME="$(az containerapp list \
-  --resource-group "$RESOURCE_GROUP" \
-  --query "[?starts_with(name, 'orders-api')].name | [0]" \
-  --output tsv)"
-az containerapp show \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$CONTAINERAPP_NAME" \
-  --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
-  --output table
+# Verify runtime state after remediation
+RUNTIME="${RUNTIME:-webapp}"  # set to containerapps when using that runtime
+if [ "$RUNTIME" = "webapp" ]; then
+  BACKEND_WEBAPP_NAME="$(az webapp list \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "[?starts_with(name, 'orders-api')].name | [0]" \
+    --output tsv)"
+  az webapp show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$BACKEND_WEBAPP_NAME" \
+    --query "{state:state,host:defaultHostName}" \
+    --output table
+else
+  CONTAINERAPP_NAME="$(az containerapp list \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "[?starts_with(name, 'orders-api')].name | [0]" \
+    --output tsv)"
+  az containerapp show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$CONTAINERAPP_NAME" \
+    --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
+    --output table
+fi
 
 # Shared recovery checks for either runtime
 curl --fail --silent --show-error "$APP_URL/health"
