@@ -68,20 +68,6 @@ SRE Agent HTTP trigger with the incident context:
 - **Initial signals:** pods are still `Running` and `Ready`; node CPU and memory
   look normal; no obvious crash-loop exists
 
-Suggested trigger payload:
-
-```json
-{
-  "incidentId": "INC0012345",
-  "severity": "P1",
-  "affectedService": "orders-api",
-  "environment": "production",
-  "summary": "Orders API availability degraded",
-  "alertDetails": "Checkout API availability dropped below 99%",
-  "correlationId": "demo-s3-selector-drift"
-}
-```
-
 If you want to show the alert handoff path, set
 `webhook_bridge_trigger_url` so Azure Monitor or a ServiceNow workflow can post
 directly into the agent HTTP trigger endpoint.
