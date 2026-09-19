@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2034  # every array here is consumed by the sourcing script
 ALL_SUBAGENT_NAMES=(
   aks-remediator
   aks-triage-agent
@@ -11,7 +12,6 @@ ALL_SUBAGENT_NAMES=(
   triage-agent
 )
 
-# shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
 ALL_RESPONSE_PLAN_NAMES=(
   aks-incidents
   aks-pod-urgent
@@ -51,6 +51,18 @@ ALL_SKILL_NAMES=(
   triage-app-errors
 )
 
+# The single source of truth for which scenarios exist and what runtime each
+# targets. apply-extras.sh resolves the runtime from here, so adding a scenario
+# is one row rather than edits across three files.
+declare -A SCENARIO_RUNTIME=(
+  [s1]=containerapps
+  [s2]=containerapps
+  [s3]=aks
+  [s4]=webapp
+  [s5]=none
+  [s6]=containerapps
+)
+
 ALL_TOOL_NAMES=(
   UpdateServiceNowIncident
   UploadServiceNowAttachment
@@ -73,49 +85,35 @@ ALL_COMMON_PROMPT_NAMES=(
 KB_NAMES=("${ALL_KB_NAMES[@]}")
 SKILL_NAMES=("${ALL_SKILL_NAMES[@]}")
 TOOL_NAMES=("${ALL_TOOL_NAMES[@]}")
-HOOK_NAMES=("${ALL_HOOK_NAMES[@]}")
-# Lab-wide prompts apply in every scenario; scenario-scoped ones are added below.
-COMMON_PROMPT_NAMES=(
+
+# Applied in every scenario. Scenario branches add to these rather than restating them.
+DEFAULT_HOOK_NAMES=(
+  deny-prod-deletes
+  require-approval-for-restarts
+)
+DEFAULT_COMMON_PROMPT_NAMES=(
   investigation-guidelines
   safety-rules
 )
+HOOK_NAMES=("${ALL_HOOK_NAMES[@]}")
+COMMON_PROMPT_NAMES=("${DEFAULT_COMMON_PROMPT_NAMES[@]}")
 SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
 )
 
-knowledge_base_path() {
-  local name="$1"
-  [[ -f "knowledge-base/$name" ]] || die "Missing knowledge-base catalog entry: $name"
-  echo "knowledge-base/$name"
-}
-
-skill_path() {
-  local name="$1"
-  [[ -f ".github/skills/$name/SKILL.md" ]] || die "Missing skill catalog entry: $name"
-  echo ".github/skills/$name/SKILL.md"
-}
-
-tool_path() {
-  local name="$1"
-  local f="recipes/alert-response-incident-operations/config/tools/$name/$name.yaml"
-  [[ -f "$f" ]] || die "Missing tool catalog entry: $name"
+catalog_path() {
+  local label="$1" f="$2"
+  [[ -f "$f" ]] || die "Missing $label catalog entry: $f"
   echo "$f"
 }
 
-hook_path() {
-  local name="$1"
-  local f="recipes/azmon-lawappinsights/config/hooks/$name.yaml"
-  [[ -f "$f" ]] || die "Missing hook catalog entry: $name"
-  echo "$f"
-}
-
-common_prompt_path() {
-  local name="$1"
-  local f="recipes/azmon-lawappinsights/config/common-prompts/$name.yaml"
-  [[ -f "$f" ]] || die "Missing common prompt catalog entry: $name"
-  echo "$f"
-}
+knowledge_base_path() { catalog_path knowledge-base "knowledge-base/$1"; }
+skill_path()          { catalog_path skill ".github/skills/$1/SKILL.md"; }
+hook_path()           { catalog_path hook "recipes/azmon-lawappinsights/config/hooks/$1.yaml"; }
+common_prompt_path()  { catalog_path "common prompt" "recipes/azmon-lawappinsights/config/common-prompts/$1.yaml"; }
+repo_path()           { catalog_path repo "recipes/azmon-lawappinsights/config/repos/$1.yaml"; }
+tool_path()           { catalog_path tool "recipes/alert-response-incident-operations/config/tools/$1/$1.yaml"; }
 
 subagent_path() {
   case "$1" in
@@ -143,10 +141,9 @@ configure_catalog_scope() {
     *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
   esac
 
-  case "$SCENARIO" in
-    ""|s1|s2|s3|s4|s5|s6) ;;
-    *) die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: s1, s2, s3, s4, s5, s6." ;;
-  esac
+  if [[ -n "$SCENARIO" && -z "${SCENARIO_RUNTIME[$SCENARIO]:-}" ]]; then
+    die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: ${!SCENARIO_RUNTIME[*]}"
+  fi
 
   SUBAGENT_NAMES=(
     incident-orchestrator
@@ -157,15 +154,8 @@ configure_catalog_scope() {
   )
   # Custom PythonTools are opt-in per scenario; only S3 writes back to ServiceNow.
   TOOL_NAMES=()
-  # Global guardrails apply in every scenario; S2 adds a deployment-specific one.
-  HOOK_NAMES=(
-    deny-prod-deletes
-    require-approval-for-restarts
-  )
-  COMMON_PROMPT_NAMES=(
-    investigation-guidelines
-    safety-rules
-  )
+  HOOK_NAMES=("${DEFAULT_HOOK_NAMES[@]}")
+  COMMON_PROMPT_NAMES=("${DEFAULT_COMMON_PROMPT_NAMES[@]}")
 
   case "$RUNTIME_STACK" in
     none)
@@ -203,7 +193,6 @@ configure_catalog_scope() {
         incident-summary-agent
         incident-comms-agent
       )
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       RESPONSE_PLAN_NAMES=(
         aks-critical-errors
       )
@@ -226,29 +215,24 @@ configure_catalog_scope() {
         servicenow-incident-update
       )
       # S3 is the only scenario that writes back to an incident record.
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       TOOL_NAMES=(
         UpdateServiceNowIncident
         UploadServiceNowAttachment
       )
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       COMMON_PROMPT_NAMES+=(
         s3-aks-incident
       )
       ;;
     s2)
       log "Including S2 autonomous remediation knowledge base from scenario=s2."
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       RESPONSE_PLAN_NAMES=(
         s2-orders-api-runtime
       )
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       KB_NAMES=(
         http-500-errors.md
         orders-architecture.md
         incident-report.md
       )
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       SKILL_NAMES=(
         incident-orchestrator-coordination
         investigate-azure-alerts
@@ -261,12 +245,10 @@ configure_catalog_scope() {
           containerapps-latency-diagnostics
         )
       fi
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       COMMON_PROMPT_NAMES+=(
         s2-orders-api-runtime
       )
       # S2 runs Autonomous with High access, so deployment writes need a gate.
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       HOOK_NAMES+=(
         s2-require-approval-for-deployment-changes
       )
@@ -280,7 +262,6 @@ configure_catalog_scope() {
         incident-comms-agent
         issue-triager
       )
-      # shellcheck disable=SC2034  # Used by apply-extras.sh after sourcing this file
       COMMON_PROMPT_NAMES+=(
         s4-alert-response
       )
