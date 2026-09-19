@@ -105,9 +105,12 @@ curl --fail --silent --show-error "$APP_URL/health"
 # Prerequisite check in deployed environment:
 # HTTP 200 => simulation route is available
 # HTTP 404/405 => skip this step and correlate with deployment history + telemetry only
-curl --silent --output /dev/null \
-  --write-out "active-cr route HTTP %{http_code}\n" \
-  -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
+ACTIVE_CR_STATUS="$(curl --silent --output /dev/null --write-out "%{http_code}" \
+  -X POST "$APP_URL/api/simulate/active-cr/CHG0030001")"
+echo "active-cr route HTTP $ACTIVE_CR_STATUS"
+if [ "$ACTIVE_CR_STATUS" != "200" ]; then
+  echo "Skipping active change-correlation simulation; use deployment history + telemetry timestamps."
+fi
 
 # Simulate a post-deployment regression impact on /api/orders
 curl --fail --silent --show-error \
