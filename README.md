@@ -87,7 +87,7 @@ Terraform state lives in the `tfstate` container of the `terraformstatesboxprd` 
 |----------|--------|---------|
 | [S1 - Detect and triage](scenarios/s1-detect-triage/README.md) | Complete | Trigger a 5xx incident and investigate in review mode. |
 | [S2 - Autonomous remediation](scenarios/s2-autonomous-remediation/README.md) | Complete | Break the running app and watch the agent detect, investigate, and remediate. |
-| [S3 - Incident root cause investigation](scenarios/s3-incident-root-cause-investigation/README.md) | Complete | Investigate AKS regressions with GitHub repo evidence and routing. |
+| [S3 - Incident root cause investigation](scenarios/s3-incident-root-cause-investigation/README.md) | Complete | Investigate AKS regressions through a ServiceNow and HTTP-triggered incident workflow. |
 | [S4 - Alert Response & Incident Operations](scenarios/s4-alert-response-incident-operations/README.md) | Complete | Validate monitoring, alert routing, telemetry, and escalation. |
 | [S5 - PIM Elevation Audit](scenarios/s5-pim-elevation-audit/README.md) | Complete | Audit Entra PIM activations and correlate Azure Activity. |
 
