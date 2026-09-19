@@ -161,82 +161,57 @@ def build_skill(src, out):
             "skillContent": txt,
         },
     }
-    out_dir = os.path.dirname(out)
-    if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(envelope, f)
-    print(name)
+    _write_envelope(envelope, out)
 
 
-# Credentials are substituted into the tool body at apply time. The PythonTool
-# sandbox cannot read environment variables, so they must be literal in functionCode;
-# committed sources keep @@...@@ placeholders and are never secrets.
-TOOL_PLACEHOLDERS = (
-    "SERVICENOW_URL",
-    "SERVICENOW_USER",
-    "SERVICENOW_PASS",
-)
+PLACEHOLDER_RE = re.compile(r"@@([A-Z0-9_]+)@@")
 
 
-def build_tool(src, out):
-    import yaml  # imported lazily so `skill` mode has no YAML dependency
+def substitute_credentials(raw):
+    """Fill @@TOKEN@@ placeholders from the environment.
 
-    with open(src, "r", encoding="utf-8") as f:
-        raw = f.read()
-
+    The PythonTool sandbox cannot read environment variables, so credentials have
+    to be literal in functionCode; committed sources keep the placeholders and are
+    never secrets. Tokens are discovered from the file rather than listed here, so
+    a tool needing a different credential needs no change to this script -- and a
+    placeholder that is never resolved is an error instead of shipping verbatim.
+    """
     missing = []
-    for key in TOOL_PLACEHOLDERS:
-        token = "@@%s@@" % key
-        if token not in raw:
-            continue
+    for key in sorted(set(PLACEHOLDER_RE.findall(raw))):
         value = os.environ.get(key, "")
-        if not value:
+        if value:
+            raw = raw.replace("@@%s@@" % key, value)
+        else:
             missing.append(key)
-            continue
-        raw = raw.replace(token, value)
     if missing:
-        sys.exit("missing credentials for %s: %s" % (src, ", ".join(missing)))
-
-    doc = yaml.safe_load(raw) or {}
-    meta = doc.get("metadata") or {}
-    spec = doc.get("spec") or {}
-
-    name = meta.get("name") or doc.get("name")
-    if not name:
-        sys.exit("missing metadata.name")
-    if not spec:
-        sys.exit("missing spec")
-
-    envelope = {"name": name, "type": "Tool", "tags": [], "properties": spec}
-    out_dir = os.path.dirname(out)
-    if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(envelope, f)
-    os.chmod(out, 0o600)
-    print(name)
+        sys.exit("missing credentials: %s" % ", ".join(missing))
+    return raw
 
 
-def _load_yaml(path):
+def _load_yaml(path, transform=None):
     import yaml  # imported lazily so `skill` mode has no YAML dependency
 
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        raw = f.read()
+    if transform:
+        raw = transform(raw)
+    return yaml.safe_load(raw) or {}
 
 
-def _write_envelope(envelope, out):
+def _write_envelope(envelope, out, mode=None):
     out_dir = os.path.dirname(out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(envelope, f)
+    if mode is not None:
+        os.chmod(out, mode)
     print(envelope["name"])
 
 
-def _build_spec_envelope(src, out, type_name):
-    """Hooks and common prompts share one shape: spec passed through verbatim."""
-    doc = _load_yaml(src)
+def build_spec_envelope(src, out, type_name, transform=None, mode=None):
+    """Tools, hooks and common prompts share one shape: spec passed through verbatim."""
+    doc = _load_yaml(src, transform)
     meta = doc.get("metadata") or {}
     spec = doc.get("spec") or {}
 
@@ -247,16 +222,17 @@ def _build_spec_envelope(src, out, type_name):
         sys.exit("missing spec in %s" % src)
 
     _write_envelope(
-        {"name": name, "type": type_name, "tags": [], "properties": spec}, out
+        {"name": name, "type": type_name, "tags": [], "properties": spec}, out, mode
     )
 
 
-def build_hook(src, out):
-    _build_spec_envelope(src, out, "GlobalHook")
-
-
-def build_common_prompt(src, out):
-    _build_spec_envelope(src, out, "CommonPrompt")
+# Each spec-shaped kind is one row: API type, an optional source transform, and an
+# optional output file mode. A new kind costs a row, not another function.
+SPEC_KINDS = {
+    "tool": ("Tool", substitute_credentials, 0o600),
+    "hook": ("GlobalHook", None, None),
+    "common-prompt": ("CommonPrompt", None, None),
+}
 
 
 # spec.type in the YAML is a short lab-side name; the API expects the View enum.
@@ -356,12 +332,8 @@ def main(argv):
         build_agent(argv[2])
     elif mode == "skill" and len(argv) >= 4:
         build_skill(argv[2], argv[3])
-    elif mode == "tool" and len(argv) >= 4:
-        build_tool(argv[2], argv[3])
-    elif mode == "hook" and len(argv) >= 4:
-        build_hook(argv[2], argv[3])
-    elif mode == "common-prompt" and len(argv) >= 4:
-        build_common_prompt(argv[2], argv[3])
+    elif mode in SPEC_KINDS and len(argv) >= 4:
+        build_spec_envelope(argv[2], argv[3], *SPEC_KINDS[mode])
     elif mode == "repo" and len(argv) >= 4:
         build_repo(argv[2], argv[3])
     elif mode == "incident-platform" and len(argv) >= 3:

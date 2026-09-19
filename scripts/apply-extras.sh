@@ -17,6 +17,11 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 PYTHON="${PYTHON:-python3}"
 
+# Step numbers are derived so inserting a step does not mean renumbering the rest.
+STEP=0
+STEP_TOTAL=8
+step() { STEP=$((STEP + 1)); log "Step $STEP/$STEP_TOTAL: $*"; }
+
 ENVIRONMENT=""
 SCENARIO=""
 TFVARS_FILE=""
@@ -83,24 +88,9 @@ tfvar_bool() {
 }
 
 resolve_runtime_stack() {
-  local scenario="$1"
-  case "$scenario" in
-    s1|s2)
-      printf 'containerapps\n'
-      ;;
-    s3)
-      printf 'aks\n'
-      ;;
-    s4)
-      printf 'webapp\n'
-      ;;
-    s5)
-      printf 'none\n'
-      ;;
-    *)
-      die "Unsupported scenario '$scenario' in $TFVARS_FILE. Expected s1, s2, s3, s4, or s5."
-      ;;
-  esac
+  local scenario="$1" runtime="${SCENARIO_RUNTIME[$1]:-}"
+  [[ -n "$runtime" ]] || die "Unsupported scenario '$scenario' in $TFVARS_FILE. Expected one of: ${!SCENARIO_RUNTIME[*]}"
+  printf '%s\n' "$runtime"
 }
 
 configure_environment() {
@@ -346,7 +336,7 @@ configure_incident_platform() {
 }
 
 upload_knowledge_base() {
-  log "Step 1/8: Uploading knowledge base..."
+  step "Uploading knowledge base..."
   local upload names name f code
   upload=(-F triggerIndexing=true)
   names=""
@@ -362,32 +352,37 @@ upload_knowledge_base() {
   echo
 }
 
-upload_common_prompts() {
-  log "Step 2/8: Uploading common prompts..."
-  local f name code
+# Every envelope-shaped collection uploads the same way: resolve the catalog path,
+# convert to an API envelope, PUT it, report. Kinds differ only in the five values
+# passed in. Uses the same nameref style as cleanup_out_of_scope.
+upload_collection() {
+  local label="$1" mode="$2" path_fn="$3" api_prefix="$4"
+  local -n _names="$5"
+  local entry f name code
 
-  for name in "${COMMON_PROMPT_NAMES[@]}"; do
-    f="$(common_prompt_path "$name")"
-    name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" common-prompt "$f" "$TMP_DIR/prompt.json")" \
-      || { warn "  $name: YAML conversion failed"; continue; }
-    code="$(put_json_file "/api/v2/extendedAgent/commonprompts/${name}" "$TMP_DIR/prompt.json")"
-    report_result "$code" "Common prompt: $name" "Common prompt $name"
+  for entry in "${_names[@]}"; do
+    f="$("$path_fn" "$entry")"
+    if ! name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" "$mode" "$f" "$TMP_DIR/envelope.json" 2>"$TMP_DIR/err")"; then
+      warn "  $entry: conversion failed — $(tr '\n' ' ' <"$TMP_DIR/err")"
+      continue
+    fi
+    code="$(put_json_file "${api_prefix}/${name}" "$TMP_DIR/envelope.json")"
+    report_result "$code" "$label: $name" "$label $name"
   done
+  # Tool envelopes carry live credentials; never leave one on disk.
+  rm -f "$TMP_DIR/envelope.json"
   echo
 }
 
-upload_hooks() {
-  log "Step 3/8: Uploading hooks..."
-  local f name code
+upload_common_prompts() {
+  step "Uploading common prompts..."
+  upload_collection "Common prompt" common-prompt common_prompt_path \
+    /api/v2/extendedAgent/commonprompts COMMON_PROMPT_NAMES
+}
 
-  for name in "${HOOK_NAMES[@]}"; do
-    f="$(hook_path "$name")"
-    name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" hook "$f" "$TMP_DIR/hook.json")" \
-      || { warn "  $name: YAML conversion failed"; continue; }
-    code="$(put_json_file "/api/v2/extendedAgent/hooks/${name}" "$TMP_DIR/hook.json")"
-    report_result "$code" "Hook: $name" "Hook $name"
-  done
-  echo
+upload_hooks() {
+  step "Uploading hooks..."
+  upload_collection "Hook" hook hook_path /api/v2/extendedAgent/hooks HOOK_NAMES
 }
 
 # Resolve the repository to connect: GITHUB_REPOSITORY is set automatically in
@@ -407,7 +402,7 @@ resolve_github_repository() {
 }
 
 register_repo() {
-  log "Step 4/8: Connecting GitHub repository..."
+  step "Connecting GitHub repository..."
   local src="recipes/azmon-lawappinsights/config/repos/github-repo.yaml"
   local repo staged name code
 
@@ -458,8 +453,7 @@ drop_servicenow_from_scope() {
 }
 
 upload_tools() {
-  log "Step 5/8: Uploading custom tools..."
-  local f name code
+  step "Uploading custom tools..."
 
   if [[ ${#TOOL_NAMES[@]} -eq 0 ]]; then
     log "  No custom tools in scope."
@@ -475,35 +469,16 @@ upload_tools() {
     return
   fi
 
-  for name in "${TOOL_NAMES[@]}"; do
-    f="$(tool_path "$name")"
-    if ! "$PYTHON" "$SCRIPT_DIR/build-api.py" tool "$f" "$TMP_DIR/tool.json" >/dev/null 2>"$TMP_DIR/err"; then
-      warn "  $name: tool conversion failed — $(cat "$TMP_DIR/err")"
-      continue
-    fi
-    code="$(put_json_file "/api/v2/extendedAgent/tools/${name}" "$TMP_DIR/tool.json")"
-    report_result "$code" "Tool: $name" "Tool $name"
-  done
-  # The staged envelope holds live credentials; do not leave it on disk.
-  rm -f "$TMP_DIR/tool.json"
-  echo
+  upload_collection "Tool" tool tool_path /api/v2/extendedAgent/tools TOOL_NAMES
 }
 
 upload_skills() {
-  log "Step 6/8: Uploading skills..."
-  local f name code
-
-  for name in "${SKILL_NAMES[@]}"; do
-    f="$(skill_path "$name")"
-    name="$("$PYTHON" "$SCRIPT_DIR/build-api.py" skill "$f" "$TMP_DIR/skill.json")"
-    code="$(put_json_file "/api/v2/extendedAgent/skills/${name}" "$TMP_DIR/skill.json")"
-    report_result "$code" "Skill: $name" "Skill $name"
-  done
-  echo
+  step "Uploading skills..."
+  upload_collection "Skill" skill skill_path /api/v2/extendedAgent/skills SKILL_NAMES
 }
 
 register_subagents() {
-  log "Step 7/8: Registering subagents..."
+  step "Registering subagents..."
   local name
 
   for name in "${SUBAGENT_NAMES[@]}"; do
@@ -513,7 +488,7 @@ register_subagents() {
 }
 
 create_response_plans() {
-  log "Step 8/8: Creating response plans..."
+  step "Creating response plans..."
   local plan
 
   for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
