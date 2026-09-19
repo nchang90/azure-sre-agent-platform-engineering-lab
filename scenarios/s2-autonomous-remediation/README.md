@@ -97,6 +97,8 @@ curl --fail --silent --show-error "$APP_URL/health"
 ### Simulate production incident and observe (5 mins)
 ```bash
 # Simulate a deployment window correlation
+# Prerequisite: this demo build includes simulation routes in `src/orders-api/Program.cs`.
+# Quick check (expect HTTP 200): POST "$APP_URL/api/simulate/reset"
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
 # Expected response: {"activeChangeRequest":"CHG0030001"}
@@ -126,7 +128,7 @@ az webapp show \
   --output table
 
 # Option B: runtime=containerapps
-CONTAINERAPP_NAME="${CONTAINERAPP_NAME:-orders-api}"
+CONTAINERAPP_NAME="${CONTAINERAPP_NAME:-${BACKEND_NAME:-orders-api}}"
 az containerapp show \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CONTAINERAPP_NAME" \
