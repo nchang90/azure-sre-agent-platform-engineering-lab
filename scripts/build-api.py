@@ -93,7 +93,6 @@ SKILL_TOOLS = {
         "QueryAppInsightsUsingAppId",
         "QueryLogAnalyticsByWorkspaceId",
     ],
-    "rca-analysis": READ_ONLY_DIAGNOSTICS + ["FindConnectedGitHubRepo"],
     "servicenow-incident-update": [
         "SearchMemory",
         "UpdateServiceNowIncident",
