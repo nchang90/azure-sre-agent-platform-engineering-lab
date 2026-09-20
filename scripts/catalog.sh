@@ -23,7 +23,6 @@ ALL_RESPONSE_PLAN_NAMES=(
   orders-api-errors
   orders-api-latency
   s2-orders-api-runtime
-  snow-all-incidents
 )
 
 ALL_KB_NAMES=(

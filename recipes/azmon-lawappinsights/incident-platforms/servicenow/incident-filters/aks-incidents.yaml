@@ -1,14 +1,18 @@
 metadata:
-  name: snow-aks-incidents
+  name: aks-incidents
 spec:
-  name: ServiceNow AKS Incident Response
+  name: S3 Checkout API Incident Response
   incidentPlatform: ServiceNow
   isEnabled: true
   priorities:
   - "1"
   - "2"
   - "3"
-  titleContains: AKS
+  # Matches both paths into this scenario: the Azure Monitor alert display name
+  # ("AKS checkout-api service has no endpoints") and the incident
+  # scripts/servicenow-incident.sh opens. Plain "AKS" matched neither, and also
+  # pulled in crashloop and node-pressure alerts S3 does not investigate.
+  titleContains: checkout-api
   handlingAgent: aks-triage-agent
   agentMode: autonomous
   deepInvestigationEnabled: true

@@ -61,12 +61,24 @@ Production incident -> ServiceNow -> HTTP trigger -> Azure SRE Agent -> AKS tria
 Create the incident in ServiceNow first, then let the workflow call the Azure
 SRE Agent HTTP trigger with the incident context:
 
-- **Alert:** `Checkout API availability has dropped below 99%`
-- **Customer impact:** checkout requests intermittently fail or time out
-- **Recent change:** a new `checkout-api` deployment was rolled out shortly before
-  the alert
-- **Initial signals:** pods are still `Running` and `Ready`; node CPU and memory
-  look normal; no obvious crash-loop exists
+```bash
+export SERVICENOW_PASS='<integration user password>'
+bash scripts/servicenow-incident.sh demo
+```
+
+The script reads `scenario` from the environment tfvars and opens the S3
+incident with the fields the response plan matches on:
+
+- **Short description:** `AKS checkout-api service has no endpoints` — the same
+  display name as the Azure Monitor alert in `infra/terraform/alerts.tf`, and
+  the `titleContains` the `aks-incidents` plan filters on
+- **Impact / urgency:** `1` / `1`, so ServiceNow rates it Priority 1
+- **Category:** `network` — the failure is routing, not the application
+- **Description:** checkout requests timing out, pods still `Running` and
+  `Ready`, node CPU and memory normal, a `checkout-api` rollout shortly before
+
+Pass a different title as the second argument if you want to demo the
+no-match case; the plan will then correctly ignore the incident.
 
 If you want to show the alert handoff path, set
 `webhook_bridge_trigger_url` so Azure Monitor or a ServiceNow workflow can post
@@ -135,8 +147,8 @@ narrow: `UpdateServiceNowIncident` writes `work_notes` (and `comments` only when
 asked) and never touches state, assignment or close fields, so an agent update
 can never resolve an incident.
 
-Credentials come from `SERVICENOW_URL` / `SERVICENOW_USER` / `SERVICENOW_PASS` —
-see [`.servicenow.env.sample`](../../.servicenow.env.sample). The PythonTool
+Credentials come from `SERVICENOW_URL` / `SERVICENOW_USER` / `SERVICENOW_PASS`,
+exported before the apply. The PythonTool
 sandbox cannot read environment variables, so `scripts/apply-extras.sh`
 substitutes them into the tool body at apply time; use a dedicated integration
 user scoped to the incident table.
@@ -144,6 +156,22 @@ user scoped to the incident table.
 If those variables are unset, the tools **and** the skill are skipped with a
 warning and the rest of the catalog still applies — S3 then behaves as it did
 before, composing the update for a human to post.
+
+### Scoping the response plan
+
+S3 registers `aks-incidents`: priority 1-3 plus title contains `AKS`. That is
+broad enough to pull in any AKS incident on the instance — fine for a lab, and
+too wide for a shared ServiceNow.
+
+To narrow it to the incident this scenario actually reproduces — a production
+routing failure on the `checkout-api` CI owned by the platform group — use the
+portal's advanced filters rather than the YAML in this repo. The checked-in
+plans support priority and title only; assignment group, configuration item,
+category and `u_*` custom fields are a portal preview. Steps:
+[incident-filters/README.md](../../recipes/azmon-lawappinsights/incident-platforms/servicenow/incident-filters/README.md#advanced-filters-are-a-portal-feature).
+
+Set that plan to **Review** rather than Autonomous. S3 ends at an evidence-backed
+RCA written onto the incident; the remediation stays with an operator.
 
 ### Deterministic evidence paths
 
@@ -201,6 +229,7 @@ After the quick start:
 - A Sev1 AKS alert still provides the investigation signal and evidence trail
 - Critical `checkout-api` workload or service deletion also raises a Sev1 AKS alert
 - The ServiceNow workflow can call the Azure SRE Agent HTTP trigger with incident context
+- The registered response plan matches the checkout incident and nothing else
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
 - The handoff chain completes in triage → summary → ServiceNow-ready report order
 - The `evidence-before-after` skill is registered for `scenario=s3`
@@ -220,6 +249,7 @@ After the quick start:
 | Scenario manifest | `infra/k8s/checkout-api-service-no-endpoints.yaml` |
 | Legacy crash-loop demo manifest | `infra/k8s/checkout-api-broken.yaml` |
 | Azure SRE Agent recipe | `recipes/alert-response-incident-operations/` |
+| Response plans | `recipes/azmon-lawappinsights/incident-platforms/servicenow/incident-filters/` |
 | Alert rules | `infra/terraform/alerts.tf` |
 | AKS configuration | `infra/terraform/aks.tf` |
 | Knowledge base docs | `knowledge-base/` (runbooks, incident templates) |
