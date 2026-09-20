@@ -35,9 +35,9 @@ terraform_apply() {
 }
 
 dump_aks_diagnostics() {
-  kubectl get pods --namespace default -l app=orders-api -o wide
-  kubectl describe deployment/orders-api --namespace default
-  kubectl describe pods --namespace default -l app=orders-api
+  kubectl get pods --namespace default -l app=checkout-api -o wide
+  kubectl describe deployment/checkout-api --namespace default
+  kubectl describe pods --namespace default -l app=checkout-api
 }
 
 deploy_aks_workload() {
@@ -58,12 +58,12 @@ deploy_aks_workload() {
     --admin \
     --overwrite-existing
 
-  kubectl apply -f infra/k8s/orders-api.yaml
-  if ! kubectl rollout status deployment/orders-api --namespace default --timeout=180s; then
+  kubectl apply -f infra/k8s/checkout-api.yaml
+  if ! kubectl rollout status deployment/checkout-api --namespace default --timeout=180s; then
     dump_aks_diagnostics
     die "The deployment failed; investigate the AKS alert through Azure SRE Agent."
   fi
-  ok "orders-api rolled out to $aks_name."
+  ok "checkout-api rolled out to $aks_name."
 }
 
 build_and_update_images() {

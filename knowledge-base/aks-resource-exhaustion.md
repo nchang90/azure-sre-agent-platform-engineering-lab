@@ -1,6 +1,6 @@
 # AKS Resource Exhaustion Runbook (S3)
 
-Use this runbook for S3 incidents where `orders-api` or its AKS nodes show CPU,
+Use this runbook for S3 incidents where `checkout-api` or its AKS nodes show CPU,
 memory, or scheduling pressure.
 
 Follow the lab flow strictly:
@@ -32,7 +32,7 @@ Follow the lab flow strictly:
 - Correlate pressure with:
   - a recent rollout or configuration change
   - a noisy neighbor or unexpected workload on the cluster
-  - undersized requests and limits on `orders-api`
+  - undersized requests and limits on `checkout-api`
 - Separate cluster-wide saturation from a single failing deployment.
 
 ## 4) Common Failure Patterns
@@ -51,7 +51,7 @@ Follow the lab flow strictly:
 ### Scheduling failures
 
 - Pods remain `Pending` with `FailedScheduling` events.
-- Compare `orders-api` resource requests against current allocatable node capacity.
+- Compare `checkout-api` resource requests against current allocatable node capacity.
 
 ### Unhealthy nodes
 
@@ -73,7 +73,7 @@ If action mode is **Review**, request approval before write actions.
 ## 6) Validate Recovery
 
 - Confirm:
-  - `orders-api` pods schedule successfully and remain ready
+  - `checkout-api` pods schedule successfully and remain ready
   - node pressure clears
   - CPU and memory metrics trend back toward baseline
   - alert conditions stop firing

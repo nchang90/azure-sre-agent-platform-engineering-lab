@@ -21,7 +21,7 @@
 
   <rect class="box" x="330" y="170" width="210" height="90" fill="#ffd8a8" stroke="#f59e0b"/>
   <text x="435" y="205" text-anchor="middle" class="label">AKS cluster</text>
-  <text x="435" y="228" text-anchor="middle" class="label">orders-api workload</text>
+  <text x="435" y="228" text-anchor="middle" class="label">checkout-api workload</text>
 
   <rect class="box" x="310" y="300" width="250" height="90" fill="#c3fae8" stroke="#06b6d4"/>
   <text x="435" y="335" text-anchor="middle" class="label">AKS VNet + subnet</text>

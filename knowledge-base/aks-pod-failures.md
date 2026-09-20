@@ -1,6 +1,6 @@
 # AKS Pod Failure Investigation Runbook (S3)
 
-Use this runbook for S3 incidents where the `orders-api` deployment in the
+Use this runbook for S3 incidents where the `checkout-api` deployment in the
 `default` namespace is unhealthy, restarting, or unable to schedule.
 
 Follow the lab flow strictly:
@@ -9,8 +9,8 @@ Follow the lab flow strictly:
 ## 1) Detect
 
 - Confirm the triggering signal:
-  - `AKS orders-api workload unavailable`
-  - `AKS orders-api workload unhealthy`
+  - `AKS checkout-api workload unavailable`
+  - `AKS checkout-api workload unhealthy`
   - `AKS - CrashLoop/OOM detected`
   - `AKS - Failed or pending pods`
   - `AKS - Pod restart spike`
@@ -20,8 +20,8 @@ Follow the lab flow strictly:
 ## 2) Triage
 
 - Check the deployment and pods:
-  - `kubectl get deployment orders-api -n default`
-  - `kubectl get pods -l app=orders-api -n default`
+  - `kubectl get deployment checkout-api -n default`
+  - `kubectl get pods -l app=checkout-api -n default`
   - `kubectl describe pod <pod-name> -n default`
 - Review recent Kubernetes telemetry:
   - `KubePodInventory` for restart counts and latest pod state
@@ -79,8 +79,8 @@ If action mode is **Review**, request approval before write actions.
 ## 6) Validate Recovery
 
 - Confirm:
-  - `kubectl rollout status deployment/orders-api -n default`
-  - at least one `orders-api` pod is `Running` and `Ready`
+  - `kubectl rollout status deployment/checkout-api -n default`
+  - at least one `checkout-api` pod is `Running` and `Ready`
   - restart growth stops
   - the Sev1/Sev2 AKS alert condition clears
 - Document the evidence, root cause, mitigation, and follow-up actions in the

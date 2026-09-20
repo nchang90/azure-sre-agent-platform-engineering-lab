@@ -1,4 +1,4 @@
-# S3 — Incident Root Cause Investigation (AKS + Azure Monitor)
+# S3 — Incident Root Cause Investigation (AKS + Service Now)
 
 **Persona:** Platform SRE / Incident Commander  
 **Time:** ~12 minutes  
@@ -10,7 +10,7 @@
 
 Deploy the Terraform environment and register the S3 recipe:
 
-The workflow deploys the healthy `orders-api` workload to AKS:
+The workflow deploys the healthy `checkout-api` workload to AKS:
 
 ```bash
 gh workflow run deploy.yml \
@@ -30,15 +30,15 @@ Apply the selector-drift manifest:
 
 ```bash
 az aks get-credentials --resource-group rg-sre-lab-demo --name <aks-name> --admin
-kubectl apply -f infra/k8s/orders-api-service-no-endpoints.yaml
-kubectl get service orders-api --namespace default -o yaml
-kubectl get endpoints orders-api --namespace default
+kubectl apply -f infra/k8s/checkout-api-service-no-endpoints.yaml
+kubectl get service checkout-api --namespace default -o yaml
+kubectl get endpoints checkout-api --namespace default
 ```
 
 Expected effect:
-- `orders-api` pods stay `Running` and `Ready`
+- `checkout-api` pods stay `Running` and `Ready`
 - CPU and memory stay near baseline
-- the `orders-api` `Service` keeps existing, but selects no endpoints
+- the `checkout-api` `Service` keeps existing, but selects no endpoints
 - callers start timing out or returning 5xx even though the pods do not look broken
 
 This scenario keeps a single primary root-cause angle and a fixed evidence
@@ -63,7 +63,7 @@ SRE Agent HTTP trigger with the incident context:
 
 - **Alert:** `Checkout API availability has dropped below 99%`
 - **Customer impact:** checkout requests intermittently fail or time out
-- **Recent change:** a new `orders-api` deployment was rolled out shortly before
+- **Recent change:** a new `checkout-api` deployment was rolled out shortly before
   the alert
 - **Initial signals:** pods are still `Running` and `Ready`; node CPU and memory
   look normal; no obvious crash-loop exists
@@ -80,7 +80,7 @@ fourth, and reporting back to the incident record without remediation.
 
 ## Story
 
-A new deployment hits AKS and the `orders-api` workload regresses in a way that
+A new deployment hits AKS and the `checkout-api` workload regresses in a way that
 looks healthy from the pod view but breaks live traffic. The Azure SRE Agent
 uses three focused subagents based on Lee's structure: AKS triage, incident
 summary, and operator communications.
@@ -97,7 +97,7 @@ the same breadcrumb trail for the failure mode.
 
 | Component | Role |
 |-----------|------|
-| **AKS Cluster** | Runs orders-api microservice workload |
+| **AKS Cluster** | Runs checkout-api microservice workload |
 | **Log Analytics** | Stores pod logs, node metrics, and events (`KubePodInventory`, `ContainerLogV2`, `KubeEvents`) |
 | **Application Insights** | Captures application traces and errors |
 | **Azure Monitor Connector** | Supplies AKS and telemetry evidence to the Azure SRE Agent |
@@ -147,10 +147,10 @@ before, composing the update for a human to post.
 
 ### Deterministic evidence paths
 
-1. `KubePodInventory` still shows healthy `orders-api` pods
-2. `KubeServices` still shows the `orders-api` `Service`
-3. `kubectl get endpoints orders-api -n default` returns no endpoints
-4. Azure Monitor fires `AKS orders-api service has no endpoints`
+1. `KubePodInventory` still shows healthy `checkout-api` pods
+2. `KubeServices` still shows the `checkout-api` `Service`
+3. `kubectl get endpoints checkout-api -n default` returns no endpoints
+4. Azure Monitor fires `AKS checkout-api service has no endpoints`
 5. The agent concludes the failure is routing/configuration drift, not a broken pod
 
 ### Expected investigation output
@@ -158,10 +158,10 @@ before, composing the update for a human to post.
 For the demo to feel production-like, the final incident update should say:
 
 - what customers saw: elevated checkout failures or timeouts
-- what stayed healthy: AKS nodes and `orders-api` pods
-- what actually broke: the `orders-api` `Service` selector no longer matched the
+- what stayed healthy: AKS nodes and `checkout-api` pods
+- what actually broke: the `checkout-api` `Service` selector no longer matched the
   healthy pods, leaving zero endpoints
-- which resources were affected: the `orders-api` deployment and `orders-api`
+- which resources were affected: the `checkout-api` deployment and `checkout-api`
   service in the `default` namespace
 - which change is implicated: the most recent rollout that introduced selector
   drift
@@ -199,7 +199,7 @@ After the quick start:
 - Three S3 subagents are registered
 - The AKS triage agent can query monitoring evidence
 - A Sev1 AKS alert still provides the investigation signal and evidence trail
-- Critical `orders-api` workload or service deletion also raises a Sev1 AKS alert
+- Critical `checkout-api` workload or service deletion also raises a Sev1 AKS alert
 - The ServiceNow workflow can call the Azure SRE Agent HTTP trigger with incident context
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
 - The handoff chain completes in triage → summary → ServiceNow-ready report order
@@ -216,9 +216,9 @@ After the quick start:
 | What | Where |
 |------|-------|
 | S3 Terraform environment | `infra/terraform/environments/demo.tfvars` |
-| Healthy workload | `infra/k8s/orders-api.yaml` |
-| Scenario manifest | `infra/k8s/orders-api-service-no-endpoints.yaml` |
-| Legacy crash-loop demo manifest | `infra/k8s/orders-api-broken.yaml` |
+| Healthy workload | `infra/k8s/checkout-api.yaml` |
+| Scenario manifest | `infra/k8s/checkout-api-service-no-endpoints.yaml` |
+| Legacy crash-loop demo manifest | `infra/k8s/checkout-api-broken.yaml` |
 | Azure SRE Agent recipe | `recipes/alert-response-incident-operations/` |
 | Alert rules | `infra/terraform/alerts.tf` |
 | AKS configuration | `infra/terraform/aks.tf` |

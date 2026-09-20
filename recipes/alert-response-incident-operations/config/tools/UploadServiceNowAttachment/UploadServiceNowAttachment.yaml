@@ -54,7 +54,7 @@ spec:
     required: true
   - name: file_name
     type: string
-    description: "string:Attachment file name (e.g. 'rca-orders-api-no-endpoints.md')"
+    description: "string:Attachment file name (e.g. 'rca-checkout-api-no-endpoints.md')"
     required: true
   - name: content
     type: string

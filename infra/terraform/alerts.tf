@@ -214,9 +214,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_crashloop_oom" {
   }
 }
 
-resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unavailable" {
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_checkout_api_unavailable" {
   count               = local.aks_enabled ? 1 : 0
-  name                = "alert-aks-orders-api-unavailable"
+  name                = "alert-aks-checkout-api-unavailable"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
@@ -225,8 +225,8 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unavai
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "AKS: the critical orders-api workload has no running healthy pods."
-  display_name            = "AKS orders-api workload unavailable"
+  description             = "AKS: the critical checkout-api workload has no running healthy pods."
+  display_name            = "AKS checkout-api workload unavailable"
   severity                = 1
   enabled                 = true
   evaluation_frequency    = "PT5M"
@@ -251,11 +251,11 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unavai
       let LatestBatch = toscalar(ClusterPods | summarize max(TimeGenerated));
       let ProbeFailing = Events
         | where TimeGenerated > ago(3m)
-        | where ClusterName startswith "aks-" and Name startswith "orders-api-"
+        | where ClusterName startswith "aks-" and Name startswith "checkout-api-"
         | where Reason == "Unhealthy" and Message has "Readiness probe failed"
         | distinct Name;
       ClusterPods
-      | where Name startswith "orders-api-"
+      | where Name startswith "checkout-api-"
       | summarize arg_max(TimeGenerated, PodStatus, ContainerStatus, ContainerStatusReason) by Namespace, Name, ContainerName
       | where TimeGenerated >= LatestBatch - 30s
       | summarize UnhealthyContainers = countif(not(PodStatus == "Running" and ((ContainerStatus == "running" and isempty(ContainerStatusReason)) or (ContainerStatus == "terminated" and ContainerStatusReason == "Completed")))) by Namespace, Name
@@ -275,9 +275,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unavai
   }
 }
 
-resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_service_missing" {
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_checkout_api_service_missing" {
   count               = local.aks_enabled ? 1 : 0
-  name                = "alert-aks-orders-api-service-missing"
+  name                = "alert-aks-checkout-api-service-missing"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
@@ -286,8 +286,8 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "AKS: the critical orders-api Kubernetes service is missing from the cluster."
-  display_name            = "AKS orders-api service missing"
+  description             = "AKS: the critical checkout-api Kubernetes service is missing from the cluster."
+  display_name            = "AKS checkout-api service missing"
   severity                = 1
   enabled                 = true
   evaluation_frequency    = "PT5M"
@@ -308,7 +308,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
       let LatestBatch = toscalar(ClusterServices | summarize max(TimeGenerated));
       ClusterServices
       | where TimeGenerated >= LatestBatch - 30s
-      | where ServiceName == "orders-api"
+      | where ServiceName == "checkout-api"
       | summarize MatchingServices = count()
       | extend MatchingServices = coalesce(MatchingServices, 0)
     KQL
@@ -324,9 +324,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
   }
 }
 
-resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unhealthy" {
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_checkout_api_unhealthy" {
   count               = local.aks_enabled ? 1 : 0
-  name                = "alert-aks-orders-api-unhealthy"
+  name                = "alert-aks-checkout-api-unhealthy"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
@@ -335,8 +335,8 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unheal
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "AKS: one or more orders-api pods are not running, failing probes, stuck (e.g. ErrImagePull), or restarting."
-  display_name            = "AKS orders-api workload unhealthy"
+  description             = "AKS: one or more checkout-api pods are not running, failing probes, stuck (e.g. ErrImagePull), or restarting."
+  display_name            = "AKS checkout-api workload unhealthy"
   severity                = 1
   enabled                 = true
   evaluation_frequency    = "PT5M"
@@ -364,12 +364,12 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unheal
       let LatestBatch = toscalar(ClusterPods | summarize max(TimeGenerated));
       let ProbeFailing = Events
         | where TimeGenerated > ago(5m)
-        | where ClusterName startswith "aks-" and Name startswith "orders-api-"
+        | where ClusterName startswith "aks-" and Name startswith "checkout-api-"
         | where Reason == "Unhealthy"
         | distinct Name
         | extend ProbeFailed = 1;
       ClusterPods
-      | where Name startswith "orders-api-"
+      | where Name startswith "checkout-api-"
       | extend Unhealthy = PodStatus != "Terminating" and not(PodStatus == "Running" and ((ContainerStatus == "running" and isempty(ContainerStatusReason)) or (ContainerStatus == "terminated" and ContainerStatusReason == "Completed")))
       | summarize LastSeen = max(TimeGenerated), UnhealthySnapshots = dcountif(TimeGenerated, Unhealthy), LatestUnhealthy = countif(Unhealthy and TimeGenerated >= LatestBatch - 30s), RestartDelta = max(PodRestartCount) - min(PodRestartCount) by Name
       | where LastSeen >= LatestBatch - 30s
@@ -389,9 +389,9 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_unheal
   }
 }
 
-resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_service_no_endpoints" {
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_checkout_api_service_no_endpoints" {
   count               = local.aks_enabled ? 1 : 0
-  name                = "alert-aks-orders-api-service-no-endpoints"
+  name                = "alert-aks-checkout-api-service-no-endpoints"
   location            = var.location
   resource_group_name = azurerm_resource_group.agent.name
   tags                = var.tags
@@ -400,8 +400,8 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
     azurerm_log_analytics_workspace.law,
   ]
 
-  description             = "AKS: an orders-api service selects no healthy pods although healthy orders-api pods run in its namespace (selector or label mismatch)."
-  display_name            = "AKS orders-api service has no endpoints"
+  description             = "AKS: an checkout-api service selects no healthy pods although healthy checkout-api pods run in its namespace (selector or label mismatch)."
+  display_name            = "AKS checkout-api service has no endpoints"
   severity                = 1
   enabled                 = true
   evaluation_frequency    = "PT5M"
@@ -411,8 +411,8 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
   scopes                  = [azurerm_log_analytics_workspace.law.id]
 
   criteria {
-    # Fires only while healthy orders-api pods exist, so a full outage is left
-    # to alert-aks-orders-api-unavailable instead of raising a duplicate incident.
+    # Fires only while healthy checkout-api pods exist, so a full outage is left
+    # to alert-aks-checkout-api-unavailable instead of raising a duplicate incident.
     query = <<-KQL
       let Services = union isfuzzy=true
         (KubeServices
@@ -424,7 +424,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
         (datatable(TimeGenerated:datetime, ClusterName:string, Namespace:string, Name:string, ContainerName:string, PodStatus:string, ContainerStatus:string, ContainerStatusReason:string, PodRestartCount:long, PodLabel:string)[]);
       let Selector = Services
         | where TimeGenerated > ago(5m)
-        | where ClusterName startswith "aks-" and ServiceName == "orders-api"
+        | where ClusterName startswith "aks-" and ServiceName == "checkout-api"
         | summarize arg_max(TimeGenerated, SelectorLabels) by Namespace
         | extend Parsed = parse_json(SelectorLabels)
         | mv-expand Item = iff(gettype(Parsed) == "array", Parsed, pack_array(Parsed))
@@ -451,11 +451,11 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "aks_orders_api_servic
         | join kind=inner SelectorKeys on Namespace
         | where MatchedKeys == SelectorKeys
         | summarize Endpoints = dcount(Name) by Namespace;
-      let HealthyOrdersPods = ReadyPods
-        | where Name startswith "orders-api-"
-        | summarize HealthyOrdersPods = count() by Namespace;
+      let HealthyCheckoutPods = ReadyPods
+        | where Name startswith "checkout-api-"
+        | summarize HealthyCheckoutPods = count() by Namespace;
       SelectorKeys
-      | join kind=inner HealthyOrdersPods on Namespace
+      | join kind=inner HealthyCheckoutPods on Namespace
       | join kind=leftouter Endpoints on Namespace
       | summarize ServicesWithoutEndpoints = countif(coalesce(Endpoints, 0) == 0)
     KQL

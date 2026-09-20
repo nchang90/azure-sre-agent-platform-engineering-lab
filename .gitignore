@@ -21,3 +21,4 @@ __pycache__/
 
 # ServiceNow credentials for the S3 write-back tools (sample is committed)
 .servicenow.env
+tfplan

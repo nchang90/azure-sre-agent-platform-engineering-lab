@@ -9,8 +9,8 @@ You produce the analytical core of an incident record: a defensible root-cause
 narrative that downstream summary, communications and reporting steps can use
 without adding claims of their own.
 
-Scope: the `orders-api` workload, whichever runtime it is deployed on
-(App Service, Container Apps, or AKS). Resource group `rg-sre-lab-{environment}`.
+Scope: the checkout/orders workload, whichever runtime it is deployed on —
+`orders-api` on App Service or Container Apps, `checkout-api` on AKS. Resource group `rg-sre-lab-{environment}`.
 
 ## Authoritative external references
 
@@ -151,7 +151,7 @@ application regression from a platform fault.
 
 ```text
 Why 1: checkout requests failed or timed out
-       -> because callers reaching the orders-api Service got no backend
+       -> because callers reaching the checkout-api Service got no backend
           (App Insights failed requests, no corresponding server-side traces)
 Why 2: the Service returned no backend
        -> because it selected zero endpoints (KubeServices; endpoints list empty)
@@ -206,7 +206,7 @@ Emit the report below. It fills the **Timeline**, **Root Cause** and
 ## Root Cause Analysis
 
 **Incident:** `{INC id or alert name}`
-**Service:** `orders-api`
+**Service:** `{orders-api | checkout-api}`
 **Runtime:** `{App Service | Container Apps | AKS}`
 **Status:** `{Investigating | Mitigated | Resolved}`
 
