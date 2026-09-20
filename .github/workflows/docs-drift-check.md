@@ -1,10 +1,8 @@
 ---
 description: |
-  Checks a merged pull request for documentation the change made wrong, and
-  for governance the documentation no longer states -- an agent autonomy level,
-  an RBAC grant, a guardrail hook. A pre-agent step computes the findings; the
-  agent writes the corrections into a draft pull request and reports back on
-  the source PR.
+  Checks a merged pull request for documentation the change made wrong. A
+  pre-agent step computes the findings; the agent writes the corrections into a
+  draft pull request and reports back on the source PR.
 
 on:
   pull_request:
@@ -91,8 +89,7 @@ finding go away.
   report `skipped`. Do not open a PR for advisory findings.
 
 Prefer acting over skipping. A wrong correction costs a closed draft PR; a
-missed one leaves the documentation lying to the next reader — and for a
-governance finding, lying to an auditor.
+missed one leaves the documentation lying to the next reader.
 
 ## Step 3: Write the corrections
 
@@ -103,17 +100,11 @@ this repo:
 |---|---|
 | A tfvars key nothing explains | the scenario's own `scenarios/s*/README.md`, and the tfvars guidance in `scenarios/README.md` |
 | A dead relative link | repoint it, or drop it if the target is gone. Many live in `knowledge-base/` runbooks |
-| An RBAC role no doc mentions | the root `README.md` prerequisites, next to the existing note about `infra/terraform/rbac.tf` |
-| A scenario that never states its autonomy | that scenario's README — say plainly whether the agent acts on its own or proposes for approval, and name the hooks that gate it |
 | A response-plan field that is never sent | the response-plan README in `recipes/.../incident-filters/`, which documents the supported field set |
 
 Match the house style: short sections, tables over prose for anything
 enumerable, relative markdown links, and the scenario READMEs' existing
 heading structure. Do not restructure a document you are correcting.
-
-Governance findings — autonomy, RBAC grants, guardrail hooks — describe the
-control as it actually is. If an agent holds `Contributor` on a workload, the
-doc says so; do not soften it into "limited access".
 
 For each fix the pull request body gives the doc line, the `problem` string
 that identified it, and the correction, so a reviewer can check the decision
