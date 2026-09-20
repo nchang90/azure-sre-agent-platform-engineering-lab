@@ -27,3 +27,16 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 | S5 PIM elevation audit | Any tfvars with `scenario = "s5"` | `bash scripts/apply-extras.sh <environment>` | Configure Entra audit data access |
 
 For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `scenario = "s2"`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, and `enable_sev01_incident_filter = true`.
+
+## ServiceNow connector tfvars
+
+For scenarios that integrate with ServiceNow (for example S3), the selected
+tfvars file can also set:
+
+- `enable_service_now_connector = true`
+- `service_now_instance = "https://<instance>.service-now.com"`
+- `service_now_username = "<integration-user>"`
+
+Keep the password out of tfvars. `scripts/apply-extras.sh` reads it from the
+environment (`TF_VAR_service_now_password`, `SERVICENOW_PASSWORD`, or
+`SERVICENOW_PASS`).

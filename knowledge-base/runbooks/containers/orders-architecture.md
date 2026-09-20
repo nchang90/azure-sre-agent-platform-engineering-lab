@@ -69,7 +69,7 @@ to correlate alerts with the specific CR a product team is rolling out.
 
 Deploys without an authorized CR are **flagged as unauthorized** by
 change-portal. The SRE Agent treats these as Sev2 incidents per the
-[change-management runbook](./change-management-runbook.md).
+[change-management runbook](../../change-management-runbook.md).
 
 ---
 
@@ -145,7 +145,7 @@ When either alert fires, the SRE Agent should:
 
 1. Read `/health` from orders-api to capture `activeChangeRequest`
 2. Call `change-lookup /changes/{cr}` for context (or `/changes/active/now`)
-3. Apply the [change-management runbook](./change-management-runbook.md)
+3. Apply the [change-management runbook](../../change-management-runbook.md)
 
 ---
 
