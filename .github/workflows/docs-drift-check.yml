@@ -1,0 +1,29 @@
+name: Documentation drift check
+
+on:
+  schedule:
+    # Off the hour: scheduled runs bunched at :00 get queued.
+    - cron: "21 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check documentation is up to date
+        run: |
+          set +e
+          python3 .github/workflows/docs-drift-check/find_stale_docs.py > "$RUNNER_TEMP/docs-check.out" 2>&1
+          rc=$?
+          {
+            echo '## Documentation drift'
+            echo '```'
+            cat "$RUNNER_TEMP/docs-check.out"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/docs-check.out"
+          exit $rc
