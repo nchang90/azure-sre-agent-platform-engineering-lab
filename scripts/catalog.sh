@@ -154,6 +154,11 @@ configure_catalog_scope() {
     *) die "Unsupported runtime_stack value '$RUNTIME_STACK' in $TFVARS_FILE. Expected containerapps, aks, webapp, or none." ;;
   esac
 
+  case "$ENABLE_SERVICE_NOW_CONNECTOR" in
+    true|false) ;;
+    *) die "Unsupported enable_service_now_connector value '$ENABLE_SERVICE_NOW_CONNECTOR' in $TFVARS_FILE. Expected true or false." ;;
+  esac
+
   if [[ -n "$SCENARIO" ]] && ! scenario_runtime "$SCENARIO" >/dev/null; then
     die "Unsupported scenario scope '$SCENARIO' in $TFVARS_FILE. Supported values: $ALL_SCENARIOS"
   fi
@@ -206,9 +211,15 @@ configure_catalog_scope() {
         incident-summary-agent
         incident-comms-agent
       )
-      RESPONSE_PLAN_NAMES=(
-        aks-critical-errors
-      )
+      if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+        RESPONSE_PLAN_NAMES=(
+          aks-incidents
+        )
+      else
+        RESPONSE_PLAN_NAMES=(
+          aks-critical-errors
+        )
+      fi
       KB_NAMES=(
         aks-network-connectivity.md
         aks-pod-failures.md

@@ -9,7 +9,7 @@ You prove what changed during an incident using the *right* evidence for the
 fault class. A smooth metric plotted for a binary routing fault is misleading
 and adds no insight — the decision in Step 1 is the point of this skill.
 
-Scope: the `orders-api` workload in the `default` namespace of the S3 AKS
+Scope: the `checkout-api` workload in the `default` namespace of the S3 AKS
 cluster (resource group `rg-sre-lab-demo`). This skill is **read-only**.
 
 ## Authoritative external references
@@ -59,9 +59,9 @@ Build a **state delta table** — `item · before · after · effect`:
 
 | Item | Before | After | Effect |
 |------|--------|-------|--------|
-| `orders-api` Service endpoints | `3` | `0` | callers reach no backend |
-| `orders-api` Service selector | `app=orders-api` | `app=orders-api-v2` | selector matches no pod |
-| `orders-api` pod labels | `app=orders-api` | `app=orders-api` | unchanged — pods are not the fault |
+| `checkout-api` Service endpoints | `3` | `0` | callers reach no backend |
+| `checkout-api` Service selector | `app=checkout-api` | `app=checkout-api-v2` | selector matches no pod |
+| `checkout-api` pod labels | `app=checkout-api` | `app=checkout-api` | unchanged — pods are not the fault |
 | Pod readiness | `3/3 Ready` | `3/3 Ready` | workload healthy throughout |
 | `POST /api/orders` | `200` | `timeout / 5xx` | customer-visible failure |
 
@@ -71,7 +71,7 @@ not:
 
 ```text
 BEFORE (routing intact)                  DURING (routing broken)
-caller -> Service orders-api             caller -> Service orders-api
+caller -> Service checkout-api             caller -> Service checkout-api
              |  selector matches                      |  selector matches nothing
              v                                        x
         [3 Ready pods]                           [3 Ready pods]  <- still healthy

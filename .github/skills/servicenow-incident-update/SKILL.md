@@ -58,7 +58,7 @@ trigger fired — and S3 keeps remediation and closure manual.
 2. **Attach the full report** with `UploadServiceNowAttachment`:
    - `table_sys_id`: the `sys_id` returned in step 1.
    - `table_name`: `incident`.
-   - `file_name`: e.g. `rca-orders-api-no-endpoints.md`.
+   - `file_name`: e.g. `rca-checkout-api-no-endpoints.md`.
    - `content`: the full RCA and before/after evidence.
    - The work note is the summary; the attachment is the detail. Do not paste a
      multi-page report into a work note.

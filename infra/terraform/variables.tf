@@ -370,3 +370,26 @@ variable "email_receiver_address" {
   type        = string
   default     = ""
 }
+
+variable "enable_service_now_connector" {
+  description = "Configure ServiceNow as the incident platform during recipe extras."
+  type        = bool
+  default     = false
+}
+
+variable "service_now_instance" {
+  description = "ServiceNow instance base URL, e.g. https://devNNNNNN.service-now.com. Required when enable_service_now_connector=true."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.service_now_instance == "" || can(regex("^https://[^/]+$", var.service_now_instance))
+    error_message = "service_now_instance must be empty or an https URL with no trailing path."
+  }
+}
+
+variable "service_now_username" {
+  description = "ServiceNow user for incident polling. Required when enable_service_now_connector=true."
+  type        = string
+  default     = ""
+}

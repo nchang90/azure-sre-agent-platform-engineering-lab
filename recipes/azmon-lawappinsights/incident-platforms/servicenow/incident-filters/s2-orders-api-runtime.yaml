@@ -1,0 +1,15 @@
+metadata:
+  name: s2-orders-api-runtime
+spec:
+  name: S2 Orders API Runtime Remediation
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  - "3"
+  titleContains: Orders API
+  handlingAgent: triage-agent
+  agentMode: autonomous
+  deepInvestigationEnabled: true
+  maxAutomatedInvestigationAttempts: 3

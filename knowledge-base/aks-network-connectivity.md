@@ -1,6 +1,6 @@
 # AKS Network and Service Connectivity Runbook (S3)
 
-Use this runbook for S3 incidents where `orders-api` is deployed but traffic
+Use this runbook for S3 incidents where `checkout-api` is deployed but traffic
 cannot reach it inside the AKS cluster.
 
 Follow the lab flow strictly:
@@ -9,21 +9,21 @@ Follow the lab flow strictly:
 ## 1) Detect
 
 - Confirm the triggering signal:
-  - `AKS orders-api service missing`
-  - `AKS orders-api workload unavailable`
+  - `AKS checkout-api service missing`
+  - `AKS checkout-api workload unavailable`
 - Record whether the failure is a missing `Service`, zero endpoints, or
   pod-to-service reachability issue.
 
 ## 2) Triage
 
 - Check the `Service` and endpoints:
-  - `kubectl get service orders-api -n default`
-  - `kubectl get endpoints orders-api -n default`
+  - `kubectl get service checkout-api -n default`
+  - `kubectl get endpoints checkout-api -n default`
 - Compare selectors to pod labels:
-  - `kubectl get service orders-api -n default -o jsonpath='{.spec.selector}'`
-  - `kubectl get pods -l app=orders-api -n default --show-labels`
+  - `kubectl get service checkout-api -n default -o jsonpath='{.spec.selector}'`
+  - `kubectl get pods -l app=checkout-api -n default --show-labels`
 - Inspect cluster events for recent deletes or apply operations affecting
-  `orders-api`.
+  `checkout-api`.
 
 ## 3) Correlate
 
@@ -36,15 +36,15 @@ Follow the lab flow strictly:
 
 ## 4) Common Failure Patterns
 
-### Missing `orders-api` Service
+### Missing `checkout-api` Service
 
-- `kubectl get service orders-api -n default` returns `NotFound`.
-- The Sev1 `AKS orders-api service missing` alert should match this condition.
+- `kubectl get service checkout-api -n default` returns `NotFound`.
+- The Sev1 `AKS checkout-api service missing` alert should match this condition.
 
 ### Selector mismatch / no endpoints
 
-- The `Service` exists, but `kubectl get endpoints orders-api -n default` is empty.
-- `orders-api` pods can still be `Running` and `Ready`, which makes this a good
+- The `Service` exists, but `kubectl get endpoints checkout-api -n default` is empty.
+- `checkout-api` pods can still be `Running` and `Ready`, which makes this a good
   investigation path when the app looks healthy but traffic is failing.
 - Compare `spec.selector` with deployment and pod labels for drift.
 
@@ -58,7 +58,7 @@ Follow the lab flow strictly:
 
 Prefer low-risk recovery actions:
 
-1. Reapply the healthy `orders-api` manifest if the `Service` or selector
+1. Reapply the healthy `checkout-api` manifest if the `Service` or selector
    drifted.
 2. Repair the selector or labels if drift is isolated and confirmed.
 3. Escalate platform networking issues after confirming the resource
@@ -69,8 +69,8 @@ If action mode is **Review**, request approval before write actions.
 ## 6) Validate Recovery
 
 - Confirm:
-  - `kubectl get service orders-api -n default` succeeds
-  - `kubectl get endpoints orders-api -n default` returns backing pod IPs
+  - `kubectl get service checkout-api -n default` succeeds
+  - `kubectl get endpoints checkout-api -n default` returns backing pod IPs
   - connected workloads can reach the service again
   - the Sev1 service-missing alert clears
 - Capture the timeline and exact resource drift in the incident report.

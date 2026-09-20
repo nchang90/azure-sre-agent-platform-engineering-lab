@@ -1,0 +1,16 @@
+metadata:
+  name: snow-all-incidents
+spec:
+  name: ServiceNow Shared Scenario Incident Response
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  - "3"
+  - "4"
+  - "5"
+  handlingAgent: incident-orchestrator
+  agentMode: autonomous
+  deepInvestigationEnabled: false
+  maxAutomatedInvestigationAttempts: 3

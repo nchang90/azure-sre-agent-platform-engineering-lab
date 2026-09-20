@@ -38,7 +38,12 @@ enable_vnet = false
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
-enable_azure_monitor_connector = true
+enable_azure_monitor_connector = false
+
+# S3 incident source: ServiceNow. Password comes from the environment, never tfvars.
+enable_service_now_connector = true
+service_now_instance         = "https://dev411761.service-now.com"
+service_now_username         = "admin"
 
 enable_sev01_incident_filter = true
 enable_daily_health_check    = true

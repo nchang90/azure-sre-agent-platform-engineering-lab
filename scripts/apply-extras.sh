@@ -30,6 +30,10 @@ AGENT_ENDPOINT=""
 SCOPED_PROMPTS_JSON="[]"
 SCOPED_SUBAGENTS_JSON="[]"
 TOKEN=""
+ENABLE_SERVICE_NOW_CONNECTOR="false"
+SERVICE_NOW_INSTANCE=""
+SERVICE_NOW_USERNAME=""
+SERVICE_NOW_PASSWORD=""
 
 # shellcheck source=scripts/catalog.sh
 source "$SCRIPT_DIR/catalog.sh"
@@ -129,6 +133,19 @@ configure_environment() {
     containerapps|aks|webapp|none) ;;
     *) die "Unsupported runtime stack override: $RUNTIME_STACK" ;;
   esac
+  ENABLE_SERVICE_NOW_CONNECTOR="$(tfvar_bool enable_service_now_connector false)"
+  SERVICE_NOW_INSTANCE="$(tfvar service_now_instance)"
+  SERVICE_NOW_USERNAME="$(tfvar service_now_username)"
+  # .servicenow.env ships SERVICENOW_PASS; accept it alongside the older names.
+  SERVICE_NOW_PASSWORD="${TF_VAR_service_now_password:-${SERVICENOW_PASSWORD:-${SERVICENOW_PASS:-}}}"
+
+  # PythonTool placeholders use the unseparated names. Prefer values from a
+  # locally sourced .servicenow.env, otherwise reuse the non-secret tfvars.
+  SERVICENOW_URL="${SERVICENOW_URL:-$SERVICE_NOW_INSTANCE}"
+  SERVICENOW_USER="${SERVICENOW_USER:-$SERVICE_NOW_USERNAME}"
+  SERVICENOW_PASS="${SERVICENOW_PASS:-$SERVICE_NOW_PASSWORD}"
+  export SERVICENOW_URL SERVICENOW_USER SERVICENOW_PASS
+
   [[ -n "$SCENARIO" ]] && log "Detected scenario scope: $SCENARIO"
   case "$RUNTIME_STACK" in
     none) log "Detected runtime scope: none (monitoring-only mode)" ;;
@@ -338,9 +355,29 @@ configure_incident_platform() {
   local platform_type="AzMonitor"
   local connection_name="azmonitor"
 
+  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+    platform_type="ServiceNow"
+    connection_name="servicenow"
+
+    [[ -n "$SERVICE_NOW_INSTANCE" ]] || die "service_now_instance is required when enable_service_now_connector=true"
+    [[ -n "$SERVICE_NOW_USERNAME" ]] || die "service_now_username is required when enable_service_now_connector=true"
+    [[ -n "$SERVICE_NOW_PASSWORD" ]] || die "TF_VAR_service_now_password, SERVICENOW_PASSWORD or SERVICENOW_PASS is required when enable_service_now_connector=true"
+  fi
+
   log "Configuring incident platform: $platform_type"
-  jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
-    '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
+  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+    jq -n \
+      --arg type "$platform_type" \
+      --arg connectionName "$connection_name" \
+      --arg connectionUrl "$SERVICE_NOW_INSTANCE" \
+      --arg endpoint "$SERVICE_NOW_INSTANCE" \
+      --arg username "$SERVICE_NOW_USERNAME" \
+      --arg password "$SERVICE_NOW_PASSWORD" \
+      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName, connectionUrl:$connectionUrl, connectionKey:({endpoint:$endpoint, username:$username, password:$password} | tojson)}}}' >"$patch_file"
+  else
+    jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
+      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
+  fi
 
   if az rest --method PATCH \
     --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
@@ -506,10 +543,14 @@ register_subagents() {
 
 create_response_plans() {
   step "Creating response plans..."
-  local plan
+  local plan incident_platform_dir="azure-monitor"
+
+  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+    incident_platform_dir="servicenow"
+  fi
 
   for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
-    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/azure-monitor/incident-filters/${plan}.yaml"
+    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/${incident_platform_dir}/incident-filters/${plan}.yaml"
   done
   echo
 }

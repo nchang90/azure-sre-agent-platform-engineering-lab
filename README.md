@@ -9,8 +9,8 @@ Hands-on Azure SRE Agent lab with six progressive incident scenarios.
 | Scenario | Purpose |
 |---|---|
 | [S1 - Detect and triage](scenarios/s1-detect-triage/README.md) | Trigger a 5xx incident and investigate in review mode. |
-| [S2 - AI Web App incident remediation](scenarios/s2-autonomous-remediation/README.md) | Investigate frontend-ok/backend-failing `/api/orders` 500s and safely restore service. |
-| [S3 - AKS root-cause investigation](scenarios/s3-incident-root-cause-investigation/README.md) | Delegate AKS routing/state investigation to specialist subagents. |
+| [S2 - AI Web App incident remediation](scenarios/s2-autonomous-remediation/README.md) | **`orders-api` on Azure App Service.** A Web App backend regression is causing `/api/orders` failures. Azure Monitor and Application Insights drive recovery. |
+| [S3 - AKS root-cause investigation](scenarios/s3-incident-root-cause-investigation/README.md) | **Checkout API on AKS.** The Checkout API is unavailable because Kubernetes routing has zero endpoints. ServiceNow triggers the investigation and receives the RCA. |
 | [S4 - Alert response & incident ops](scenarios/s4-alert-response-incident-operations/README.md) | Validate monitoring, alert routing, telemetry, and escalation. |
 | [S5 - PIM elevation audit](scenarios/s5-pim-elevation-audit/README.md) | Audit Entra PIM activations and correlate Azure Activity. |
 | [S6 - Front Door incident response](scenarios/s6-frontdoor-incident-response/README.md) | Inject backend faults with Chaos Studio and correlate Front Door health probes with App Insights. |
