@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Check that this repo's documentation still matches its code.
+"""Find documentation this repo's code has made wrong.
 
-Every check below is a mechanical comparison between two files, so the same
-commit always gives the same answer. Prints one line per stale document and
-exits 1 if there are any, so it can gate a workflow. Run it locally the same
-way CI does:
-
-    python3 .github/workflows/docs-drift-check/find_stale_docs.py
+The agent does not decide what is stale; this does, so the same commit yields
+the same findings no matter which model reads them. Every check below is a
+mechanical comparison between two files. Prints JSON to stdout and always
+exits 0 — the agent decides what to do about the findings.
 """
+import json
 import os
 import re
 import sys
@@ -43,11 +42,7 @@ for path in walk("scripts", ".sh"):
         if key not in prose:
             stale.add((path, "reads tfvars key %s but no doc mentions it" % key))
 
-for path, problem in sorted(stale):
-    print("%s: %s" % (path, problem))
+findings = [{"file": f, "problem": p} for f, p in sorted(stale)]
 
-if stale:
-    print("\n%d stale finding(s)." % len(stale))
-    sys.exit(1)
-
-print("Documentation is up to date.")
+json.dump({"stale_count": len(findings), "findings": findings}, sys.stdout, indent=2)
+sys.stdout.write("\n")
