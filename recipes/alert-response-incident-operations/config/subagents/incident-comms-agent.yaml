@@ -16,6 +16,7 @@ spec:
     - SearchMemory
     # Registered only for scenario=s3, and only when ServiceNow credentials are
     # configured; see scripts/catalog.sh and upload_tools in apply-extras.sh.
+    - LookupServiceNowIncident
     - UpdateServiceNowIncident
     - UploadServiceNowAttachment
   temperature: 0.2

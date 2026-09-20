@@ -70,6 +70,7 @@ scenario_runtime() {
 }
 
 ALL_TOOL_NAMES=(
+  LookupServiceNowIncident
   UpdateServiceNowIncident
   UploadServiceNowAttachment
 )
@@ -238,8 +239,9 @@ configure_catalog_scope() {
         rca-analysis
         servicenow-incident-update
       )
-      # S3 is the only scenario that writes back to an incident record.
+      # S3 is the only scenario that reads from and writes back to an incident record.
       TOOL_NAMES=(
+        LookupServiceNowIncident
         UpdateServiceNowIncident
         UploadServiceNowAttachment
       )

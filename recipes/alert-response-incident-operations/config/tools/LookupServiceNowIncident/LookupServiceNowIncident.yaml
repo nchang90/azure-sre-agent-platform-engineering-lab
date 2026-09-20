@@ -1,0 +1,144 @@
+api_version: azuresre.ai/v2
+kind: ExtendedAgentTool
+metadata:
+  name: LookupServiceNowIncident
+spec:
+  type: PythonTool
+  connector: ''
+  toolMode: Auto
+  description: |-
+    Read an EXISTING ServiceNow incident by number (e.g. INC0010001) or sys_id. Returns the
+    sys_id, the descriptive fields, and the most recent work notes already on the record.
+    Call this BEFORE UpdateServiceNowIncident so the investigation is scoped to what the
+    incident actually reports and so an update that is already posted is not posted twice.
+    This tool is read-only: it never creates, updates, resolves or closes a record.
+  functionCode: |-
+    import requests
+
+    # Injected at apply time from the gitignored .servicenow.env (the PythonTool sandbox cannot
+    # read env vars, so credentials must be literal here). Committed source keeps the
+    # substitution placeholders and is never a secret.
+    SERVICENOW_URL = "@@SERVICENOW_URL@@"
+    SERVICENOW_USER = "@@SERVICENOW_USER@@"
+    SERVICENOW_PASS = "@@SERVICENOW_PASS@@"
+
+    FIELDS = (
+        "sys_id,number,short_description,description,state,priority,severity,"
+        "category,subcategory,cmdb_ci,assignment_group,assigned_to,"
+        "opened_at,sys_updated_on,correlation_id"
+    )
+
+    def main(incident_number: str = "", sys_id: str = "", work_note_limit: str = "5") -> dict:
+        if not (SERVICENOW_URL and SERVICENOW_USER and SERVICENOW_PASS):
+            return {"success": False, "found": False, "error": "ServiceNow credentials not configured (SERVICENOW_URL/USER/PASS)."}
+        if not (incident_number or sys_id):
+            return {"success": False, "found": False, "error": "Provide either incident_number or sys_id."}
+        # Declared as a string to match the other tools; the API may hand it over
+        # as a string, an int, or not at all.
+        try:
+            note_limit = max(1, min(int(str(work_note_limit).strip() or 5), 20))
+        except (TypeError, ValueError):
+            note_limit = 5
+        auth = (SERVICENOW_USER, SERVICENOW_PASS)
+        headers = {"Accept": "application/json"}
+        try:
+            if sys_id:
+                query = f"sys_id={sys_id}"
+            else:
+                query = f"number={incident_number}"
+            lookup = requests.get(
+                f"{SERVICENOW_URL}/api/now/table/incident",
+                auth=auth,
+                headers=headers,
+                params={
+                    "sysparm_query": query,
+                    "sysparm_fields": FIELDS,
+                    "sysparm_display_value": "true",
+                    "sysparm_limit": 1,
+                },
+                timeout=20
+            )
+            lookup.raise_for_status()
+            matches = lookup.json().get("result", [])
+            if not matches:
+                target = sys_id or incident_number
+                return {"success": True, "found": False, "error": f"No ServiceNow incident found for {target}."}
+            incident = matches[0]
+            target_sys_id = incident.get("sys_id", "")
+
+            # work_notes is a journal field: the incident row does not carry its history,
+            # so the entries come from sys_journal_field. Failure here must not fail the
+            # lookup -- the descriptive fields are still useful without the notes.
+            work_notes = []
+            try:
+                journal = requests.get(
+                    f"{SERVICENOW_URL}/api/now/table/sys_journal_field",
+                    auth=auth,
+                    headers=headers,
+                    params={
+                        "sysparm_query": f"element_id={target_sys_id}^element=work_notes^ORDERBYDESCsys_created_on",
+                        "sysparm_fields": "sys_created_on,sys_created_by,value",
+                        "sysparm_limit": note_limit,
+                    },
+                    timeout=20
+                )
+                journal.raise_for_status()
+                work_notes = [
+                    {
+                        "created_on": entry.get("sys_created_on", ""),
+                        "created_by": entry.get("sys_created_by", ""),
+                        "value": entry.get("value", ""),
+                    }
+                    for entry in journal.json().get("result", [])
+                ]
+            except Exception as journal_error:
+                work_notes = []
+                journal_warning = str(journal_error)
+            else:
+                journal_warning = ""
+
+            link = f"{SERVICENOW_URL}/nav_to.do?uri=incident.do?sys_id={target_sys_id}"
+            result = {
+                "success": True,
+                "found": True,
+                "sys_id": target_sys_id,
+                "number": incident.get("number", incident_number),
+                "short_description": incident.get("short_description", ""),
+                "description": incident.get("description", ""),
+                "state": incident.get("state", ""),
+                "priority": incident.get("priority", ""),
+                "severity": incident.get("severity", ""),
+                "category": incident.get("category", ""),
+                "subcategory": incident.get("subcategory", ""),
+                "configuration_item": incident.get("cmdb_ci", ""),
+                "assignment_group": incident.get("assignment_group", ""),
+                "assigned_to": incident.get("assigned_to", ""),
+                "opened_at": incident.get("opened_at", ""),
+                "updated_on": incident.get("sys_updated_on", ""),
+                "correlation_id": incident.get("correlation_id", ""),
+                "link": link,
+                "work_note_count": len(work_notes),
+                "work_notes": work_notes,
+            }
+            if journal_warning:
+                result["work_notes_warning"] = f"Work notes could not be read: {journal_warning}"
+            return result
+        except Exception as e:
+            return {"success": False, "found": False, "error": str(e)}
+  timeoutSeconds: 240
+  dependencies:
+  - requests
+  authScopes:
+  parameters:
+  - name: incident_number
+    type: string
+    description: "string:Incident number to read (e.g. 'INC0010001'). Required unless sys_id is given."
+    required: false
+  - name: sys_id
+    type: string
+    description: "string:sys_id of the incident, if already known — skips the number lookup"
+    required: false
+  - name: work_note_limit
+    type: string
+    description: "string:How many of the most recent work notes to return (default 5, max 20)"
+    required: false
