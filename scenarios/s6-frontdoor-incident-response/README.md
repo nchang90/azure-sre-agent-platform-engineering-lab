@@ -147,6 +147,6 @@ az containerapp scale \
 
 ## Knowledge Base
 
-- [http-502-errors.md](../../knowledge-base/http-502-errors.md)
-- [frontdoor-architecture.md](../../knowledge-base/frontdoor-architecture.md)
+- [frontdoor-broken-routing.md](../../knowledge-base/runbooks/frontdoor/frontdoor-broken-routing.md)
+- [orders-architecture.md](../../knowledge-base/runbooks/containers/orders-architecture.md)
 - [incident-report.md](../../knowledge-base/incident-report.md)
