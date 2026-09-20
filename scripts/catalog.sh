@@ -46,7 +46,6 @@ ALL_SKILL_NAMES=(
   evidence-before-after
   incident-orchestrator-coordination
   investigate-azure-alerts
-  rca-analysis
   servicenow-incident-update
   triage-app-errors
 )
@@ -236,7 +235,6 @@ configure_catalog_scope() {
         evidence-before-after
         incident-orchestrator-coordination
         investigate-azure-alerts
-        rca-analysis
         servicenow-incident-update
       )
       # S3 is the only scenario that reads from and writes back to an incident record.
@@ -262,7 +260,6 @@ configure_catalog_scope() {
       SKILL_NAMES=(
         incident-orchestrator-coordination
         investigate-azure-alerts
-        rca-analysis
         triage-app-errors
       )
       if [[ "$RUNTIME_STACK" == "containerapps" ]]; then

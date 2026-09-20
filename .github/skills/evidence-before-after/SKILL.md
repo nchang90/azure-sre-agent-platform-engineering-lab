@@ -22,7 +22,7 @@ Use these as primary references before relying on other external sources:
 ## When to use
 
 - An incident record or operator update needs evidence of impact and scope.
-- `rca-analysis` has confirmed a root cause and fixed the time windows.
+- Triage has confirmed a root cause and fixed the incident time windows.
 - Someone asks "show me what actually changed" or "prove the pods were fine".
 
 ## Step 1 — Choose the evidence form FIRST (do not skip)
@@ -46,7 +46,7 @@ supporting proof of caller impact.
 ## Step 2 — Capture the before/after state (routing and config faults)
 
 Read the current state, then reconstruct the prior state from the change history
-and the windows confirmed by `rca-analysis`.
+and the confirmed incident windows.
 
 - Service and endpoint state from `KubeServices` via
   `QueryLogAnalyticsByWorkspaceId`; the endpoint count is the headline number.
@@ -84,7 +84,7 @@ ASCII form is the default and must always be present.
 ## Step 3 — Pull metrics (performance and availability faults, or impact proof)
 
 Only when a metric genuinely tells the story. Define three windows using the
-exact boundaries from `rca-analysis`:
+exact boundaries established during triage:
 
 - **Before** — healthy baseline.
 - **During** — detection to mitigation.

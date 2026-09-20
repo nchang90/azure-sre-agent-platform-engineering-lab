@@ -103,7 +103,7 @@ No remediation has been performed by the agent.
   state that no remediation was performed, and must never describe a
   recommendation as if it had been applied.
 - **Label confidence.** Carry the confirmed/likely/suspected distinction from
-  `rca-analysis` into the note. Do not upgrade a hypothesis on the way out.
+  the investigation into the note. Do not upgrade a hypothesis on the way out.
 - **Redact before writing.** The incident record is operator-visible and often
   broadly readable. Mask any secret, token, connection string, key or personal
   data as `[REDACTED]` before it reaches a work note or an attachment.
