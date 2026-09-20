@@ -1,8 +1,10 @@
 ---
 description: |
-  Checks a merged pull request for documentation the change made wrong. A
-  pre-agent step computes the drift signals; the agent writes the corrections
-  into a draft pull request and reports the outcome back on the source PR.
+  Checks a merged pull request for documentation the change made wrong, and
+  for governance the documentation no longer states -- an agent autonomy level,
+  an RBAC grant, a guardrail hook. A pre-agent step computes the findings; the
+  agent writes the corrections into a draft pull request and reports back on
+  the source PR.
 
 on:
   pull_request:
@@ -60,8 +62,9 @@ safe-outputs:
 
 # Documentation drift check
 
-A pull request just merged. Decide whether it left any documentation wrong,
-fix what you can in markdown, and report the outcome on the source pull request.
+A pull request just merged into this Azure SRE Agent lab. Decide whether it
+left any documentation wrong, fix what prose can fix, and report on the source
+pull request.
 
 ## Step 1: Read the signals
 
@@ -72,51 +75,60 @@ that the same commit produces the same decision across model versions.
 
 | Field | Meaning |
 |---|---|
-| `recommendation` | `docs_required` when this PR touched a file with a finding, `docs_optional` otherwise |
+| `recommendation` | `docs_required` when this PR touched a file with a finding |
 | `gating_count` | Findings in files this PR changed — the ones you must act on |
-| `advisory_count` | Pre-existing findings elsewhere in the repo |
-| `findings[]` | `file`, `problem`, and `gating` for each |
+| `advisory_count` | Pre-existing findings elsewhere — not this PR's problem |
+| `findings[]` | `file`, `problem`, `fix`, `gating` |
 
-Each `problem` is one of:
-
-| Problem | What it means | Fix in markdown? |
-|---|---|---|
-| `spec.X is never sent` | `build-api.py` emits a fixed key set and the API rejects the rest, so the field does nothing | Only the docs that call it supported — the YAML is a code fix |
-| `metadata.name is X but the file is Y` | Plans register by `metadata.name` and are cleaned up by file name, so the plan deletes itself or leaks | No — code fix, report it |
-| `selects response plan X but no YAML` | `apply-extras.sh` exits on the missing file | No — code fix, report it |
-| `link to X does not exist` | A relative link points at a file that is gone or moved | Yes |
-| `reads tfvars key X but no doc mentions it` | A key the scripts require that nothing explains how to set | Yes — document it where that scenario's setup is described |
+`fix` is already decided for you: `docs` means prose is the fix, `code` means
+it is not. Never edit a script, YAML or Terraform file to make a `code`
+finding go away.
 
 ## Step 2: Decide
 
-- `recommendation == "docs_required"` → continue to Step 3.
-- `recommendation == "docs_optional"` → make no pull request. Go to Step 4 and
-  report `skipped`. Advisory findings are pre-existing backlog and are **not**
-  this pull request's problem; do not open a PR for them.
+- `recommendation == "docs_required"` → continue.
+- `recommendation == "docs_optional"` → no pull request. Go to Step 4 and
+  report `skipped`. Do not open a PR for advisory findings.
 
 Prefer acting over skipping. A wrong correction costs a closed draft PR; a
-missed one leaves the documentation lying to the next reader.
+missed one leaves the documentation lying to the next reader — and for a
+governance finding, lying to an auditor.
 
 ## Step 3: Write the corrections
 
-Fix every gating finding that can be fixed in a `.md` file. For each one, the
-pull request body must give the doc line, the `problem` string that identified
-it, and the correction — so a reviewer can check the decision without rerunning
-anything.
+Fix every gating finding whose `fix` is `docs`. Where each kind belongs in
+this repo:
 
-Findings whose fix is code, not prose, go in the body under **Code changes
-needed**, naming the file and the problem. Never edit a script, YAML or
-Terraform file to match the docs.
+| Finding | Where the correction goes |
+|---|---|
+| A tfvars key nothing explains | the scenario's own `scenarios/s*/README.md`, and the tfvars guidance in `scenarios/README.md` |
+| A dead relative link | repoint it, or drop it if the target is gone. Many live in `knowledge-base/` runbooks |
+| An RBAC role no doc mentions | the root `README.md` prerequisites, next to the existing note about `infra/terraform/rbac.tf` |
+| A scenario that never states its autonomy | that scenario's README — say plainly whether the agent acts on its own or proposes for approval, and name the hooks that gate it |
+| A response-plan field that is never sent | the response-plan README in `recipes/.../incident-filters/`, which documents the supported field set |
+
+Match the house style: short sections, tables over prose for anything
+enumerable, relative markdown links, and the scenario READMEs' existing
+heading structure. Do not restructure a document you are correcting.
+
+Governance findings — autonomy, RBAC grants, guardrail hooks — describe the
+control as it actually is. If an agent holds `Contributor` on a workload, the
+doc says so; do not soften it into "limited access".
+
+For each fix the pull request body gives the doc line, the `problem` string
+that identified it, and the correction, so a reviewer can check the decision
+without rerunning anything. List `code` findings under **Code changes needed**
+with the file and problem, and leave the code alone.
 
 If `create_pull_request` fails deterministically — "No changes to commit", a
-rejected path, a protected file — **do not retry it**. The failure will repeat.
-Go to Step 4 and report `draft_failed` with the error.
+rejected path, a protected file — **do not retry it**. The failure will
+repeat. Go to Step 4 and report `draft_failed` with the error.
 
 ## Step 4: Report on the source pull request
 
-Post exactly one comment on the merged pull request, whichever branch you took:
+Post exactly one comment, whichever branch you took:
 
-- `drafted` — the docs PR you opened, and one line per finding fixed
-- `skipped` — that no documentation was affected, citing `recommendation`
+- `drafted` — the docs PR you opened, one line per finding fixed
+- `skipped` — no documentation was affected, citing `recommendation`
 - `draft_failed` — documentation *was* affected but no PR was produced, with
   the error. Never report this as a clean skip.

@@ -30,8 +30,9 @@ def walk(subdir, suffix):
                 yield os.path.relpath(os.path.join(base, name), ROOT)
 
 
-def report(path, problem):
-    found.append({"file": path, "problem": problem})
+def report(path, problem, kind="docs"):
+    """kind: "docs" when prose is the fix, "code" when it is not."""
+    found.append({"file": path, "problem": problem, "fix": kind})
 
 
 plans = [p for p in walk("recipes", ".yaml") if "incident-filters" in p]
@@ -46,13 +47,14 @@ for path in plans:
     spec = read(path).split("spec:")[1]
     for key in re.findall(r"^  ([A-Za-z]\w*):", spec, re.M):
         if key not in sent | {"maxAttempts", "incident_platform"}:
-            report(path, "spec.%s is never sent; build-api.py drops it" % key)
+            report(path, "spec.%s is never sent; build-api.py drops it" % key, "code")
 
     # Plans register by metadata.name but are cleaned up by file name.
     name = re.search(r"^metadata:\s*\n\s*name:\s*(\S+)", read(path), re.M)
     stem = os.path.splitext(os.path.basename(path))[0]
     if name and name.group(1) != stem:
-        report(path, "metadata.name is %s but the file is %s" % (name.group(1), stem))
+        report(path, "metadata.name is %s but the file is %s"
+               % (name.group(1), stem), "code")
 
 # A scenario selecting a missing plan makes apply-extras.sh exit. Only the
 # scoped lists matter: ALL_RESPONSE_PLAN_NAMES outlives its files on purpose,
@@ -60,7 +62,8 @@ for path in plans:
 stems = {os.path.splitext(os.path.basename(p))[0] for p in plans}
 for block in re.finditer(r"(?<!ALL_)RESPONSE_PLAN_NAMES=\((.*?)\)", read("scripts/catalog.sh"), re.S):
     for plan in set(block.group(1).split()) - stems:
-        report("scripts/catalog.sh", "selects response plan %s but no YAML has that name" % plan)
+        report("scripts/catalog.sh",
+               "selects response plan %s but no YAML has that name" % plan, "code")
 
 for path, text in docs.items():
     for link in re.findall(r"\[[^\]]+\]\((?!https?:|#|mailto:)([^)#]+)", text):
@@ -74,10 +77,51 @@ for path in walk("scripts", ".sh"):
         if key not in prose:
             report(path, "reads tfvars key %s but no doc mentions it" % key)
 
+# --- Governance -----------------------------------------------------------
+# An autonomy level the API does not recognise, or one nobody reviewed.
+for path in plans:
+    mode = re.search(r"^  agentMode:\s*(\S+)", read(path), re.M)
+    if mode and mode.group(1) not in ("autonomous", "review"):
+        report(path, "agentMode %s is not autonomous or review" % mode.group(1), "code")
+
+catalog = read("scripts/catalog.sh")
+
+# A guardrail that exists but is switched off, or is never applied to any
+# scenario, is a control on paper only.
+for path in walk("recipes", ".yaml"):
+    if "/hooks/" not in path:
+        continue
+    name = os.path.splitext(os.path.basename(path))[0]
+    if re.search(r"^\s*enabled:\s*false", read(path), re.M):
+        report(path, "hook %s is registered but disabled" % name, "code")
+    if not re.search(r"(DEFAULT_HOOK_NAMES|HOOK_NAMES)\+?=\([^)]*\b%s\b" % re.escape(name),
+                     catalog, re.S):
+        report("scripts/catalog.sh", "hook %s is never applied to any scenario" % name, "code")
+
+# safety-rules must survive every scenario's scoping, and a scenario that
+# reassigns the list rather than appending to it silently drops it.
+for block in re.finditer(r"(?<!\+)COMMON_PROMPT_NAMES=\((.*?)\)", catalog, re.S):
+    names = block.group(1).split()
+    if names and "safety-rules" not in names and "DEFAULT_COMMON_PROMPT_NAMES" not in block.group(1):
+        report("scripts/catalog.sh", "a scenario reassigns COMMON_PROMPT_NAMES without safety-rules", "code")
+
+# Every scenario README should say how far its agent may act on its own.
+for path in docs:
+    if re.match(r"scenarios/s\d[^/]*/README\.md$", path):
+        if not re.search(r"autonomous|review mode|approval", docs[path], re.I):
+            report(path, "does not say whether the agent acts autonomously or needs approval")
+
+# A privilege granted to the agent that no document mentions.
+rbac = read("infra/terraform/rbac.tf")
+for role in sorted(set(re.findall(r'role_definition_name\s*=\s*"([^"]+)"', rbac))):
+    if role not in prose:
+        report("infra/terraform/rbac.tf",
+               "grants the %s role but no doc mentions it" % role)
+
 touched = set(os.environ.get("CHANGED_FILES", "").split())
 findings = []
-for path, problem in sorted({(f["file"], f["problem"]) for f in found}):
-    findings.append({"file": path, "problem": problem,
+for path, problem, fix in sorted({(f["file"], f["problem"], f["fix"]) for f in found}):
+    findings.append({"file": path, "problem": problem, "fix": fix,
                      "gating": not touched or path in touched})
 gating = [f for f in findings if f["gating"]]
 
