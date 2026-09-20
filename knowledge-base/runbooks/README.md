@@ -10,16 +10,16 @@ Incident runbooks organized by service area.
 - [Broken Routing Rules](frontdoor/frontdoor-broken-routing.md)
 
 ## AKS
-- [Add AKS-specific runbooks here](aks/README.md)
+- AKS-specific runbooks are scenario-driven and are added as the AKS labs grow.
 
 ## Monitoring & Observability
-- [Add monitoring runbooks here](monitoring/README.md)
+- Monitoring guidance lives in the scenario READMEs and service-specific
+  runbooks in this folder.
 
 ---
 
 **How to add a runbook:**
 1. Choose the appropriate category above
 2. Create a new `.md` file
-3. Use the [runbook template](template.md)
+3. Follow the structure used by the existing service runbooks in this folder
 4. Update this index
-
