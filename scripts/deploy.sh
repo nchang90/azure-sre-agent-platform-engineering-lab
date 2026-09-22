@@ -14,6 +14,26 @@ TF_OUT=""
 
 read_tf() { jq -r ".${1}.value // empty" <<<"$TF_OUT"; }
 
+should_retry_terraform_apply() {
+  local output="${1:-}"
+
+  grep -qi "workspace could not be found" <<<"$output" && return 0
+  grep -qi "Provider produced inconsistent result after apply" <<<"$output" && return 0
+  grep -qi "unexpected status 404 (404 Not Found) with error: ResourceNotFound" <<<"$output" && return 0
+
+  return 1
+}
+
+retry_terraform_apply() {
+  if [[ -n "${RUNTIME:-}" ]]; then
+    terraform -chdir=infra/terraform apply -auto-approve \
+      -var-file="environments/${ENVIRONMENT}.tfvars" \
+      -var="runtime=${RUNTIME}"
+  else
+    terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE"
+  fi
+}
+
 terraform_apply() {
   local output exit_code
 
@@ -25,10 +45,10 @@ terraform_apply() {
 
   [[ $exit_code -eq 0 ]] && return 0
 
-  if grep -qi "workspace could not be found" <<<"$output"; then
-    log "Terraform apply hit a transient workspace lookup issue; retrying once..."
+  if should_retry_terraform_apply "$output"; then
+    log "Terraform apply hit a transient provider or read-after-create issue; retrying once..."
     sleep 10
-    terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE"
+    retry_terraform_apply
   else
     return "$exit_code"
   fi
