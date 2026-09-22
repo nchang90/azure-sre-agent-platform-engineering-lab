@@ -21,7 +21,7 @@ Steps and tfvars guidance: [scenarios/README.md](scenarios/README.md).
 
 `azd up` (see [azure.yaml](azure.yaml)), or run the workflows:
 
-- [`deploy.yml`](.github/workflows/deploy.yml) — daily schedule + manual. Inputs: `environment` (`demo`/`sbox`/`dev`), S2 `runtime` (`webapp` default or `containerapps`), `plan`, `apply`.
+- [`deploy.yml`](.github/workflows/deploy.yml) — daily schedule + manual. Inputs: `environment` (`demo`/`sbox`/`dev`), S2 `runtime` (`containerapps` default or `webapp`), `plan`, `apply`.
 - [`destroy.yml`](.github/workflows/destroy.yml) — daily schedule + manual.
 
 State lives in the `tfstate` container of the `terraformstatesboxprd` storage account (`terraform-tfstate` resource group), one key per environment — see [`infra/terraform/backend/`](infra/terraform/backend/).
