@@ -48,7 +48,7 @@ ENVIRONMENT selects matching Terraform files:
 
 The selected tfvars file scopes the catalog:
   all environments   -> all skills and scenario-scoped knowledge-base docs
-  all scenarios      -> one shared incident response plan
+  each scenario      -> exactly one scenario-scoped incident response plan
   scenario = s1..s6        -> primary scenario selector
   S2 runtime         -> deployed Terraform runtime_stack (webapp or containerapps)
   fixed runtimes     -> s1=containerapps, s3=aks, s4=webapp, s5=none
@@ -261,6 +261,30 @@ cleanup_out_of_scope() {
   echo
 }
 
+cleanup_unselected_response_plans() {
+  local code plan_name encoded_name plans="$TMP_DIR/response-plan-names.txt"
+
+  log "Cleaning up unselected response plans..."
+  code="$(api GET "/api/v2/extendedAgent/incidentFilters")"
+  if ! is_success_http "$code"; then
+    warn "  Could not list response plans; HTTP $code: $(response_summary)"
+    echo
+    return
+  fi
+
+  jq -r '
+    (if type == "array" then . else .value // .items // .incidentFilters // [] end)[]
+    | .name // .id // empty
+  ' "$RESP" >"$plans"
+
+  while IFS= read -r plan_name; do
+    contains "$plan_name" "${RESPONSE_PLAN_NAMES[@]}" && continue
+    encoded_name="$("$PYTHON" -c 'import sys; from urllib.parse import quote; print(quote(sys.argv[1], safe=""))' "$plan_name")"
+    delete_resource "/api/v2/extendedAgent/incidentFilters/${encoded_name}" "Response plan: $plan_name"
+  done <"$plans"
+  echo
+}
+
 contains() {
   local needle="$1"; shift
   local item
@@ -442,7 +466,6 @@ upload_hooks() {
 }
 
 # Resolve the repository to connect: GITHUB_REPOSITORY is set automatically in
-# GitHub Actions; fall back to the origin remote for local runs.
 resolve_github_repository() {
   if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
     echo "$GITHUB_REPOSITORY"
@@ -578,7 +601,7 @@ main() {
   cleanup_out_of_scope "Subagent" "/api/v2/extendedAgent/agents" ALL_SUBAGENT_NAMES SUBAGENT_NAMES
   configure_incident_platform
   create_response_plans
-  cleanup_out_of_scope "Response plan" "/api/v2/extendedAgent/incidentFilters" ALL_RESPONSE_PLAN_NAMES RESPONSE_PLAN_NAMES
+  cleanup_unselected_response_plans
   ok "Recipe extras applied"
 }
 

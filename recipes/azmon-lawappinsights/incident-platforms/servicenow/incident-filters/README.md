@@ -5,9 +5,9 @@ named in `RESPONSE_PLAN_NAMES` (see `scripts/catalog.sh`) with
 `PUT /api/v2/extendedAgent/incidentFilters/{metadata.name}`.
 
 `metadata.name` must match the file name. It is both the registered plan id and
-the catalog entry, and `cleanup_out_of_scope` deletes by catalog name — a plan
-whose id differs is either deleted right after it is registered or left behind
-forever when the scenario changes.
+the catalog entry. After registration, `scripts/apply-extras.sh` lists the
+agent's response plans and deletes every plan except the one selected for the
+active scenario. This also removes legacy and portal-created plans.
 
 ## Plans
 
