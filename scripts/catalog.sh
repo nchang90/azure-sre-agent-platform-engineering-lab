@@ -12,19 +12,6 @@ ALL_SUBAGENT_NAMES=(
   triage-agent
 )
 
-ALL_RESPONSE_PLAN_NAMES=(
-  aks-incidents
-  aks-pod-urgent
-  aks-critical-errors
-  all-incidents
-  azmon-sev01
-  container-apps-alerts
-  orders-api-health-response
-  orders-api-errors
-  orders-api-latency
-  s2-orders-api-runtime
-)
-
 ALL_KB_NAMES=(
   aks-network-connectivity.md
   aks-pod-failures.md
@@ -301,4 +288,7 @@ configure_catalog_scope() {
 
   log "Common prompts: ${COMMON_PROMPT_NAMES[*]}"
   log "Hooks: ${HOOK_NAMES[*]}"
+
+  [[ ${#RESPONSE_PLAN_NAMES[@]} -eq 1 ]] \
+    || die "Scenario '${SCENARIO:-unscoped}' must select exactly one response plan; selected: ${RESPONSE_PLAN_NAMES[*]:-none}"
 }
