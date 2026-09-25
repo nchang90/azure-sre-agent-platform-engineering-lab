@@ -322,6 +322,17 @@ def build_incident_filter(path):
         "agentMode": agent_mode,
         "maxAutomatedInvestigationAttempts": spec.get("maxAutomatedInvestigationAttempts") or spec.get("maxAttempts") or 3,
     }
+
+    # Optional plan behaviour. Emitted only when the YAML declares it, so plans
+    # that say nothing keep the exact payload they had before. The upstream
+    # recipe (sreagent-templates/bicep/apply-extras.sh) PUTs these to the same
+    # route in the same envelope, so they are part of the contract -- but an
+    # agent build that rejects them is handled by the strip-and-retry in
+    # register_response_plan_file rather than failing the apply.
+    for key in ("deepInvestigationEnabled", "mergeEnabled", "mergeWindowHours"):
+        if key in spec:
+            result[key] = spec[key]
+
     json.dump(result, sys.stdout)
 
 

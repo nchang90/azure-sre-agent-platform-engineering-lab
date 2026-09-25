@@ -12,7 +12,7 @@ operations; no other skill or agent writes to ServiceNow.
 This skill closes the loop of the S3 flow:
 
 ```text
-incident -> HTTP trigger -> agent triage -> root cause -> ServiceNow update
+ServiceNow incident -> connector match -> agent triage -> root cause -> ServiceNow update
 ```
 
 ## Authoritative external references
@@ -30,8 +30,9 @@ Use these as primary references before relying on other external sources:
   incident.
 
 Do not use to open an incident, change its state, reassign it, or resolve or
-close it. The incident already exists — the operator created it before the HTTP
-trigger fired — and S3 keeps remediation and closure manual.
+close it. The incident already exists — the operator created it, and matching it
+is what started this investigation — and S3 keeps remediation and closure
+manual.
 
 ## Before writing anything
 
