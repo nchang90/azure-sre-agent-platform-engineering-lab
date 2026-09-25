@@ -34,11 +34,10 @@ aks_max_count = 3
 
 deploy_sre_agent = true
 
-enable_vnet = false
+enable_vnet = true
 
 enable_app_insights_connector  = true
 enable_log_analytics_connector = true
-enable_azure_monitor_connector = false
 
 # S3 incident source: ServiceNow. Password comes from the environment, never tfvars.
 enable_service_now_connector = true

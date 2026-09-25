@@ -14,19 +14,31 @@ active scenario. This also removes legacy and portal-created plans.
 | File | Scope |
 |---|---|
 | `all-incidents.yaml` | Shared default: every priority, orchestrator, autonomous. |
-| `aks-incidents.yaml` | S3: priority 1-3, title contains `AKS`, autonomous. |
+| `aks-incidents.yaml` | S3: priority 1-3, title contains `checkout-api`, autonomous. |
 | `s2-orders-api-runtime.yaml` | S2: priority 1-3, title contains `Orders API`. |
 
 ## Supported fields
 
-`incidentPlatform`, `isEnabled`, `priorities`, `titleContains`,
+Always sent: `incidentPlatform`, `isEnabled`, `priorities`, `titleContains`,
 `handlingAgent`, `agentMode`, `maxAutomatedInvestigationAttempts`.
 
-That list is the whole contract. `build-api.py` emits exactly these keys and
-drops everything else, and the API rejects properties it does not recognize —
-which is why #74 removed `deepInvestigationEnabled`. The field still appears in
-some plans above but is **not** sent. Before adding a key here, add it to
-`build_incident_filter` in `scripts/build-api.py` too, or it will do nothing.
+Sent only when the YAML declares them: `deepInvestigationEnabled`,
+`mergeEnabled`, `mergeWindowHours`. A plan that omits one produces the exact
+payload it did before.
+
+`build_incident_filter` in `scripts/build-api.py` is the whole contract — it
+emits these keys and drops everything else, so adding a key here without adding
+it there does nothing.
+
+The optional three are part of the upstream payload: `sreagent-templates/bicep/apply-extras.sh`
+in [microsoft/sre-agent](https://github.com/microsoft/sre-agent) PUTs them to
+this same route in this same envelope, and its `snow-p1p2.yaml` ships
+`mergeEnabled` and `mergeWindowHours`. #74 dropped `deepInvestigationEnabled`
+alongside the real fix in that commit — a wrong request envelope and a duplicate
+`maxAttempts` key — so it was never established that the API rejects it.
+If an agent build does turn out to reject them, `register_response_plan_file`
+strips all three and retries once rather than failing the apply; watch the apply
+output for "agent rejected the optional plan fields".
 
 ## Advanced filters are a portal feature
 

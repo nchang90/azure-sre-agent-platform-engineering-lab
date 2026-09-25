@@ -336,6 +336,7 @@ register_subagent() {
 register_response_plan_file() {
   local yaml_path="$1"
   local code plan_body plan_id handling_agent expected_platform props body="$TMP_DIR/incident-filter.json" attempt summary
+  local optional_stripped=0
 
   [[ -f "$yaml_path" ]] || die "Missing response plan YAML: $yaml_path"
 
@@ -367,6 +368,21 @@ register_response_plan_file() {
       warn "  Response plan '${plan_id}' is waiting for incident platform '${expected_platform}' to finish initializing."
       wait_for_incident_platform "$expected_platform" 4 15 || true
       sleep 15
+      continue
+    fi
+
+    # deepInvestigationEnabled, mergeEnabled and mergeWindowHours are optional
+    # plan behaviour that the upstream recipe sends to this same route. If this
+    # agent build does not recognise them, drop them once and retry: the plan
+    # still scopes and routes correctly without them, which is better than
+    # failing the whole apply over a behaviour flag.
+    if [[ "$attempt" -lt 4 && "$code" == "400" && "$optional_stripped" == "0" ]] \
+      && jq -e 'has("deepInvestigationEnabled") or has("mergeEnabled") or has("mergeWindowHours")' <<<"$props" >/dev/null; then
+      optional_stripped=1
+      props="$(jq -c 'del(.deepInvestigationEnabled, .mergeEnabled, .mergeWindowHours)' <<<"$props")"
+      jq -nc --arg name "$plan_id" --argjson props "$props" \
+        '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
+      warn "  Response plan '${plan_id}': agent rejected the optional plan fields; retrying without them."
       continue
     fi
 

@@ -24,11 +24,14 @@ Every agent in the chain is read-only and must not claim a remediation was
 performed. Connectors, skills, knowledge base and response plans come from the
 `azmon-lawappinsights` recipe; this recipe contributes subagents only.
 
-The `aks-critical-errors` Azure Monitor response plan still supplies AKS alert
-context, but the demo flow starts when a ServiceNow incident workflow calls the
-Azure SRE Agent HTTP trigger with the incident payload. S3 investigates Azure
-Monitor and AKS evidence, then returns a diagnosis and report without executing
-remediation.
+The demo flow starts when an operator opens a ServiceNow incident and the
+agent's ServiceNow connector picks it up — a matching incident record is the
+trigger, not the underlying AKS failure. Which response plan is registered
+follows the connector: `aks-incidents` (ServiceNow) when
+`enable_service_now_connector = true`, otherwise `aks-critical-errors`
+(Azure Monitor). The agent's incident platform is a single setting, so only one
+of the two is live at a time. S3 investigates Azure Monitor and AKS evidence,
+then returns a diagnosis and report without executing remediation.
 
 ## Deployment
 

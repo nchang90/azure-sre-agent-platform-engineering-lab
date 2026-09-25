@@ -55,11 +55,15 @@ Use the scenario as a customer-impacting production outage rather than a simple
 AKS failure drill. The strongest demo flow is:
 
 ```text
-Production incident -> ServiceNow -> HTTP trigger -> Azure SRE Agent -> AKS triage -> root cause -> ServiceNow update
+Production incident -> ServiceNow incident -> ServiceNow connector -> Azure SRE Agent -> AKS triage -> root cause -> ServiceNow update
 ```
 
-Create the incident in ServiceNow first, then let the workflow call the Azure
-SRE Agent HTTP trigger with the incident context:
+**Creating the ServiceNow incident is what starts the investigation.** Breaking
+the cluster does not: the Azure Monitor alert only emails the action group in
+`infra/terraform/alerts.tf`, and with `enable_service_now_connector = true` the
+agent's incident platform is ServiceNow, so ServiceNow incident records are the
+only thing it picks up. Apply the broken manifest first so the agent finds real
+evidence, then open the incident:
 
 ```bash
 export SERVICENOW_PASS='<integration user password>'
@@ -80,9 +84,11 @@ incident with the fields the response plan matches on:
 Pass a different title as the second argument if you want to demo the
 no-match case; the plan will then correctly ignore the incident.
 
-If you want to show the alert handoff path, set
-`webhook_bridge_trigger_url` so Azure Monitor or a ServiceNow workflow can post
-directly into the agent HTTP trigger endpoint.
+There is no HTTP trigger endpoint in this lab. `webhook_bridge_trigger_url` only
+adds a webhook receiver to the `ag-sre-lab-*` action group, which the
+`checkout-api` alerts do not use — they route to `application-insights-smart-detection`,
+which has an email receiver and nothing else. Point it at a real endpoint of your
+own if you want to demo an alert handoff; it is not part of the S3 path.
 
 This keeps the scenario aligned to a realistic production flow: alert first,
 customer impact second, ServiceNow incident creation third, evidence-led triage
@@ -115,7 +121,7 @@ the same breadcrumb trail for the failure mode.
 | **Azure Monitor Connector** | Supplies AKS and telemetry evidence to the Azure SRE Agent |
 | **Azure Monitor Alert** | Provides the production signal for missing endpoints, workload loss, or node pressure |
 | **ServiceNow Incident** | Acts as the system of record for the customer-facing outage |
-| **HTTP Trigger** | Starts the Azure SRE Agent investigation from the ServiceNow workflow payload |
+| **ServiceNow Connector** | Polls the ServiceNow incident table; an incident matching the response plan starts the investigation |
 | **Azure SRE Agent** | Coordinates the three incident-investigation subagents |
 
 ---
@@ -123,9 +129,9 @@ the same breadcrumb trail for the failure mode.
 ## How It Works
 
 1. **Deploy the broken service variant** → selector drift is introduced
-2. **Azure Monitor alerts** (2–5 min) → detects service-without-endpoints or related AKS failure signals via Log Analytics
-3. **ServiceNow incident created or updated** → the operator opens the production incident for the outage
-4. **ServiceNow workflow calls the HTTP trigger** → incident metadata is sent to the Azure SRE Agent
+2. **Azure Monitor alerts** (5-10 min) → `alert-aks-checkout-api-service-no-endpoints` fires Sev1 off Log Analytics and emails the on-call. This is the human signal; it does not reach the agent.
+3. **ServiceNow incident created** → the operator opens the production incident (`scripts/servicenow-incident.sh`). **This is the trigger.**
+4. **The ServiceNow connector picks it up** → the `aks-incidents` response plan matches on priority 1-3 plus title containing `checkout-api`, and hands the incident to `aks-triage-agent`
 5. **Azure SRE Agent investigates** → Uses a three-subagent handoff chain
    - Examines `KubePodInventory` for pod state and restart counts
    - Checks `KubeServices` / endpoints for selector drift
@@ -159,9 +165,10 @@ before, composing the update for a human to post.
 
 ### Scoping the response plan
 
-S3 registers `aks-incidents`: priority 1-3 plus title contains `AKS`. That is
-broad enough to pull in any AKS incident on the instance — fine for a lab, and
-too wide for a shared ServiceNow.
+S3 registers `aks-incidents`: priority 1-3 plus title contains `checkout-api`.
+That is narrow enough to ignore the crashloop and node-pressure alerts S3 does
+not investigate, but it still matches any `checkout-api` incident on the
+instance — fine for a lab, and too wide for a shared ServiceNow.
 
 To narrow it to the incident this scenario actually reproduces — a production
 routing failure on the `checkout-api` CI owned by the platform group — use the
@@ -228,7 +235,7 @@ After the quick start:
 - The AKS triage agent can query monitoring evidence
 - A Sev1 AKS alert still provides the investigation signal and evidence trail
 - Critical `checkout-api` workload or service deletion also raises a Sev1 AKS alert
-- The ServiceNow workflow can call the Azure SRE Agent HTTP trigger with incident context
+- Creating the ServiceNow incident starts the investigation; breaking the cluster alone does not
 - The registered response plan matches the checkout incident and nothing else
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
 - The handoff chain completes in triage → summary → ServiceNow-ready report order
