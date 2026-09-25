@@ -337,6 +337,7 @@ register_response_plan_file() {
   local yaml_path="$1"
   local code plan_body plan_id handling_agent expected_platform props body="$TMP_DIR/incident-filter.json" attempt summary
   local optional_stripped=0
+  local max_attempts=8
 
   [[ -f "$yaml_path" ]] || die "Missing response plan YAML: $yaml_path"
 
@@ -351,7 +352,7 @@ register_response_plan_file() {
   jq -nc --arg name "$plan_id" --argjson props "$props" \
     '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
 
-  for attempt in 1 2 3 4; do
+  for attempt in $(seq 1 "$max_attempts"); do
     code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
     if is_success_http "$code"; then
       ok "  Response plan -> ${handling_agent} (${plan_id})"
@@ -359,7 +360,9 @@ register_response_plan_file() {
     fi
 
     summary="$(response_summary)"
-    if [[ "$attempt" -lt 4 && "$code" == "400" && -n "$expected_platform" && "$summary" == *"Incident platform '${expected_platform}' does not match configured incident management type"* ]]; then
+    if [[ "$attempt" -lt "$max_attempts" && "$code" == "400" && -n "$expected_platform" \
+      && ( "$summary" == *"IncidentPlatformConfigurationPending"* \
+      || "$summary" == *"Incident platform '${expected_platform}' does not match configured incident management type"* ) ]]; then
       local actual_type
       actual_type="$(current_incident_platform_type)"
       if [[ -n "$actual_type" && "$actual_type" != "None" && "$actual_type" != "$expected_platform" ]]; then
@@ -376,7 +379,7 @@ register_response_plan_file() {
     # agent build does not recognise them, drop them once and retry: the plan
     # still scopes and routes correctly without them, which is better than
     # failing the whole apply over a behaviour flag.
-    if [[ "$attempt" -lt 4 && "$code" == "400" && "$optional_stripped" == "0" ]] \
+    if [[ "$attempt" -lt "$max_attempts" && "$code" == "400" && "$optional_stripped" == "0" ]] \
       && jq -e 'has("deepInvestigationEnabled") or has("mergeEnabled") or has("mergeWindowHours")' <<<"$props" >/dev/null; then
       optional_stripped=1
       props="$(jq -c 'del(.deepInvestigationEnabled, .mergeEnabled, .mergeWindowHours)' <<<"$props")"
