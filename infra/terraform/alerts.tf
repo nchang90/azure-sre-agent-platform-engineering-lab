@@ -38,7 +38,10 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_health" {
 
   criteria {
     query = <<-KQL
-      ContainerAppSystemLogs_CL
+      let SystemLogs = union isfuzzy=true
+        (ContainerAppSystemLogs_CL),
+        (datatable(ContainerAppName_s:string, Reason_s:string, Log_s:string)[]);
+      SystemLogs
       | where ContainerAppName_s == "orders-api"
       | where Reason_s == "ReplicaUnhealthy" or Log_s has "probe failed"
       | summarize ProbeFailures = count()
@@ -77,7 +80,10 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_errors" {
 
   criteria {
     query = <<-KQL
-      ContainerAppSystemLogs_CL
+      let SystemLogs = union isfuzzy=true
+        (ContainerAppSystemLogs_CL),
+        (datatable(ContainerAppName_s:string, Reason_s:string, Log_s:string)[]);
+      SystemLogs
       | where ContainerAppName_s == "orders-api"
       | where Reason_s in ("ContainerBackOff", "Completed", "BackOff") or Log_s has_any ("back-off", "crash", "error", "terminated")
       | summarize FailedEvents = count()
