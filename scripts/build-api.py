@@ -84,6 +84,26 @@ SKILL_TOOLS = {
         "ExecutePythonCode",
     ],
     "evidence-before-after": READ_ONLY_DIAGNOSTICS,
+    "cross-platform-observability-triage": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "GetAzCliHelp",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "QueryAppInsightsUsingAppId",
+        "ExecutePythonCode",
+    ],
+    "incident-workitem-creation": [
+        "SearchMemory",
+        "FindConnectedGitHubRepo",
+        "FetchGithubIssue",
+        "FetchGithubIssueComments",
+        "CreateGithubIssueComment",
+        "UpdateGithubIssue",
+        "LookupServiceNowIncident",
+        "UpdateServiceNowIncident",
+        "UploadServiceNowAttachment",
+    ],
     "incident-orchestrator-coordination": [
         "SearchMemory",
     ],
@@ -103,6 +123,11 @@ SKILL_TOOLS = {
         "QueryAppInsightsByResourceId",
         "QueryAppInsightsUsingAppId",
         "QueryLogAnalyticsByWorkspaceId",
+    ],
+    "remediation-recommendation-planner": [
+        "SearchMemory",
+        "RunAzCliReadCommands",
+        "GetAzCliHelp",
     ],
 }
 

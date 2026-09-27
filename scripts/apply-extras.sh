@@ -49,7 +49,7 @@ ENVIRONMENT selects matching Terraform files:
 The selected tfvars file scopes the catalog:
   all environments   -> all skills and scenario-scoped knowledge-base docs
   each scenario      -> exactly one scenario-scoped incident response plan
-  scenario = s1..s6        -> primary scenario selector
+  scenario = s1..s7        -> primary scenario selector
   S2 runtime         -> deployed Terraform runtime_stack (webapp or containerapps)
   fixed runtimes     -> s1=containerapps, s3=aks, s4=webapp, s5=none
 
@@ -126,7 +126,7 @@ configure_environment() {
 
   log "Selecting Terraform environment: $ENVIRONMENT"
   SCENARIO="$(tfvar scenario | tr '[:upper:]' '[:lower:]')"
-  [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, or s5)."
+  [[ -n "$SCENARIO" ]] || die "scenario is required in $TFVARS_FILE (expected s1, s2, s3, s4, s5, s6, or s7)."
   terraform -chdir=infra/terraform init -reconfigure -backend-config="$backend_file" >/dev/null
   RUNTIME_STACK="$(resolve_runtime_stack "$SCENARIO")"
   case "$RUNTIME_STACK" in
@@ -541,8 +541,8 @@ drop_servicenow_from_scope() {
 upload_tools() {
   step "Uploading custom tools..."
 
-  # Scenarios other than S3 default to the full skill list, which would otherwise
-  # ship servicenow-incident-update with none of the tools it drives.
+  # Scenarios without custom tools still default to the full skill list, which
+  # would otherwise ship ServiceNow-dependent skills with none of their tools.
   if [[ ${#TOOL_NAMES[@]} -eq 0 ]]; then
     log "  No custom tools in scope."
     drop_servicenow_from_scope
@@ -589,7 +589,7 @@ create_response_plans() {
   fi
 
   for plan in "${RESPONSE_PLAN_NAMES[@]}"; do
-    register_response_plan_file "recipes/azmon-lawappinsights/incident-platforms/${incident_platform_dir}/incident-filters/${plan}.yaml"
+    register_response_plan_file "${RESPONSE_PLAN_BASE_DIR}/${incident_platform_dir}/incident-filters/${plan}.yaml"
   done
   echo
 }

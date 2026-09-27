@@ -1,0 +1,15 @@
+metadata:
+  name: s7-servicenow-incidents
+spec:
+  name: S7 Agentic Incident Commander (ServiceNow)
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+    - "1"
+    - "2"
+    - "3"
+  titleContains: orders-api
+  handlingAgent: incident-commander-intake
+  agentMode: autonomous
+  deepInvestigationEnabled: true
+  maxAutomatedInvestigationAttempts: 3

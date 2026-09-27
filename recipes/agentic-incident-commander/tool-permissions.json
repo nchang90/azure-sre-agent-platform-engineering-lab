@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "name": "commander-intake",
+      "allow": [
+        "SearchMemory"
+      ]
+    },
+    {
+      "name": "cross-platform-observability",
+      "allow": [
+        "GetAzCliHelp",
+        "QueryLogAnalyticsByWorkspaceId",
+        "QueryAppInsightsByResourceId",
+        "QueryAppInsightsUsingAppId",
+        "RunAzCliReadCommands",
+        "SearchMemory",
+        "ExecutePythonCode"
+      ]
+    },
+    {
+      "name": "incident-workitem-writeback",
+      "allow": [
+        "SearchMemory",
+        "FindConnectedGitHubRepo",
+        "FetchGithubIssue",
+        "FetchGithubIssueComments",
+        "UpdateServiceNowIncident",
+        "UploadServiceNowAttachment"
+      ],
+      "ask": [
+        "CreateGithubIssueComment",
+        "UpdateGithubIssue"
+      ]
+    }
+  ]
+}

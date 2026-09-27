@@ -1,0 +1,11 @@
+{
+  "toggles": {
+    "enableAppInsightsConnector": true,
+    "enableLogAnalyticsConnector": true,
+    "enableAzureMonitorConnector": true,
+    "enableServiceNowConnector": "{{serviceNowEnabled:bool}}",
+    "azureMonitorLookbackDays": 7,
+    "serviceNowInstance": "{{serviceNowInstance}}"
+  },
+  "connectors": []
+}

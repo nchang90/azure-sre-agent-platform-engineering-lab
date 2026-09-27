@@ -1,14 +1,19 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # every array here is consumed by the sourcing script
 ALL_SUBAGENT_NAMES=(
+  cross-platform-observability-investigator
+  incident-commander-intake
   aks-remediator
   aks-triage-agent
   alert-investigator
   incident-comms-agent
+  incident-workitem-writer
   incident-orchestrator
   incident-summary-agent
   issue-triager
   pim-elevation
+  remediation-recommendation-agent
+  runbook-knowledge-analyst
   triage-agent
 )
 
@@ -29,9 +34,12 @@ ALL_SKILL_NAMES=(
   azure-kubernetes
   containerapps-500-diagnostics
   containerapps-latency-diagnostics
+  cross-platform-observability-triage
   evidence-before-after
+  incident-workitem-creation
   incident-orchestrator-coordination
   investigate-azure-alerts
+  remediation-recommendation-planner
   servicenow-incident-update
   triage-app-errors
 )
@@ -40,7 +48,7 @@ ALL_SKILL_NAMES=(
 # targets. apply-extras.sh resolves the runtime from here, so adding a scenario
 # is one line rather than edits across three files. Deliberately a case rather
 # than an associative array: those need bash 4, and this has to run on macOS too.
-ALL_SCENARIOS="s1 s2 s3 s4 s5 s6"
+ALL_SCENARIOS="s1 s2 s3 s4 s5 s6 s7"
 
 scenario_runtime() {
   case "$1" in
@@ -50,6 +58,7 @@ scenario_runtime() {
     s4)    echo webapp ;;
     s5)    echo none ;;
     s6)    echo containerapps ;;
+    s7)    echo none ;;
     *)     return 1 ;;
   esac
 }
@@ -93,6 +102,7 @@ SUBAGENT_NAMES=("${ALL_SUBAGENT_NAMES[@]}")
 RESPONSE_PLAN_NAMES=(
   all-incidents
 )
+RESPONSE_PLAN_BASE_DIR="recipes/azmon-lawappinsights/incident-platforms"
 
 catalog_path() {
   local label="$1" f="$2"
@@ -119,11 +129,16 @@ subagent_path() {
     alert-investigator) echo "recipes/azmon-lawappinsights/agents/alert-investigator.yaml" ;;
     aks-remediator) echo "recipes/azmon-lawappinsights/agents/aks-remediator.yaml" ;;
     aks-triage-agent) echo "recipes/alert-response-incident-operations/config/subagents/aks-triage-agent.yaml" ;;
+    cross-platform-observability-investigator) echo "recipes/agentic-incident-commander/agents/cross-platform-observability-investigator.yaml" ;;
     incident-comms-agent) echo "recipes/alert-response-incident-operations/config/subagents/incident-comms-agent.yaml" ;;
+    incident-commander-intake) echo "recipes/agentic-incident-commander/agents/incident-commander-intake.yaml" ;;
+    incident-workitem-writer) echo "recipes/agentic-incident-commander/agents/incident-workitem-writer.yaml" ;;
     incident-orchestrator) echo "recipes/azmon-lawappinsights/agents/orchestrator-agent.yaml" ;;
     incident-summary-agent) echo "recipes/alert-response-incident-operations/config/subagents/incident-summary-agent.yaml" ;;
     issue-triager) echo "recipes/azmon-lawappinsights/agents/issue-triager.yaml" ;;
     pim-elevation) echo "recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml" ;;
+    remediation-recommendation-agent) echo "recipes/agentic-incident-commander/agents/remediation-recommendation-agent.yaml" ;;
+    runbook-knowledge-analyst) echo "recipes/agentic-incident-commander/agents/runbook-knowledge-analyst.yaml" ;;
     triage-agent) echo "recipes/azmon-lawappinsights/agents/triage-agent.yaml" ;;
     *) die "Unknown subagent catalog entry: $1" ;;
   esac
@@ -156,7 +171,8 @@ configure_catalog_scope() {
   RESPONSE_PLAN_NAMES=(
     all-incidents
   )
-  # Custom PythonTools are opt-in per scenario; only S3 writes back to ServiceNow.
+  RESPONSE_PLAN_BASE_DIR="recipes/azmon-lawappinsights/incident-platforms"
+  # Custom PythonTools are opt-in per scenario.
   TOOL_NAMES=()
   HOOK_NAMES=("${DEFAULT_HOOK_NAMES[@]}")
   COMMON_PROMPT_NAMES=("${DEFAULT_COMMON_PROMPT_NAMES[@]}")
@@ -226,7 +242,7 @@ configure_catalog_scope() {
         investigate-azure-alerts
         servicenow-incident-update
       )
-      # S3 is the only scenario that reads from and writes back to an incident record.
+      # S3 reads from and writes back to a ServiceNow incident record.
       TOOL_NAMES=(
         LookupServiceNowIncident
         UpdateServiceNowIncident
@@ -282,6 +298,42 @@ configure_catalog_scope() {
       log "Including S5 PIM elevation audit catalog from scenario=s5."
       SUBAGENT_NAMES+=(
         pim-elevation
+      )
+      ;;
+    s7)
+      log "Including S7 agentic incident commander catalog from scenario=s7."
+      SUBAGENT_NAMES=(
+        incident-commander-intake
+        cross-platform-observability-investigator
+        runbook-knowledge-analyst
+        incident-workitem-writer
+        remediation-recommendation-agent
+      )
+      RESPONSE_PLAN_BASE_DIR="recipes/agentic-incident-commander/incident-platforms"
+      if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
+        RESPONSE_PLAN_NAMES=(
+          s7-servicenow-incidents
+        )
+      else
+        RESPONSE_PLAN_NAMES=(
+          s7-azmonitor-incidents
+        )
+      fi
+      KB_NAMES=(
+        http-500-errors.md
+        incident-report.md
+        on-call-handoff.md
+        orders-architecture.md
+      )
+      SKILL_NAMES=(
+        cross-platform-observability-triage
+        incident-workitem-creation
+        remediation-recommendation-planner
+      )
+      TOOL_NAMES=(
+        LookupServiceNowIncident
+        UpdateServiceNowIncident
+        UploadServiceNowAttachment
       )
       ;;
     "")

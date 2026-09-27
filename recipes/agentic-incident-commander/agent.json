@@ -1,0 +1,18 @@
+{
+  "_scenario": "agentic-incident-commander",
+  "_description": "Cross-platform incident commander flow with Dynatrace and Azure evidence correlation.",
+  "identity": {
+    "agentName": "{{agentName}}",
+    "resourceGroup": "{{resourceGroup}}",
+    "subscription": "",
+    "location": "{{location}}",
+    "targetResourceGroups": "{{targetRGs}}"
+  },
+  "access": {
+    "accessLevel": "Low",
+    "actionMode": "Review"
+  },
+  "upgradeChannel": "Preview",
+  "monthlyAgentUnitLimit": 10000,
+  "tags": {}
+}

@@ -1,0 +1,31 @@
+{
+  "_scenario": "agentic-incident-commander",
+  "agent": {
+    "accessLevel": "Low",
+    "actionMode": "Review",
+    "upgradeChannel": "Preview",
+    "incidentPlatform": "AzMonitor"
+  },
+  "connectors": [
+    { "name": "azure-monitor", "type": "AzureMonitor" },
+    { "name": "application-insights", "type": "ApplicationInsights" },
+    { "name": "log-analytics", "type": "LogAnalytics" },
+    { "name": "servicenow", "type": "ServiceNow" }
+  ],
+  "skills": [
+    "cross-platform-observability-triage",
+    "incident-workitem-creation",
+    "remediation-recommendation-planner"
+  ],
+  "subagents": [
+    "incident-commander-intake",
+    "cross-platform-observability-investigator",
+    "runbook-knowledge-analyst",
+    "incident-workitem-writer",
+    "remediation-recommendation-agent"
+  ],
+  "responsePlans": [
+    { "name": "s7-azmonitor-incidents", "handlingAgent": "incident-commander-intake" },
+    { "name": "s7-servicenow-incidents", "handlingAgent": "incident-commander-intake" }
+  ]
+}

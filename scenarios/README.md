@@ -5,6 +5,8 @@
 - [S3 Incident Root Cause Investigation](./s3-incident-root-cause-investigation/)
 - [S4 Alert Response and Incident Operations](./s4-alert-response-incident-operations/)
 - [S5 PIM Elevation Audit & Alignment](./s5-pim-elevation-audit/README.md)
+- [S6 Front Door Incident Response](./s6-frontdoor-incident-response/README.md)
+- [S7 Agentic Incident Commander](./s7-agentic-incident-commander/README.md)
 
 ## Scenario steps and tfvars guidance
 
@@ -13,10 +15,10 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 `apply-extras.sh` reads the selected tfvars file and registers the matching recipe catalog:
 - All environments upload every `.github/skills/*/SKILL.md` skill.
 - Knowledge-base uploads are scoped by scenario; S2 uploads only the 5xx remediation, orders architecture, and incident report documents.
-- Every scenario uses the shared `all-incidents` response plan.
+- Response plans are scenario-scoped (`all-incidents` for shared defaults; scenario-specific plans for S2/S3/S7).
 - The `demo` Terraform environment enables Azure SRE Agent workspace egress through a delegated VNet subnet.
-- `scenario = "s1"|"s2"|"s3"|"s4"|"s5"` is the primary scenario selector.
-- Runtime scope is fixed for `s1 -> containerapps`, `s3 -> aks`, `s4 -> webapp`, and `s5 -> none`; S2 dynamically follows the deployed Terraform `runtime_stack` (`webapp` or `containerapps`).
+- `scenario = "s1"|"s2"|"s3"|"s4"|"s5"|"s6"|"s7"` is the primary scenario selector.
+- Runtime scope is fixed for `s1 -> containerapps`, `s3 -> aks`, `s4 -> webapp`, `s5 -> none`, `s6 -> containerapps`, and `s7 -> none`; S2 dynamically follows the deployed Terraform `runtime_stack` (`webapp` or `containerapps`).
 
 | Scenario | Recommended tfvars | Required apply-extras step | Optional step |
 |---|---|---|---|
@@ -25,6 +27,8 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 | S3 AKS incident root cause, triggered from ServiceNow | `environments/demo.tfvars` (or any tfvars with `scenario = "s3"`) | `bash scripts/apply-extras.sh <environment>` | `bash scripts/servicenow-incident.sh demo` to open the incident that starts the investigation |
 | S4 Alert response and incident operations | Any tfvars with `scenario = "s4"` and monitoring connectors | `bash scripts/apply-extras.sh <environment>` | Configure GitHub or ITSM connectors when creating follow-up records |
 | S5 PIM elevation audit | Any tfvars with `scenario = "s5"` | `bash scripts/apply-extras.sh <environment>` | Configure Entra audit data access |
+| S6 Front Door incident response | Any tfvars with `scenario = "s6"` | `bash scripts/apply-extras.sh <environment>` | Run the S6 fault-injection and probe-correlation lab steps |
+| S7 Agentic Incident Commander | Any tfvars with `scenario = "s7"` | `bash scripts/apply-extras.sh <environment>` | Enable ServiceNow connector for ServiceNow-first routing |
 
 For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `scenario = "s2"`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, and `enable_sev01_incident_filter = true`.
 

@@ -1,6 +1,6 @@
 # Azure SRE Agent - Platform Engineering Lab
 
-Hands-on Azure SRE Agent lab with six progressive incident scenarios.
+Hands-on Azure SRE Agent lab with seven progressive incident scenarios.
 
 **Prerequisites:** [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), [Terraform 1.5+](https://developer.hashicorp.com/terraform/install), and an identity that can create role assignments at the target scopes (Owner or User Access Administrator) — see [`infra/terraform/rbac.tf`](infra/terraform/rbac.tf).
 
@@ -14,6 +14,7 @@ Hands-on Azure SRE Agent lab with six progressive incident scenarios.
 | [S4 - Alert response & incident ops](scenarios/s4-alert-response-incident-operations/README.md) | Validate monitoring, alert routing, telemetry, and escalation. |
 | [S5 - PIM elevation audit](scenarios/s5-pim-elevation-audit/README.md) | Audit Entra PIM activations and correlate Azure Activity. |
 | [S6 - Front Door incident response](scenarios/s6-frontdoor-incident-response/README.md) | Inject backend faults with Chaos Studio and correlate Front Door health probes with App Insights. |
+| [S7 - Agentic Incident Commander](scenarios/s7-agentic-incident-commander/README.md) | HMCTS-inspired incident command flow from observability through recommendation-ready remediation guidance. |
 
 Steps and tfvars guidance: [scenarios/README.md](scenarios/README.md).
 
@@ -34,7 +35,7 @@ Workflows authenticate with workload identity federation, no client secrets: the
 infra/           # Terraform, Bicep modules (AVM-based), K8s manifests for Orders API
 scenarios/       # Progressive learning scenarios, each with its own README
 knowledge-base/  # Runbooks by service, on-call handoff, incident report, issue triage
-recipes/         # Reference agent configs: azmon-lawappinsights, dynatrace-servicenow
+recipes/         # Reference agent configs: azmon-lawappinsights, alert-response-incident-operations, agentic-incident-commander
 src/             # orders-api (.NET sample), change-lookup (git change discovery)
 scripts/         # Automation & deployment scripts
 .github/         # Workflows & Copilot skills
