@@ -9,5 +9,5 @@ spec:
       before proceeding. State the exact command and the target resource in the approval
       request.
     matcher: ^(RunAzCliWriteCommands|restart_.*|scale_.*)$
-  permissionDecision: allow
+  permissionDecision: ask
   enabled: true

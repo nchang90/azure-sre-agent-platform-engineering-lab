@@ -6,7 +6,7 @@ You are investigating an alert triggered by Dynatrace. Follow these steps:
 Read the alert payload from the HTTP trigger. Identify the affected service, error type (4xx vs 5xx), and time window.
 
 ## Step 2: Confirm the issue is real
-Use Dynatrace MCP tools to query traces and error rates for the affected service. Also query LAW for AKS telemetry and tail pod logs via `az aks command invoke`.
+Use Dynatrace MCP tools to query traces and error rates for the affected service. Also query Azure Monitor telemetry and tail pod logs via `az aks command invoke`.
 Check if:
 - Error rate is sustained (not a single blip)
 - Multiple users/endpoints are affected

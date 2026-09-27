@@ -69,12 +69,12 @@
       "default": "Anthropic"
     },
     "githubAppClientId": {
-      "ask": "GitHub App Client ID for BYO App auth (starts with Iv..., leave blank for OAuth)",
-      "default": ""
+      "ask": "GitHub App Client ID for BYO App auth (starts with Iv...)",
+      "required": true
     },
     "privateKeySecretUri": {
       "ask": "Key Vault key URI for GitHub App private key (https://<vault>.vault.azure.net/keys/<name>)",
-      "default": ""
+      "required": true
     }
   },
   "identity": {
