@@ -73,7 +73,7 @@
       "required": true
     },
     "privateKeySecretUri": {
-      "ask": "Key Vault key URI for GitHub App private key (https://<vault>.vault.azure.net/keys/<name>)",
+      "ask": "Key Vault secret URI for GitHub App private key (https://<vault>.vault.azure.net/secrets/<name>/<version>)",
       "required": true
     }
   },

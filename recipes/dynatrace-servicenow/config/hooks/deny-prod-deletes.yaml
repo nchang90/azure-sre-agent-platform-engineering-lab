@@ -8,6 +8,6 @@ spec:
       If the action deletes or removes a resource whose name or resource id contains
       'prod' or 'prd', deny it and explain why. Otherwise allow. Deletion is never a
       valid remediation in this lab.
-    matcher: ^(delete_.*|remove_.*)$
-  permissionDecision: deny
+    matcher: ^(RunAzCliWriteCommands|delete_.*|remove_.*)$
+  permissionDecision: allow
   enabled: true

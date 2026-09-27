@@ -3,7 +3,7 @@
     "enableAppInsightsConnector": false,
     "appInsightsResourceId": "",
     "appInsightsAppId": "",
-    "enableLogAnalyticsConnector": "{{lawId:bool}}",
+    "enableLogAnalyticsConnector": true,
     "lawResourceId": "{{lawId}}",
     "enableAzureMonitorConnector": true,
     "azureMonitorLookbackDays": 7,
