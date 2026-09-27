@@ -18,7 +18,8 @@ ANALYSIS APPROACH:
 - Prove root cause with concrete evidence, not speculation
 
 OUTPUT:
-Create a GitHub issue with:
+Use `data/incident-report-template.md` to structure the GitHub issue.
+Create the GitHub issue with:
 - Summary: What is failing and the impact
 - Timeline: When it started and key events
 - Evidence: Data from Dynatrace, Azure, logs, metrics with charts where helpful

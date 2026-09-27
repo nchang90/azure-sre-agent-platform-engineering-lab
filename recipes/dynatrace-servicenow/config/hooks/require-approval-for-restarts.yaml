@@ -8,6 +8,6 @@ spec:
       If this action will restart, scale, or recycle a resource, require human approval
       before proceeding. State the exact command and the target resource in the approval
       request.
-    matcher: ^(RunAzCliWriteCommands|restart_.*|scale_.*)$
+    matcher: ^(restart_.*|scale_.*)$
   permissionDecision: ask
   enabled: true
