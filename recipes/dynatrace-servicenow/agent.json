@@ -47,12 +47,8 @@
       "ask": "ServiceNow instance URL (e.g. https://dev181595.service-now.com)",
       "required": true
     },
-    "snowUser": {
-      "ask": "ServiceNow username",
-      "required": true
-    },
-    "snowPassword": {
-      "ask": "ServiceNow password",
+    "snowConnectionKey": {
+      "ask": "ServiceNow connection key JSON (contains endpoint, username, and password)",
       "required": true,
       "secret": true
     },

@@ -4,8 +4,10 @@ spec:
   eventType: PreToolUse
   hook:
     type: prompt
-    prompt: If this action will restart or scale a resource, require human approval
-      before proceeding.
-    matcher: ^(restart_|scale_).*
+    prompt: >-
+      If this action will restart, scale, or recycle a resource, require human approval
+      before proceeding. State the exact command and the target resource in the approval
+      request.
+    matcher: ^(RunAzCliWriteCommands|restart_.*|scale_.*)$
   permissionDecision: allow
   enabled: true

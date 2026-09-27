@@ -69,7 +69,7 @@ The agent is outside the VNet. All access is through the Azure control plane:
 
 | Resource | Read | Remediate |
 |---|---|---|
-| AKS | `az aks command invoke -- kubectl get/logs/describe` | `az aks command invoke -- kubectl delete/rollout restart` |
+| AKS | `az aks command invoke -- kubectl get/logs/describe` | `az aks command invoke -- kubectl rollout restart` |
 | PostgreSQL | `az postgres flexible-server show/list` | `az postgres flexible-server start/restart` |
 | App Insights | Built-in connector (private query via AMPLS) | N/A (read-only) |
 | Log Analytics | Built-in connector (private query via AMPLS) | N/A (read-only) |
