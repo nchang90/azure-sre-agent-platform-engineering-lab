@@ -1,6 +1,6 @@
 ---
 name: remediation-recommendation-planner
-description: Produce approval-aware remediation recommendations prioritized by safety and reversibility.
+description: Produce lightweight, approval-aware remediation recommendations from observability and runbook evidence.
 ---
 
 # Remediation Recommendation Planner

@@ -310,15 +310,9 @@ configure_catalog_scope() {
         remediation-recommendation-agent
       )
       RESPONSE_PLAN_BASE_DIR="recipes/agentic-incident-commander/incident-platforms"
-      if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
-        RESPONSE_PLAN_NAMES=(
-          s7-servicenow-incidents
-        )
-      else
-        RESPONSE_PLAN_NAMES=(
-          s7-azmonitor-incidents
-        )
-      fi
+      RESPONSE_PLAN_NAMES=(
+        s7-azmonitor-incidents
+      )
       KB_NAMES=(
         http-500-errors.md
         incident-report.md
@@ -330,11 +324,7 @@ configure_catalog_scope() {
         incident-workitem-creation
         remediation-recommendation-planner
       )
-      TOOL_NAMES=(
-        LookupServiceNowIncident
-        UpdateServiceNowIncident
-        UploadServiceNowAttachment
-      )
+      TOOL_NAMES=()
       ;;
     "")
       log "No scenario-specific extras requested."

@@ -92,6 +92,9 @@ SKILL_TOOLS = {
         "QueryAppInsightsByResourceId",
         "QueryAppInsightsUsingAppId",
         "ExecutePythonCode",
+        "QueryDynatraceProblems",
+        "QueryDynatraceLogs",
+        "QueryDynatraceServices",
     ],
     "incident-workitem-creation": [
         "SearchMemory",
@@ -100,9 +103,10 @@ SKILL_TOOLS = {
         "FetchGithubIssueComments",
         "CreateGithubIssueComment",
         "UpdateGithubIssue",
-        "LookupServiceNowIncident",
-        "UpdateServiceNowIncident",
-        "UploadServiceNowAttachment",
+        "FetchJiraIssue",
+        "FetchJiraIssues",
+        "CreateJiraIssueComment",
+        "UpdateJiraIssue",
     ],
     "incident-orchestrator-coordination": [
         "SearchMemory",

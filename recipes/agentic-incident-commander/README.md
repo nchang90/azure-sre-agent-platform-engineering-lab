@@ -1,17 +1,16 @@
 # agentic-incident-commander
 
-HMCTS-inspired incident commander recipe for cross-platform service incidents.
+Lightweight HMCTS-inspired Incident Commander recipe for cross-platform incident response.
 
 ## Purpose
 
-This recipe models the end-to-end flow:
+This recipe runs a lightweight flow using:
 
-1. Service issue trigger
-2. Observability correlation (Dynatrace + Azure telemetry)
-3. Agent-led investigation
-4. Runbook/knowledge lookup
-5. Incident/work-item write-back
-6. Remediation recommendation (recommend-only)
+1. Azure Monitor incident trigger
+2. Dynatrace MCP + Azure telemetry correlation
+3. Knowledge/runbook lookup
+4. GitHub MCP + Jira MCP incident/work-item update
+5. Remediation recommendation (recommend-only)
 
 ## Package layout
 
@@ -21,10 +20,9 @@ This recipe models the end-to-end flow:
 - `tool-permissions.json`
 - `agents/`
 - `incident-platforms/azure-monitor/incident-filters/`
-- `incident-platforms/servicenow/incident-filters/`
 
 ## Notes
 
-- This recipe contributes a five-agent handoff chain.
-- The final output distinguishes facts from hypotheses.
-- Remediation is recommendation-only unless explicit human approval is provided.
+- The flow is evidence-driven and recommendation-first.
+- The final output separates confirmed findings from hypotheses.
+- Remediation is never executed automatically in this scenario.

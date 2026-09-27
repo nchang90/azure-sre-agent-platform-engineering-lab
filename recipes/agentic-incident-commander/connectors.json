@@ -10,7 +10,9 @@
     { "name": "azure-monitor", "type": "AzureMonitor" },
     { "name": "application-insights", "type": "ApplicationInsights" },
     { "name": "log-analytics", "type": "LogAnalytics" },
-    { "name": "servicenow", "type": "ServiceNow" }
+    { "name": "dynatrace", "type": "Dynatrace" },
+    { "name": "github", "type": "GitHub" },
+    { "name": "jira", "type": "Jira" }
   ],
   "skills": [
     "cross-platform-observability-triage",
@@ -25,7 +27,6 @@
     "remediation-recommendation-agent"
   ],
   "responsePlans": [
-    { "name": "s7-azmonitor-incidents", "handlingAgent": "incident-commander-intake" },
-    { "name": "s7-servicenow-incidents", "handlingAgent": "incident-commander-intake" }
+    { "name": "s7-azmonitor-incidents", "handlingAgent": "incident-commander-intake" }
   ]
 }

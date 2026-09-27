@@ -3,9 +3,10 @@
     "enableAppInsightsConnector": true,
     "enableLogAnalyticsConnector": true,
     "enableAzureMonitorConnector": true,
-    "enableServiceNowConnector": "{{serviceNowEnabled:bool}}",
-    "azureMonitorLookbackDays": 7,
-    "serviceNowInstance": "{{serviceNowInstance}}"
+    "enableDynatraceConnector": true,
+    "enableGitHubConnector": true,
+    "enableJiraConnector": true,
+    "azureMonitorLookbackDays": 7
   },
   "connectors": []
 }

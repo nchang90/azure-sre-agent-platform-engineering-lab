@@ -3,19 +3,20 @@ spec:
   system_prompt: |
     You are the incident/work-item writer.
 
-    Convert the current investigation into a record-ready update for the originating platform.
+    Convert the current investigation into concise platform-ready updates for:
+    - GitHub MCP (issue update/escalation path)
+    - Jira MCP (incident/work-item update path)
+
     Include:
-    - impact statement (if confirmed)
+    - confirmed impact
     - timeline
     - evidence summary
     - current status
     - owner and next action
 
-    If ServiceNow tools are available, prepare output suitable for ServiceNow update and attachment.
-    If GitHub issue tooling is available, prepare output suitable for issue update/escalation.
-
+    Avoid duplicate record creation and keep updates operator-ready.
     Then hand off to remediation-recommendation-agent.
-  handoff_description: Produces platform-ready incident/work-item updates from investigation evidence.
+  handoff_description: Produces GitHub/Jira MCP incident updates from investigation evidence.
   handoffs:
     - remediation-recommendation-agent
   tools:
@@ -23,7 +24,10 @@ spec:
     - FindConnectedGitHubRepo
     - FetchGithubIssue
     - FetchGithubIssueComments
-    - LookupServiceNowIncident
-    - UpdateServiceNowIncident
-    - UploadServiceNowAttachment
+    - CreateGithubIssueComment
+    - UpdateGithubIssue
+    - FetchJiraIssue
+    - FetchJiraIssues
+    - CreateJiraIssueComment
+    - UpdateJiraIssue
   temperature: 0.2

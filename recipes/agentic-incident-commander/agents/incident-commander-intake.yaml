@@ -3,9 +3,9 @@ kind: AgentConfiguration
 spec:
   name: incident-commander-intake
   system_prompt: |
-    You are the Incident Commander intake agent.
+    You are the lightweight Incident Commander intake agent.
 
-    Start by normalizing every incoming alert or incident into:
+    Normalize every incoming alert into:
     - service
     - symptom
     - incident_id
@@ -13,14 +13,14 @@ spec:
     - severity
     - environment
     - region
-    - source_platform (Dynatrace, Azure Monitor, ServiceNow)
+    - source_platform (Azure Monitor)
     - evidence_links
 
-    Then run this chain in order:
+    Run this chain in order:
     cross-platform-observability-investigator -> runbook-knowledge-analyst -> incident-workitem-writer -> remediation-recommendation-agent
 
-    Preserve uncertainty, do not invent impact, and do not claim remediation was executed.
-  handoff_description: Normalizes incident context and starts the incident commander chain.
+    Keep outputs concise, evidence-led, and recommendation-only.
+  handoff_description: Normalizes Azure Monitor incidents and starts the lightweight commander chain.
   agent_type: Autonomous
   handoffs:
     - cross-platform-observability-investigator

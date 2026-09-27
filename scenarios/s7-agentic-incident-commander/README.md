@@ -1,4 +1,4 @@
-# S7 — Agentic Incident Commander (HMCTS-inspired)
+# S7 — Agentic Incident Commander (Lightweight, HMCTS-inspired)
 
 **Persona:** Incident Commander / On-call SRE  
 **Runtime:** Monitoring-first (cross-platform)  
@@ -8,20 +8,19 @@
 
 ## Scenario objective
 
-Run a full incident-command workflow:
+Run a lightweight Incident Commander workflow using:
 
-1. Service issue observed
-2. Observability correlation (Dynatrace + Azure telemetry)
-3. Agent investigation
-4. Runbook/knowledge lookup
-5. Incident/work-item update
-6. Remediation recommendation
+1. Azure Monitor trigger
+2. Dynatrace MCP + Azure telemetry correlation
+3. Knowledge files / runbook lookup
+4. GitHub MCP + Jira MCP incident update
+5. Remediation recommendation (no auto-execution)
 
 ---
 
 ## Trigger
 
-Start from an Azure Monitor or ServiceNow incident for `orders-api`.
+Start from an Azure Monitor incident for `orders-api`.
 
 ---
 
@@ -30,7 +29,7 @@ Start from an Azure Monitor or ServiceNow incident for `orders-api`.
 - Fired alert details and severity
 - Failed request and exception patterns
 - Dependency failure signals
-- Time-window correlation across available telemetry sources
+- Time-window correlation between Azure telemetry and Dynatrace MCP evidence
 
 ---
 
@@ -50,13 +49,13 @@ incident-commander-intake
 
 ## Incident artifact output
 
-The chain produces an operator-ready incident update including:
+The chain produces operator-ready updates for GitHub MCP and Jira MCP including:
 
-- Impact (confirmed)
-- Timeline
-- Evidence summary
-- Current status
-- Owner and next action
+- confirmed impact
+- timeline
+- evidence summary
+- current status
+- owner and next action
 
 ---
 
@@ -69,4 +68,4 @@ The final output provides recommendation-only actions with:
 - rollback notes
 - approval requirement
 
-No remediation is claimed as executed unless a human explicitly approves and performs it.
+No remediation is executed automatically in S7.

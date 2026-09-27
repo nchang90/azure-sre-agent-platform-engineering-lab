@@ -16,22 +16,25 @@
         "QueryAppInsightsUsingAppId",
         "RunAzCliReadCommands",
         "SearchMemory",
-        "ExecutePythonCode"
+        "ExecutePythonCode",
+        "QueryDynatraceProblems",
+        "QueryDynatraceLogs",
+        "QueryDynatraceServices"
       ]
     },
     {
-      "name": "incident-workitem-writeback",
+      "name": "incident-writeback",
       "allow": [
         "SearchMemory",
         "FindConnectedGitHubRepo",
         "FetchGithubIssue",
         "FetchGithubIssueComments",
-        "UpdateServiceNowIncident",
-        "UploadServiceNowAttachment"
-      ],
-      "ask": [
         "CreateGithubIssueComment",
-        "UpdateGithubIssue"
+        "UpdateGithubIssue",
+        "FetchJiraIssue",
+        "FetchJiraIssues",
+        "CreateJiraIssueComment",
+        "UpdateJiraIssue"
       ]
     }
   ]

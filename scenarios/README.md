@@ -28,7 +28,7 @@ Any scenario can use any file in `infra/terraform/environments/*.tfvars`, or a n
 | S4 Alert response and incident operations | Any tfvars with `scenario = "s4"` and monitoring connectors | `bash scripts/apply-extras.sh <environment>` | Configure GitHub or ITSM connectors when creating follow-up records |
 | S5 PIM elevation audit | Any tfvars with `scenario = "s5"` | `bash scripts/apply-extras.sh <environment>` | Configure Entra audit data access |
 | S6 Front Door incident response | Any tfvars with `scenario = "s6"` | `bash scripts/apply-extras.sh <environment>` | Run the S6 fault-injection and probe-correlation lab steps |
-| S7 Agentic Incident Commander | Any tfvars with `scenario = "s7"` | `bash scripts/apply-extras.sh <environment>` | Enable ServiceNow connector for ServiceNow-first routing |
+| S7 Agentic Incident Commander | Any tfvars with `scenario = "s7"` | `bash scripts/apply-extras.sh <environment>` | Configure Dynatrace MCP, GitHub MCP, and Jira MCP connectors |
 
 For S2 with another environment such as `prod.tfvars`, keep the same S2-critical settings used by `sbox.tfvars`: `scenario = "s2"`, `access_level = "High"`, `enable_app_insights_connector = true`, `enable_log_analytics_connector = true`, and `enable_sev01_incident_filter = true`.
 
