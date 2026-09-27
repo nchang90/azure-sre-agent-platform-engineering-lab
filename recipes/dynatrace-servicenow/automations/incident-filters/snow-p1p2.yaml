@@ -1,7 +1,7 @@
 metadata:
   name: snow-p1p2
 spec:
-  incidentPlatform: ServiceNow
+  incidentPlatform: servicenow
   isEnabled: true
   priorities:
   - "1"

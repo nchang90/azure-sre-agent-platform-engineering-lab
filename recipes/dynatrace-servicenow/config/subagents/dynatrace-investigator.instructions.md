@@ -18,7 +18,7 @@ ANALYSIS APPROACH:
 - Prove root cause with concrete evidence, not speculation
 
 OUTPUT:
-Use `data/incident-report-template.md` to structure the GitHub issue.
+Use `recipes/dynatrace-servicenow/data/incident-report-template.md` to structure the GitHub issue.
 Create the GitHub issue with:
 - Summary: What is failing and the impact
 - Timeline: When it started and key events

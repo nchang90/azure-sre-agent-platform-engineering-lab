@@ -33,13 +33,13 @@ These actions are blocked until a human approves:
 
 These actions are never allowed:
 
-- `kubectl delete` anything
-- Delete any Azure resource
 - Scale infrastructure (node pools, VM sizes)
 - IAM / role assignment changes
 - Schema migrations or data modifications on PostgreSQL
 - Network security group or firewall rule changes
 - Access or display secrets, keys, or connection strings
+
+Delete/remove commands against production resources require explicit human approval.
 
 ## Verification After Remediation
 
