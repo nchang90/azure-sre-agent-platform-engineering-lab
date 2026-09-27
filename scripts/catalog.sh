@@ -191,7 +191,7 @@ configure_catalog_scope() {
 
   case "$SCENARIO" in
     s3)
-      log "Including S3 high-severity AKS incident catalog from scenario=s3."
+      log "Including S3 AKS incident catalog from scenario=s3."
       SUBAGENT_NAMES=(
         aks-triage-agent
         incident-summary-agent
@@ -200,6 +200,9 @@ configure_catalog_scope() {
       if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
         RESPONSE_PLAN_NAMES=(
           aks-incidents
+          aks-crashloop-incidents
+          aks-node-pressure-incidents
+          aks-hpa-incidents
         )
       else
         RESPONSE_PLAN_NAMES=(

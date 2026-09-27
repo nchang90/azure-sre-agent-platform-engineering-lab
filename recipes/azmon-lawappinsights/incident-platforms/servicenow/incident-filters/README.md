@@ -14,7 +14,10 @@ active scenario. This also removes legacy and portal-created plans.
 | File | Scope |
 |---|---|
 | `all-incidents.yaml` | Shared default: every priority, orchestrator, autonomous. |
-| `aks-incidents.yaml` | S3: priority 1-3, title contains `checkout-api`, autonomous. |
+| `aks-incidents.yaml` | S3 core path: priority 1-3, title contains `checkout-api`, autonomous. |
+| `aks-crashloop-incidents.yaml` | S3 targeted path: priority 1-2, title contains `AKS - CrashLoop/OOM detected`, autonomous. |
+| `aks-node-pressure-incidents.yaml` | S3 targeted path: priority 1-2, title contains `AKS node CPU pressure`, autonomous. |
+| `aks-hpa-incidents.yaml` | S3 targeted path: priority 1-2, title contains `AKS HPA`, autonomous. |
 | `s2-orders-api-runtime.yaml` | S2: priority 1-3, title contains `Orders API`. |
 
 ## Supported fields
