@@ -1,0 +1,14 @@
+metadata:
+  name: aks-crashloop-incidents
+spec:
+  name: S3 AKS CrashLoop Incident Response
+  incidentPlatform: ServiceNow
+  isEnabled: true
+  priorities:
+  - "1"
+  - "2"
+  titleContains: AKS - CrashLoop/OOM detected
+  handlingAgent: aks-triage-agent
+  agentMode: autonomous
+  deepInvestigationEnabled: true
+  maxAutomatedInvestigationAttempts: 3

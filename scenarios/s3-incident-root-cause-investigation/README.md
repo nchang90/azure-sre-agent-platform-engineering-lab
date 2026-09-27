@@ -131,7 +131,7 @@ the same breadcrumb trail for the failure mode.
 1. **Deploy the broken service variant** → selector drift is introduced
 2. **Azure Monitor alerts** (5-10 min) → `alert-aks-checkout-api-service-no-endpoints` fires Sev1 off Log Analytics and emails the on-call. This is the human signal; it does not reach the agent.
 3. **ServiceNow incident created** → the operator opens the production incident (`scripts/servicenow-incident.sh`). **This is the trigger.**
-4. **The ServiceNow connector picks it up** → the `aks-incidents` response plan matches on priority 1-3 plus title containing `checkout-api`, and hands the incident to `aks-triage-agent`
+4. **The ServiceNow connector picks it up** → targeted `aks-*` response plans match by AKS incident title and priority, then hand the incident to `aks-triage-agent`
 5. **Azure SRE Agent investigates** → Uses a three-subagent handoff chain
    - Examines `KubePodInventory` for pod state and restart counts
    - Checks `KubeServices` / endpoints for selector drift
@@ -165,10 +165,16 @@ before, composing the update for a human to post.
 
 ### Scoping the response plan
 
-S3 registers `aks-incidents`: priority 1-3 plus title contains `checkout-api`.
-That is narrow enough to ignore the crashloop and node-pressure alerts S3 does
-not investigate, but it still matches any `checkout-api` incident on the
-instance — fine for a lab, and too wide for a shared ServiceNow.
+S3 registers a targeted ServiceNow response-plan set:
+
+- `aks-incidents`: priority 1-3 + title contains `checkout-api` (core routing path)
+- `aks-crashloop-incidents`: priority 1-2 + title contains `AKS - CrashLoop/OOM detected`
+- `aks-node-pressure-incidents`: priority 1-2 + title contains `AKS node CPU pressure`
+- `aks-hpa-incidents`: priority 1-2 + title contains `AKS HPA`
+
+This keeps the checkout-api scenario deterministic while still covering high/urgent
+AKS crashloop, node-pressure, and HPA incidents without a broad `titleContains: AKS`
+match.
 
 To narrow it to the incident this scenario actually reproduces — a production
 routing failure on the `checkout-api` CI owned by the platform group — use the
@@ -236,7 +242,7 @@ After the quick start:
 - A Sev1 AKS alert still provides the investigation signal and evidence trail
 - Critical `checkout-api` workload or service deletion also raises a Sev1 AKS alert
 - Creating the ServiceNow incident starts the investigation; breaking the cluster alone does not
-- The registered response plan matches the checkout incident and nothing else
+- The registered response plans match checkout-api routing plus targeted high/urgent AKS incidents for triage
 - Scenario A keeps pods healthy while reproducing broken routing with no endpoints
 - The handoff chain completes in triage → summary → ServiceNow-ready report order
 - The `evidence-before-after` skill is registered for `scenario=s3`
