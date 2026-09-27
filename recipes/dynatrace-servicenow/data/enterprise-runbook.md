@@ -24,8 +24,8 @@ These actions are pre-approved per organization policy. The agent can execute th
 
 These actions are blocked until a human approves:
 
-### All Write Operations
-- Any `RunAzCliWriteCommands` call triggers the approval hook
+### High-risk Write Operations
+- Any `RunAzCliWriteCommands` call outside the pre-approved autonomous actions above triggers the approval hook
 - The agent shows what it wants to do and waits for "yes"
 - Reads (list, show, get, describe, logs, query) pass through without approval
 
