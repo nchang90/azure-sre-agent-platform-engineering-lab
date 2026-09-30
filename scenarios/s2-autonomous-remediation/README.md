@@ -10,7 +10,7 @@
 
 In this lab, you will:
 
-- Reproduce a production incident where the frontend still loads but backend calls fail.
+- Reproduce a controlled App Service outage while the health probe stays available.
 - Investigate with Azure Monitor, Application Insights, Log Analytics, and deployment evidence.
 - Verify safe remediation and service recovery.
 
@@ -130,7 +130,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 |------|--------|
 | `deny-prod-deletes` | Denies deletes/removes against resources named `prod` or `prd` |
 | `require-approval-for-restarts` | Requires human approval to restart, scale or recycle a resource |
-| `s2-require-approval-for-deployment-changes` | Requires approval for revision activate/deactivate, ingress traffic changes, `az containerapp update`, `az webapp config set`, `az webapp config appsettings set`, slot swaps, and deployment workflow re-runs |
+| `s2-require-approval-for-deployment-changes` | Requires approval for deployment changes, except setting only `CHAOS_ENABLED=false` on a confirmed S2 lab `orders-api-*` App Service with `CHAOS_MODE=outage` |
 
 The first two apply in every scenario; the third is added only for `scenario=s2`,
 because S2 is the scenario that combines `Autonomous` mode with `High` access.
@@ -140,7 +140,58 @@ Definitions live in [`recipes/azmon-lawappinsights/config/hooks/`](../../recipes
 
 ## Exercise 2: Trigger the incident and observe impact
 
-### Task 1: Use GitHub Copilot CLI to introduce a controlled backend regression
+### Conference path: inject an App Service outage with Chaos Monkey
+
+Use only the isolated S2 lab App Service, not a production website. The deployed
+`orders-api` App Service starts with `CHAOS_ENABLED=false` and
+`CHAOS_MODE=outage`. Its root currently returns service metadata (not a
+dashboard). Enabling chaos makes the root and API return 503 while `/health`
+stays healthy; the process remains running so Application Insights can record
+failed requests and Azure SRE Agent can diagnose the configuration change.
+This simulates a website outage without killing the process or leaking memory.
+
+```bash
+# Use BACKEND_WEBAPP_NAME, RESOURCE_GROUP and APP_URL from Exercise 1.
+curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error "$APP_URL/"
+
+# Inject the failure by changing only the isolated lab app setting.
+az webapp config appsettings set \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_WEBAPP_NAME" \
+  --settings CHAOS_ENABLED=true \
+  --output none
+
+# Allow the App Service to restart with the new setting, then generate 5xx telemetry.
+for request in {1..12}; do
+  curl --silent --output /dev/null \
+    --write-out "website request $request: HTTP %{http_code}\n" "$APP_URL/"
+done
+curl --fail --silent --show-error "$APP_URL/health"
+```
+
+Check that the website returns 503 and that `alert-orders-api-5xx` fires after
+more than five failures in its five-minute window (evaluated every five
+minutes). The S2 Azure Monitor response plan routes the **Orders API** Sev1
+alert to the triage agent in autonomous mode. Review its evidence: recent app
+setting change, App Service still Running, `/health` healthy, failed requests
+in Application Insights, and `CHAOS_ENABLED=true` with `CHAOS_MODE=outage`.
+The only pre-approved autonomous configuration fix is to set
+`CHAOS_ENABLED=false` on this isolated lab's `orders-api-*` App Service. All
+other deployment changes and explicit restarts still require human approval.
+Verify that the root and `/api/orders` succeed and 5xx returns to baseline;
+do not claim remediation occurred until the agent action and recovery are
+observed. If the agent does not act, restore the lab manually:
+
+```bash
+az webapp config appsettings set \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_WEBAPP_NAME" \
+  --settings CHAOS_ENABLED=false \
+  --output none
+```
+
+### Alternative: use GitHub Copilot CLI to introduce a backend-only regression
 
 The regression is driven by the `orders-api` simulation endpoints, which are part of
 the deployed image. Let Copilot CLI draft and run the calls so the demo shows an
@@ -277,7 +328,9 @@ Conference default: **App Service**.
 Alternate runtime: **Container Apps** with the same `/api/orders` failure symptoms and runtime-specific telemetry correlation.
 
 A new `orders-api` backend version is deployed to production.
-The UI dashboard still loads, but backend calls start failing.
+In the backend-only variant the UI dashboard still loads, but backend calls
+start failing. In the conference Chaos Monkey variant, the App Service root
+also fails until the setting is restored.
 Soon after deployment:
 
 - App Service still reports **Running**
@@ -343,9 +396,9 @@ Additional variants:
 
 ## Exercise 4: UI demo sequence
 
-1. Open the dashboard and show normal UX.
-2. Introduce controlled backend regression.
-3. Show frontend still renders while backend actions fail.
+1. Show the App Service root, `/health`, and order requests working.
+2. Enable the isolated lab's `CHAOS_ENABLED` app setting.
+3. Show the root and order requests returning 503 while `/health` still passes.
 4. Show Azure Monitor incident firing on `web-api` 5xx.
 5. Show SRE Agent investigation trail across telemetry + deployment evidence.
 6. Optionally delegate backend diagnosis to a specialist sub-agent.
@@ -372,6 +425,7 @@ After the quick start:
 ```bash
 # Restore the runtime simulation if the agent has not already remediated it.
 # You can use GitHub Copilot CLI to draft the reset command the same way.
+# For the App Service Chaos Monkey path, set CHAOS_ENABLED=false as shown above.
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/simulate/reset"
 

@@ -9,8 +9,13 @@ spec:
   hook:
     type: prompt
     prompt: >-
-      You are a deployment safety reviewer for the orders platform. Require explicit
-      human approval before any of the following: activating or deactivating a
+      You are a deployment safety reviewer for the orders platform. Allow one
+      autonomous exception: after confirming the S2 orders-api App Service in an
+      isolated rg-sre-lab-* resource group has CHAOS_MODE=outage and
+      CHAOS_ENABLED=true, a single az webapp config appsettings set command
+      targeting only that orders-api-* app and setting only CHAOS_ENABLED=false
+      may proceed to restore service. Require explicit human approval for all
+      other app setting writes and for any of the following: activating or deactivating a
       Container App revision; setting Container App ingress traffic weights; running
       az containerapp update, az webapp config set, az webapp config appsettings set,
       or az webapp deployment slot swap; or re-running a GitHub Actions deployment

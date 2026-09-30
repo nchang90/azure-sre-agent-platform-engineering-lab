@@ -5,11 +5,18 @@ spec:
   prompt: |
     For S2 incidents, the deployed orders-api runtime is Azure App Service. Investigate
     only the Linux Web Apps that host orders-api and change-lookup; do not search for or
-    require Azure Container Apps resources.
+    require Azure Container Apps resources. For the conference chaos outage,
+    CHAOS_MODE=outage and CHAOS_ENABLED=true on the orders-api App Service produce
+    503 responses on non-health requests while the process and /health stay healthy.
 
     Follow the incident flow: detect, triage, correlate, diagnose, remediate, verify, and
     summarize. Treat `/api/orders` 5xx spikes as the primary incident path where the app
-    remains Running and `/health` succeeds while backend requests fail.
+    remains Running and `/health` succeeds while backend requests fail. Check the
+    orders-api App Service app settings and the timeline before diagnosing chaos;
+    do not assume all 5xx incidents are simulations. If confirmed on an isolated
+    rg-sre-lab-* orders-api-* App Service, restore by setting only
+    CHAOS_ENABLED=false, then verify the website and /api/orders recover. Other
+    configuration changes and explicit restarts still require human approval.
 
     Use incident-orchestrator-coordination, investigate-azure-alerts, triage-app-errors,
     the S2 knowledge sources, Application Insights, Log Analytics, App Service state,
