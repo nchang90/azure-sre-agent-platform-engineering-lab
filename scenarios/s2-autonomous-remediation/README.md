@@ -183,7 +183,7 @@ curl --silent --output /dev/null \
 ```
 
 Check that the platform records more than five HTTP 5xx responses in five
-minutes and `alert-orders-api-webapp-5xx` fires. If requests time out or do
+minutes and `Orders API App Service HTTP 5xx` fires. If requests time out or do
 not produce a platform 5xx, inspect the App Service metric before claiming
 the alert fired. The S2 Azure Monitor response plan routes the **Orders API**
 Sev1 alert to the triage agent in autonomous mode. Review its evidence:
