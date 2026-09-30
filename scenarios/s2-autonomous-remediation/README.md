@@ -141,8 +141,8 @@ Definitions live in [`recipes/azmon-lawappinsights/config/hooks/`](../../recipes
 ## Conference trigger: crash the App Service with Copilot CLI
 
 Use only the isolated S2 lab App Service, not a production website. The deployed
-`orders-api` App Service starts with `CHAOS_ENABLED=false` and
-`CHAOS_MODE=crash`. Its root currently returns service metadata (not a
+`orders-api` App Service starts with `enable_s2_chaos=false` (which sets
+`CHAOS_ENABLED=false`) and `CHAOS_MODE=crash`. Its root returns service metadata (not a
 dashboard). Enabling chaos terminates the process on startup. The App Service
 may restart the container repeatedly, but `/health`, the root, and orders
 remain unavailable until the setting is reverted. A dead process cannot emit
@@ -160,14 +160,15 @@ az webapp config appsettings list --resource-group "$RESOURCE_GROUP" \
   --output table
 ```
 
-Trigger the change interactively with GitHub Copilot CLI. Review and approve
-the exact command before execution; do not grant unrestricted tool access:
+Trigger the Terraform toggle through the deployment workflow with GitHub
+Copilot CLI. Review and approve the exact command; do not grant unrestricted
+tool access or set `chaos=true` outside the isolated S2 App Service lab:
 
 ```bash
-copilot -i "For the isolated S2 lab only, run az webapp config appsettings set \
---resource-group $RESOURCE_GROUP --name $BACKEND_WEBAPP_NAME \
---settings CHAOS_ENABLED=true --output none. Show me the exact command \
-and wait for my approval. Do not change CHAOS_MODE, other settings or other apps."
+copilot -i "For the isolated S2 sbox App Service demo, run gh workflow run deploy.yml \
+-f environment=sbox -f runtime=webapp -f chaos=true -f plan=true -f apply=true. \
+Show me the exact command and wait for my approval. Do not change other \
+environments or resources. Then show me the workflow status."
 ```
 
 Once the App Service starts failing, generate platform HTTP 5xx responses:
@@ -189,7 +190,9 @@ Sev1 alert to the triage agent in autonomous mode. Review its evidence:
 the app-setting change, failed health and requests, container startup/crash
 logs, and `CHAOS_ENABLED=true` with `CHAOS_MODE=crash`.
 The only pre-approved autonomous configuration fix is to set
-`CHAOS_ENABLED=false` on this isolated lab's `orders-api-*` App Service. All
+`CHAOS_ENABLED=false` on this isolated lab's `orders-api-*` App Service. This
+restores service immediately but leaves Terraform state configured for chaos
+until the default-off toggle is applied again. All
 other deployment changes and explicit restarts still require human approval.
 Verify that `/health`, the root and `/api/orders` succeed and 5xx returns to baseline;
 do not claim remediation occurred until the agent action and recovery are
@@ -202,6 +205,11 @@ az webapp config appsettings set \
   --settings CHAOS_ENABLED=false \
   --output none
 ```
+
+After recovery, reconcile Terraform with `chaos=false` using the same
+`deploy.yml` workflow (and confirm its plan before applying). Do not reapply
+the saved `chaos=true` plan: it would crash the app again. Scheduled deploys
+also use the safe `false` default.
 
 For the optional backend-only 500 variant, use the simulation steps in
 [`orders-architecture.md`](../../knowledge-base/runbooks/containers/orders-architecture.md).

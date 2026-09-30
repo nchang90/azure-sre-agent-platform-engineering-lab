@@ -65,7 +65,9 @@ For the isolated S2 lab only, if the orders-api App Service has
 `CHAOS_MODE=crash` and `CHAOS_ENABLED=true`, set **only**
 `CHAOS_ENABLED=false` on that App Service. The S2 approval hook permits this
 specific reversal without approval; other configuration writes and explicit
-restarts remain gated. Do not use this exception for a real production app.
+restarts remain gated. The Terraform `enable_s2_chaos` toggle must then be
+reconciled to `false` so a later apply does not reintroduce the crash. Do not
+use this exception for a real production app.
 
 If action mode is **Review**, request approval before write actions.
 
