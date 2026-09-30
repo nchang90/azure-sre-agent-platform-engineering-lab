@@ -138,9 +138,7 @@ Definitions live in [`recipes/azmon-lawappinsights/config/hooks/`](../../recipes
 
 ---
 
-## Exercise 2: Trigger the incident and observe impact
-
-### Conference path: inject an App Service outage with Chaos Monkey
+## Conference trigger: crash the App Service with Copilot CLI
 
 Use only the isolated S2 lab App Service, not a production website. The deployed
 `orders-api` App Service starts with `CHAOS_ENABLED=false` and
@@ -205,86 +203,14 @@ az webapp config appsettings set \
   --output none
 ```
 
-### Alternative: use GitHub Copilot CLI to introduce a backend-only regression
+For the optional backend-only 500 variant, use the simulation steps in
+[`orders-architecture.md`](../../knowledge-base/runbooks/containers/orders-architecture.md).
+That variant uses the separate Application Insights `alert-orders-api-5xx`
+rule; it does not test process-crash recovery.
 
-The regression is driven by the `orders-api` simulation endpoints, which are part of
-the deployed image. Let Copilot CLI draft and run the calls so the demo shows an
-operator working in natural language rather than pasting curl.
-
-Copilot needs the backend URL, so export it first (Exercise 1 already set `APP_URL`):
-
-```bash
-echo "$APP_URL"
-```
-
-Interactive — Copilot proposes each command and waits for your approval:
-
-```bash
-copilot -i "Against the orders-api at $APP_URL, POST to /api/simulate/active-cr/CHG0030001 \
-to mark an active change window, then POST to /api/simulate/failure-rate/100 so /api/orders \
-starts returning HTTP 500. Then send 30 POSTs to /api/orders with a JSON body of \
-{\"customerId\":\"lab-user\",\"sku\":\"S2-DEMO\",\"quantity\":1} and print each status code."
-```
-
-> **Why these two calls:** `active-cr` stamps a change-request id into the forced 500
-> response detail, which is the evidence the agent correlates against deployment history
-> in Exercise 3. `failure-rate/100` is deterministic — the App Service stays **Running**
-> and `/health` keeps passing, so the incident presents as a backend-only regression.
-
-Scripted — non-interactive mode requires `--allow-all-tools`, so use it only in the
-isolated lab resource group:
-
-```bash
-copilot -p "Against the orders-api at $APP_URL, POST /api/simulate/active-cr/CHG0030001, \
-then POST /api/simulate/failure-rate/100, then send 30 POSTs to /api/orders and report \
-how many returned 500." --allow-all-tools
-```
-
-<details>
-<summary>Fallback: run the same calls directly with curl</summary>
-
-```bash
-# Mark the change window so forced 500s carry a correlatable CR id
-curl --fail --silent --show-error \
-  -X POST "$APP_URL/api/simulate/active-cr/CHG0030001"
-
-# Break the backend: force /api/orders to return HTTP 500
-curl --fail --silent --show-error \
-  -X POST "$APP_URL/api/simulate/failure-rate/100"
-
-# Generate failed requests so the 5xx alert threshold is reached
-for request in {1..30}; do
-  curl --silent --output /dev/null \
-    --write-out "request $request: HTTP %{http_code}\n" \
-    -X POST "$APP_URL/api/orders" \
-    -H "Content-Type: application/json" \
-    --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
-done
-```
-
-</details>
-
-### Task 2: Confirm the incident signature
-
-The alert rule `alert-orders-api-5xx` queries the Application Insights `requests` table
-for `orders-api` 5xx responses, so the failing requests above are what arms it. Confirm
-the regression is backend-only:
-
-```bash
-# App Service still reports Running and /health still passes
-curl --fail --silent --show-error "$APP_URL/health"
-
-# /api/orders is the only thing failing
-curl --silent --output /dev/null \
-  --write-out "/api/orders during incident: HTTP %{http_code}\n" \
-  -X POST "$APP_URL/api/orders" \
-  -H "Content-Type: application/json" \
-  --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
-```
-
-> **Do not** use `az webapp stop` to trigger either scenario. For a process
-> crash, use the App Service `Http5xx` metric alert; for backend-only failure,
-> use the Application Insights `alert-orders-api-5xx` rule.
+> **Do not** use `az webapp stop` as a substitute for the Chaos Monkey setting:
+> stopping the app does not provide the configuration root cause for the agent
+> to reverse.
 
 ---
 
