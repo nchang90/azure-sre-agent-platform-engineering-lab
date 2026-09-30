@@ -79,25 +79,15 @@ registers the S2 response plan, agent guidance, and approval hooks. The
    JSON service metadata; `/health` reports `healthy`. The app setting
    `CHAOS_ENABLED` is `false`, and `CHAOS_MODE` is `crash`.
 
-## Exercise 2: Trigger the outage with GitHub Copilot CLI
+## Exercise 2: Observe the outage
 
-The `enable_s2_chaos` Terraform toggle sets `CHAOS_ENABLED=true`. With
-`CHAOS_MODE=crash`, the worker terminates on startup and cannot serve
-`/health` or generate new Application Insights request traces. Azure Monitor
-uses the App Service **platform** `Http5xx` metric for this outage.
+Use GitHub Copilot CLI to trigger the sandbox `deploy.yml` workflow with
+`environment=sbox`, `runtime=webapp`, and `chaos=true`. Inspect and approve
+the proposed command yourself; do not use unrestricted tool access or
+target another environment. The `enable_s2_chaos` Terraform toggle sets
+`CHAOS_ENABLED=true`, causing the worker to crash on startup.
 
-1. Ask Copilot CLI to start the sandbox workflow. Inspect and approve its
-   proposed command; don't grant unrestricted tool access.
-
-   ```bash
-   copilot -i "For the isolated S2 sbox App Service lab, run gh workflow run \
-   deploy.yml -f environment=sbox -f runtime=webapp -f chaos=true \
-   -f plan=true -f apply=true. Show the exact command and wait for my \
-   approval. Don't change any other environment. Report the workflow status."
-   ```
-
-1. Confirm the workflow applied the new setting and the app is unavailable.
-   An App Service configuration update can take time to recycle the worker.
+1. After the workflow applies, confirm the setting and service impact.
 
    ```bash
    az webapp config appsettings list \
@@ -108,11 +98,11 @@ uses the App Service **platform** `Http5xx` metric for this outage.
      --write-out "health HTTP %{http_code}\n" "$APP_URL/health"
    ```
 
-   **Expected result:** The settings show `CHAOS_ENABLED=true` and
-   `CHAOS_MODE=crash`; health no longer returns HTTP 200. A status of `000`
-   means the request failed before receiving an HTTP response.
+   **Expected result:** `CHAOS_ENABLED=true`, `CHAOS_MODE=crash`, and `/health`
+   no longer returns HTTP 200. The worker cannot emit new Application Insights
+   request traces while down.
 
-1. Send enough requests to exercise the platform metric.
+1. Generate requests to exercise the App Service **platform** `Http5xx` metric.
 
    ```bash
    for request in {1..12}; do
@@ -121,10 +111,9 @@ uses the App Service **platform** `Http5xx` metric for this outage.
    done
    ```
 
-   **Expected result:** If the platform returns more than five 5xx responses
-   in five minutes, the `Orders API App Service HTTP 5xx` alert can fire. Do
-   not assume a timeout (`000`) increments the metric; check the metric and
-   alert state in Azure Monitor before continuing.
+   **Expected result:** More than five platform 5xx responses in five minutes
+   can fire `Orders API App Service HTTP 5xx`. A `000` indicates no HTTP
+   response and doesn't count; check the metric before continuing.
 
 ## Exercise 3: Investigate the alert and verify recovery
 
