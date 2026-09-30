@@ -61,7 +61,7 @@ Prioritize these regression variants:
 3. Restart the app only for transient runtime faults.
 4. Apply dependency timeout/scale mitigations only when backed by telemetry.
 
-For the isolated S2 lab only, if the orders-api App Service has
+For rg-sre-lab-sbox/orders-api-* only, if the App Service has
 `CHAOS_MODE=crash` and `CHAOS_ENABLED=true`, set **only**
 `CHAOS_ENABLED=false` on that App Service. The S2 approval hook permits this
 specific reversal without approval; other configuration writes and explicit

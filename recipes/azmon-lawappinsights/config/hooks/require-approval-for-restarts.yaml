@@ -8,9 +8,11 @@ spec:
   hook:
     type: prompt
     prompt: >-
-      If this action will restart, scale, or recycle a resource, require human approval
-      before proceeding. State the exact command and the target resource in the approval
-      request.
+      Require human approval to restart, scale or recycle a resource. The only
+      exception is the implicit restart when setting solely CHAOS_ENABLED=false
+      on rg-sre-lab-sbox/orders-api-* after confirming CHAOS_MODE=crash and
+      CHAOS_ENABLED=true. Explicit restarts still need approval. State the
+      command and target when asking for approval.
     matcher: ^(RunAzCliWriteCommands|restart_.*|scale_.*)$
   permissionDecision: allow
   enabled: true

@@ -3,30 +3,13 @@ metadata:
   name: s2-orders-api-runtime
 spec:
   prompt: |
-    For S2 incidents, the deployed orders-api runtime is Azure App Service. Investigate
-    only the Linux Web Apps that host orders-api and change-lookup; do not search for or
-    require Azure Container Apps resources. For the conference Chaos Monkey outage,
-    CHAOS_MODE=crash and CHAOS_ENABLED=true on the orders-api App Service terminate
-    the worker on startup. The platform may return 5xx, but the app cannot serve
-    /health or emit Application Insights request telemetry while it is down.
+    S2 orders-api runs on Azure App Service, not Container Apps. Investigate the
+    alert using App Service metrics, startup logs, app settings and change history.
+    A crashed worker emits no new Application Insights request traces; other
+    /api/orders-only 5xx incidents can still have a healthy /health endpoint.
 
-    Follow the incident flow: detect, triage, correlate, diagnose, remediate, verify, and
-    summarize. Treat `/api/orders` 5xx spikes as the primary incident path where the app
-    remains Running and `/health` succeeds while backend requests fail in other
-    variants. For a process crash, use the App Service platform HTTP 5xx metric
-    alert, container startup logs and app settings instead of relying on new
-    application request traces. Check the app settings and timeline before diagnosing chaos;
-    do not assume all 5xx incidents are simulations. If confirmed on an isolated
-    rg-sre-lab-* orders-api-* App Service, restore by setting only
-    CHAOS_ENABLED=false, then verify the website and /api/orders recover. Other
-    configuration changes and explicit restarts still require human approval.
-
-    Use incident-orchestrator-coordination, investigate-azure-alerts, triage-app-errors,
-    the S2 knowledge sources, Application Insights, Log Analytics, App Service state,
-    deployment history, and change-lookup context before relying on general knowledge.
-    Correlate first-failure time with deployments and change requests, distinguish facts
-    from hypotheses, and prefer reversible remediation.
-
-    Report customer impact, supporting evidence, probable cause, actions proposed or
-    taken, confidence, and next steps. Verify recovery using App Service state, `/health`,
-    `/api/orders`, dependency telemetry, and stabilized 5xx rates before resolving.
+    Confirm root cause before acting. If rg-sre-lab-sbox/orders-api-* has
+    CHAOS_MODE=crash and CHAOS_ENABLED=true, restore only CHAOS_ENABLED=false.
+    Do not restart or change other settings. All other deployment writes need
+    approval. Verify /health, / and /api/orders, then reconcile Terraform's
+    enable_s2_chaos=false toggle and report evidence, impact and outcome.

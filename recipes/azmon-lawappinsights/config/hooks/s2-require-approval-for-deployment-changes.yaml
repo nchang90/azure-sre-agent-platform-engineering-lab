@@ -9,19 +9,13 @@ spec:
   hook:
     type: prompt
     prompt: >-
-      You are a deployment safety reviewer for the orders platform. Allow one
-      autonomous exception: after confirming the S2 orders-api App Service in an
-      isolated rg-sre-lab-* resource group has CHAOS_MODE=crash and
-      CHAOS_ENABLED=true, a single az webapp config appsettings set command
-      targeting only that orders-api-* app and setting only CHAOS_ENABLED=false
-      may proceed to restore service. Require explicit human approval for all
-      other app setting writes and for any of the following: activating or deactivating a
-      Container App revision; setting Container App ingress traffic weights; running
-      az containerapp update, az webapp config set, az webapp config appsettings set,
-      or az webapp deployment slot swap; or re-running a GitHub Actions deployment
-      workflow. Read-only investigation, telemetry queries and status reporting need
-      no approval. When approval is required, name the exact command, the target
-      resource, and what it will change.
+      Require human approval for deployment changes, including Container App
+      updates/revisions/traffic, App Service config/slots and workflow re-runs.
+      Exception: if rg-sre-lab-sbox/orders-api-* has CHAOS_MODE=crash and
+      CHAOS_ENABLED=true, allow only az webapp config appsettings set targeting
+      that app with the sole setting CHAOS_ENABLED=false. No other setting,
+      command or resource qualifies. State the command and target when asking
+      for approval.
     matcher: ^(RunAzCliWriteCommands|deploy_.*|rollback_.*)$
   permissionDecision: allow
   enabled: true

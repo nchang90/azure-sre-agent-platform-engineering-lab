@@ -130,7 +130,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 |------|--------|
 | `deny-prod-deletes` | Denies deletes/removes against resources named `prod` or `prd` |
 | `require-approval-for-restarts` | Requires human approval to restart, scale or recycle a resource |
-| `s2-require-approval-for-deployment-changes` | Requires approval for deployment changes, except setting only `CHAOS_ENABLED=false` on a confirmed S2 lab `orders-api-*` App Service with `CHAOS_MODE=crash` |
+| `s2-require-approval-for-deployment-changes` | Requires approval for deployment changes, except setting only `CHAOS_ENABLED=false` on the confirmed `rg-sre-lab-sbox/orders-api-*` App Service with `CHAOS_MODE=crash` |
 
 The first two apply in every scenario; the third is added only for `scenario=s2`,
 because S2 is the scenario that combines `Autonomous` mode with `High` access.
@@ -190,7 +190,7 @@ Sev1 alert to the triage agent in autonomous mode. Review its evidence:
 the app-setting change, failed health and requests, container startup/crash
 logs, and `CHAOS_ENABLED=true` with `CHAOS_MODE=crash`.
 The only pre-approved autonomous configuration fix is to set
-`CHAOS_ENABLED=false` on this isolated lab's `orders-api-*` App Service. This
+`CHAOS_ENABLED=false` on the `rg-sre-lab-sbox/orders-api-*` App Service. This
 restores service immediately but leaves Terraform state configured for chaos
 until the default-off toggle is applied again. All
 other deployment changes and explicit restarts still require human approval.
