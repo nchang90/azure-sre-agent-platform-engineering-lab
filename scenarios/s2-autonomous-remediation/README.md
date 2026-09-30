@@ -1,142 +1,80 @@
-# Lab: S2 — AI Web App Production Incident (Autonomous Remediation)
+# Lab: Recover an App Service outage with Azure SRE Agent (S2)
 
-**Persona:** Platform / SRE  
-**Time:** ~15 minutes
-**Runtime:** Azure App Service (conference default) or Azure Container Apps
-**Infrastructure:** Terraform
-**Recipe:** `azmon-lawappinsights`
+In this guided lab, you're the on-call platform engineer for `orders-api`. You'll
+deploy a healthy app to the **isolated S2 sandbox**, use GitHub Copilot CLI to
+enable a deliberate Chaos Monkey crash, and observe Azure Monitor and Azure
+SRE Agent investigate and recover the service.
+
+> [!IMPORTANT]
+> This exercise intentionally crashes an App Service worker. Run it only in
+> `rg-sre-lab-sbox`, not on a production website. The deployed `orders-api`
+> root returns service metadata; this repository does not deploy a dashboard.
 
 ## Learning objectives
 
-In this lab, you will:
+After completing this lab, you can:
 
-- Reproduce a controlled App Service process crash and restore service.
-- Investigate with Azure Monitor, Application Insights, Log Analytics, and deployment evidence.
-- Verify safe remediation and service recovery.
-
----
+- Verify a healthy App Service and establish a request baseline.
+- Trigger and observe a controlled process failure using a Terraform toggle.
+- Correlate an Azure Monitor alert with App Service startup logs and app settings.
+- Verify autonomous recovery and reconcile the Terraform configuration.
 
 ## Prerequisites
 
-Set these values in `tfvars`:
+- An Azure subscription and access to deploy the S2 sandbox. Sign in with
+  `az login`, authenticate `gh`, and have GitHub Copilot CLI available.
+- The repository's Azure deployment secrets and Terraform backend configured
+  as described in the [repository setup](../../README.md#deploy).
+- `infra/terraform/environments/sbox.tfvars` configured for `scenario = "s2"`,
+  `access_level = "High"`, `action_mode = "Autonomous"`, and the Application
+  Insights, Log Analytics, and Sev0/Sev1 incident connectors enabled.
+- A separate terminal for observing the workflow and checking the endpoint.
 
-```hcl
-scenario                       = "s2"
-access_level                   = "High"
-action_mode                    = "Autonomous"
-enable_app_insights_connector  = true
-enable_log_analytics_connector = true
-enable_sev01_incident_filter   = true
-```
+The [deploy workflow](../../.github/workflows/deploy.yml) defaults to
+`runtime=webapp` and `chaos=false`. It provisions the S2 App Service and
+registers the S2 response plan, agent guidance, and approval hooks. The
+`chaos=true` input is restricted to the `sbox` App Service deployment.
 
----
+## Exercise 1: Deploy the healthy service
 
-## Exercise 1: Deploy and validate baseline
+1. Start the sandbox deployment. Review the workflow plan before proceeding.
 
-### Task 1: Deploy the environment
+   ```bash
+   gh workflow run deploy.yml \
+     -f environment=sbox -f runtime=webapp \
+     -f chaos=false -f plan=true -f apply=true
+   gh run watch
+   ```
 
-```bash
-# The workflow reads sbox.tfvars, deploys Terraform and application images,
-# then apply-extras.sh detects scenario=s2 and registers the S2 catalog.
-gh workflow run deploy.yml \
-  -f environment=sbox \
-  -f runtime=webapp \
-  -f plan=true \
-  -f apply=true
+1. Resolve the app name and URL. Keep these variables in the same shell for
+   the following exercises.
 
-gh run watch
-```
+   ```bash
+   RESOURCE_GROUP="rg-sre-lab-sbox"
+   BACKEND_WEBAPP_NAME="$(az webapp list \
+     --resource-group "$RESOURCE_GROUP" \
+     --query "[?starts_with(name, 'orders-api-')].name | [0]" \
+     --output tsv)"
+   APP_FQDN="$(az webapp show \
+     --resource-group "$RESOURCE_GROUP" --name "$BACKEND_WEBAPP_NAME" \
+     --query defaultHostName --output tsv)"
+   APP_URL="https://$APP_FQDN"
+   ```
 
-Deployment does four things:
-1. Reads `sbox.tfvars` and applies Terraform
-2. Deploys the runtime workload (`orders-api`)
-3. Registers runtime-scoped S2 agent extras via `apply-extras.sh` — knowledge base, common
-   prompts, hooks, the GitHub repo connection, skills, subagents and the
-   response plan
-4. Enables autonomous incident handling for S2 response plan
+1. Confirm that the root, health endpoint, and an order request all succeed.
 
-The repo connection is what lets the agent correlate the incident with the
-commits and workflow runs behind it, via the `FindConnectedGitHubRepo` tool. The
-repository is resolved from `GITHUB_REPOSITORY` in Actions, or the `origin`
-remote locally. A first-time connection may need a one-off GitHub authorization
-in the portal's Repos blade; the rest of the catalog applies either way.
+   ```bash
+   curl --fail --silent --show-error "$APP_URL/"
+   curl --fail --silent --show-error "$APP_URL/health"
+   curl --fail --silent --show-error \
+     -X POST "$APP_URL/api/orders" \
+     -H "Content-Type: application/json" \
+     --data '{"customerId":"baseline-user","sku":"BASELINE","quantity":1}'
+   ```
 
-`apply-extras.sh` reads Terraform's deployed `runtime_stack`, so Web App runs
-receive App Service guidance and Container Apps runs receive Container Apps
-guidance. The workflow defaults to `webapp`.
-
-### Task 2: Load the backend endpoint and validate baseline
-
-```bash
-ENVIRONMENT="sbox"
-RESOURCE_GROUP="rg-sre-lab-$ENVIRONMENT"
-BACKEND_WEBAPP_NAME="$(az webapp list \
-  --resource-group "$RESOURCE_GROUP" \
-  --query "[?starts_with(name, 'orders-api')].name | [0]" \
-  --output tsv)"
-APP_FQDN="$(az webapp show \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$BACKEND_WEBAPP_NAME" \
-  --query defaultHostName \
-  --output tsv)"
-APP_URL="https://$APP_FQDN"
-
-# Verify the app and API baseline
-az webapp show \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$BACKEND_WEBAPP_NAME" \
-  --query "{state:state,host:defaultHostName}" \
-  --output table
-curl --fail --silent --show-error "$APP_URL/health"
-curl --silent --output /dev/null \
-  --write-out "baseline /api/orders HTTP %{http_code}\n" \
-  -X POST "$APP_URL/api/orders" \
-  -H "Content-Type: application/json" \
-  --data '{"customerId":"baseline-user","sku":"BASELINE","quantity":1}'
-```
-
-### Task 3 (optional): Use Container Apps runtime
-
-Set `runtime=containerapps` in deploy, then load the URL with:
-
-```bash
-ENVIRONMENT="sbox"
-RESOURCE_GROUP="rg-sre-lab-$ENVIRONMENT"
-CONTAINERAPP_NAME="$(az containerapp list \
-  --resource-group "$RESOURCE_GROUP" \
-  --query "[?starts_with(name, 'orders-api')].name | [0]" \
-  --output tsv)"
-APP_FQDN="$(az containerapp show \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$CONTAINERAPP_NAME" \
-  --query properties.configuration.ingress.fqdn \
-  --output tsv)"
-APP_URL="https://$APP_FQDN"
-az containerapp show \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$CONTAINERAPP_NAME" \
-  --query "{state:properties.provisioningState,revision:properties.latestRevisionName}" \
-  --output table
-curl --fail --silent --show-error "$APP_URL/health"
-```
-
-> **Caution:** `Autonomous` mode allows write actions. Use only in an isolated lab resource group.
-
-### Guardrails applied for S2
-
-`scripts/apply-extras.sh` registers three `PreToolUse` hooks before the agent can act:
-
-| Hook | Effect |
-|------|--------|
-| `deny-prod-deletes` | Denies deletes/removes against resources named `prod` or `prd` |
-| `require-approval-for-restarts` | Requires human approval to restart, scale or recycle a resource |
-| `s2-require-approval-for-deployment-changes` | Requires approval for deployment changes, except setting only `CHAOS_ENABLED=false` on the confirmed `rg-sre-lab-sbox/orders-api-*` App Service with `CHAOS_MODE=crash` |
-
-The first two apply in every scenario; the third is added only for `scenario=s2`,
-because S2 is the scenario that combines `Autonomous` mode with `High` access.
-Definitions live in [`recipes/azmon-lawappinsights/config/hooks/`](../../recipes/azmon-lawappinsights/config/hooks/).
-
----
+   **Expected result:** All three requests return HTTP 200. The root returns
+   JSON service metadata; `/health` reports `healthy`. The app setting
+   `CHAOS_ENABLED` is `false`, and `CHAOS_MODE` is `crash`.
 
 ## Conference trigger: crash the App Service with Copilot CLI
 
