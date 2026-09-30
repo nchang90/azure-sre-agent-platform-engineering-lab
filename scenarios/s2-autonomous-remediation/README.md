@@ -115,26 +115,16 @@ target another environment. The `enable_s2_chaos` Terraform toggle sets
    can fire `Orders API App Service HTTP 5xx`. A `000` indicates no HTTP
    response and doesn't count; check the metric before continuing.
 
-## Exercise 3: Investigate the alert and verify recovery
+## Exercise 3: Observe the agent and verify recovery
 
-1. In Azure Monitor, find the **Orders API App Service HTTP 5xx** alert.
-   Confirm its affected resource is the sandbox `orders-api` App Service and
-   record the alert time and the platform 5xx count.
+1. In Azure Monitor, confirm the **Orders API App Service HTTP 5xx** alert
+   targets the sandbox app. In Azure SRE Agent, observe the `triage-agent`
+   incident. The agent should correlate the crash with `CHAOS_ENABLED=true`
+   and restore **only** `CHAOS_ENABLED=false` on
+   `rg-sre-lab-sbox/orders-api-*`. Do not mark the incident resolved based on
+   an alert alone; confirm the agent's evidence and action.
 
-1. In Azure SRE Agent, inspect the S2 incident handled by `triage-agent`.
-   Compare the alert time with the deploy workflow and the App Service
-   `CHAOS_ENABLED` and `CHAOS_MODE` settings. Check startup/crash logs; the
-   worker can't send new application traces while it is down. If no incident
-   appears, check the alert state and the S2 response plan before assuming the
-   agent investigated.
-
-1. Check the agent's proposed root cause and action. For this lab, evidence
-   should link `CHAOS_ENABLED=true` and `CHAOS_MODE=crash` to the startup
-   failure. The approval hooks allow one autonomous exception: set **only**
-   `CHAOS_ENABLED=false` on `rg-sre-lab-sbox/orders-api-*`. Explicit restarts
-   and other deployment changes still require approval.
-
-1. Once the agent reports recovery, verify the live setting and endpoints.
+1. After the agent acts, check the live setting and service endpoints.
 
    ```bash
    az webapp config appsettings list \
