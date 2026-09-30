@@ -5,9 +5,7 @@
 public class ChaosMonkeyException(string message) : Exception(message) { }
 
 /// <summary>
-/// Middleware that injects faults when CHAOS_ENABLED=true.
-/// With CHAOS_MODE=outage, returns 503 for all non-health requests without
-/// crashing the process, so Application Insights can observe the incident.
+/// Middleware that randomly injects faults when CHAOS_ENABLED=true.
 ///
 /// Fault profile (per request):
 ///   /health path  → 40% chance of 503
@@ -24,22 +22,8 @@ public class ChaosMiddleware(RequestDelegate next, ILogger<ChaosMiddleware> logg
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var path = context.Request.Path.Value ?? string.Empty;
-        if (string.Equals(Environment.GetEnvironmentVariable("CHAOS_MODE"), "outage", StringComparison.OrdinalIgnoreCase))
-        {
-            if (path.Equals("/health", StringComparison.OrdinalIgnoreCase))
-            {
-                await next(context);
-                return;
-            }
-
-            logger.LogError("CHAOS: simulated App Service outage (503) on {Path}", path);
-            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            await context.Response.WriteAsJsonAsync(new { error = "chaos-outage", chaos = true });
-            return;
-        }
-
         var roll  = Random.Shared.Next(1, 101);
+        var path  = context.Request.Path.Value ?? string.Empty;
         var count = Interlocked.Increment(ref _requestCount);
 
         // ── health probe failures (40%) ──────────────────────────────────────

@@ -10,7 +10,7 @@
 
 In this lab, you will:
 
-- Reproduce a controlled App Service outage while the health probe stays available.
+- Reproduce a controlled App Service process crash and restore service.
 - Investigate with Azure Monitor, Application Insights, Log Analytics, and deployment evidence.
 - Verify safe remediation and service recovery.
 
@@ -130,7 +130,7 @@ curl --fail --silent --show-error "$APP_URL/health"
 |------|--------|
 | `deny-prod-deletes` | Denies deletes/removes against resources named `prod` or `prd` |
 | `require-approval-for-restarts` | Requires human approval to restart, scale or recycle a resource |
-| `s2-require-approval-for-deployment-changes` | Requires approval for deployment changes, except setting only `CHAOS_ENABLED=false` on a confirmed S2 lab `orders-api-*` App Service with `CHAOS_MODE=outage` |
+| `s2-require-approval-for-deployment-changes` | Requires approval for deployment changes, except setting only `CHAOS_ENABLED=false` on a confirmed S2 lab `orders-api-*` App Service with `CHAOS_MODE=crash` |
 
 The first two apply in every scenario; the third is added only for `scenario=s2`,
 because S2 is the scenario that combines `Autonomous` mode with `High` access.
@@ -144,42 +144,56 @@ Definitions live in [`recipes/azmon-lawappinsights/config/hooks/`](../../recipes
 
 Use only the isolated S2 lab App Service, not a production website. The deployed
 `orders-api` App Service starts with `CHAOS_ENABLED=false` and
-`CHAOS_MODE=outage`. Its root currently returns service metadata (not a
-dashboard). Enabling chaos makes the root and API return 503 while `/health`
-stays healthy; the process remains running so Application Insights can record
-failed requests and Azure SRE Agent can diagnose the configuration change.
-This simulates a website outage without killing the process or leaking memory.
+`CHAOS_MODE=crash`. Its root currently returns service metadata (not a
+dashboard). Enabling chaos terminates the process on startup. The App Service
+may restart the container repeatedly, but `/health`, the root, and orders
+remain unavailable until the setting is reverted. A dead process cannot emit
+new Application Insights request telemetry: the S2 App Service platform
+`Http5xx` metric alert is used for this path instead of the application-level
+`alert-orders-api-5xx`.
 
 ```bash
 # Use BACKEND_WEBAPP_NAME, RESOURCE_GROUP and APP_URL from Exercise 1.
 curl --fail --silent --show-error "$APP_URL/health"
 curl --fail --silent --show-error "$APP_URL/"
-
-# Inject the failure by changing only the isolated lab app setting.
-az webapp config appsettings set \
-  --resource-group "$RESOURCE_GROUP" \
+az webapp config appsettings list --resource-group "$RESOURCE_GROUP" \
   --name "$BACKEND_WEBAPP_NAME" \
-  --settings CHAOS_ENABLED=true \
-  --output none
-
-# Allow the App Service to restart with the new setting, then generate 5xx telemetry.
-for request in {1..12}; do
-  curl --silent --output /dev/null \
-    --write-out "website request $request: HTTP %{http_code}\n" "$APP_URL/"
-done
-curl --fail --silent --show-error "$APP_URL/health"
+  --query "[?name=='CHAOS_ENABLED' || name=='CHAOS_MODE'].{name:name,value:value}" \
+  --output table
 ```
 
-Check that the website returns 503 and that `alert-orders-api-5xx` fires after
-more than five failures in its five-minute window (evaluated every five
-minutes). The S2 Azure Monitor response plan routes the **Orders API** Sev1
-alert to the triage agent in autonomous mode. Review its evidence: recent app
-setting change, App Service still Running, `/health` healthy, failed requests
-in Application Insights, and `CHAOS_ENABLED=true` with `CHAOS_MODE=outage`.
+Trigger the change interactively with GitHub Copilot CLI. Review and approve
+the exact command before execution; do not grant unrestricted tool access:
+
+```bash
+copilot -i "For the isolated S2 lab only, run az webapp config appsettings set \
+--resource-group $RESOURCE_GROUP --name $BACKEND_WEBAPP_NAME \
+--settings CHAOS_ENABLED=true --output none. Show me the exact command \
+and wait for my approval. Do not change CHAOS_MODE, other settings or other apps."
+```
+
+Once the App Service starts failing, generate platform HTTP 5xx responses:
+
+```bash
+for request in {1..12}; do
+  curl --silent --output /dev/null \
+    --max-time 10 --write-out "website request $request: HTTP %{http_code}\n" "$APP_URL/"
+done
+curl --silent --output /dev/null \
+  --max-time 10 --write-out "/health HTTP %{http_code}\n" "$APP_URL/health"
+```
+
+Check that the platform records more than five HTTP 5xx responses in five
+minutes and `alert-orders-api-webapp-5xx` fires. If requests time out or do
+not produce a platform 5xx, inspect the App Service metric before claiming
+the alert fired. The S2 Azure Monitor response plan routes the **Orders API**
+Sev1 alert to the triage agent in autonomous mode. Review its evidence:
+the app-setting change, failed health and requests, container startup/crash
+logs, and `CHAOS_ENABLED=true` with `CHAOS_MODE=crash`.
 The only pre-approved autonomous configuration fix is to set
 `CHAOS_ENABLED=false` on this isolated lab's `orders-api-*` App Service. All
 other deployment changes and explicit restarts still require human approval.
-Verify that the root and `/api/orders` succeed and 5xx returns to baseline;
+Verify that `/health`, the root and `/api/orders` succeed and 5xx returns to baseline;
 do not claim remediation occurred until the agent action and recovery are
 observed. If the agent does not act, restore the lab manually:
 
@@ -268,9 +282,9 @@ curl --silent --output /dev/null \
   --data '{"customerId":"lab-user","sku":"S2-DEMO","quantity":1}'
 ```
 
-> **Do not** use `az webapp stop` to trigger this scenario. A stopped app emits no
-> Application Insights request telemetry, so `alert-orders-api-5xx` never fires and the
-> agent has nothing to investigate.
+> **Do not** use `az webapp stop` to trigger either scenario. For a process
+> crash, use the App Service `Http5xx` metric alert; for backend-only failure,
+> use the Application Insights `alert-orders-api-5xx` rule.
 
 ---
 
@@ -311,13 +325,14 @@ fi
 
 # Shared recovery checks for either runtime
 curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error "$APP_URL/"
 curl --fail --silent --show-error \
   -X POST "$APP_URL/api/orders" \
   -H "Content-Type: application/json" \
   --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
 ```
 
-Both curls exit non-zero while the incident is still active — that is the signal
+These checks fail while the crash incident is still active — that is the signal
 remediation has not completed yet.
 
 ---
@@ -328,19 +343,15 @@ Conference default: **App Service**.
 Alternate runtime: **Container Apps** with the same `/api/orders` failure symptoms and runtime-specific telemetry correlation.
 
 A new `orders-api` backend version is deployed to production.
-In the backend-only variant the UI dashboard still loads, but backend calls
-start failing. In the conference Chaos Monkey variant, the App Service root
-also fails until the setting is restored.
+In the backend-only variant the App Service root still loads, but backend calls
+start failing. In the conference Chaos Monkey variant, the worker crashes on
+startup and all endpoints fail until the setting is restored.
 Soon after deployment:
 
-- App Service still reports **Running**
-- CPU and memory remain near baseline
-- `/health` still passes
-- `/api/orders` starts returning HTTP 500
-- Application Insights exceptions rise
-- dependency failures increase
-- 5xx rate crosses the alert threshold
-- deployment history aligns with incident start
+- App Service container repeatedly fails to start
+- `/health`, `/`, and `/api/orders` are unavailable
+- App Service platform `Http5xx` metric crosses the alert threshold
+- app settings and crash logs align with the incident start
 
 This lab demonstrates autonomous incident handling with evidence-driven remediation.
 
@@ -348,12 +359,12 @@ This lab demonstrates autonomous incident handling with evidence-driven remediat
 
 ## Investigation path
 
-1. **Detect** → Azure Monitor incident opens on `web-api` 5xx threshold breach
-2. **Investigate** → Traverse evidence chain: Azure Monitor → App Service → Application Insights → web-api → deployment history
-3. **Correlate** → Align first-failure time with recent deployment/change window
-4. **Diagnose** → Identify likely regression class
-5. **Remediate** → Apply safest reversible remediation for confirmed cause
-6. **Verify** → Confirm dashboard backend calls recover, `/api/orders` succeeds, and 5xx returns to baseline
+1. **Detect** → Azure Monitor incident opens on App Service platform 5xx
+2. **Investigate** → Traverse Azure Monitor → App Service startup logs and settings
+3. **Correlate** → Align first-failure time with the app-setting change
+4. **Diagnose** → Confirm the lab-only Chaos Monkey process crash
+5. **Remediate** → Revert only `CHAOS_ENABLED` on the isolated lab app
+6. **Verify** → Confirm `/health`, the root and `/api/orders` recover
 
 ---
 
@@ -398,22 +409,22 @@ Additional variants:
 
 1. Show the App Service root, `/health`, and order requests working.
 2. Enable the isolated lab's `CHAOS_ENABLED` app setting.
-3. Show the root and order requests returning 503 while `/health` still passes.
-4. Show Azure Monitor incident firing on `web-api` 5xx.
-5. Show SRE Agent investigation trail across telemetry + deployment evidence.
+3. Show the website and health check failing after the worker crashes.
+4. Show Azure Monitor incident firing on App Service platform 5xx.
+5. Show SRE Agent investigation trail across metrics, startup logs and settings.
 6. Optionally delegate backend diagnosis to a specialist sub-agent.
-7. Apply safe remediation and refresh dashboard to confirm recovery.
+7. Observe autonomous setting reversal and refresh the endpoint to confirm recovery.
 
 ---
 
 ## Validation Checklist
 
 After the quick start:
-- ✅ Alert fires in 30–60 seconds
+- ✅ App Service `Http5xx` alert fires after the metric threshold is crossed
 - ✅ Agent correlates incident timing to recent deployment/change context
 - ✅ RCA names first-failure time, the correlated change, and the delta between them
 - ✅ RCA renders a numbered 5-Whys ladder with the trigger and latent cause stated separately
-- ✅ Application Insights shows request failures, exceptions, and dependency impact
+- ✅ App Service startup logs and platform metrics show the outage (application telemetry stops)
 - ✅ Agent proposes or applies safe remediation
 - ✅ `/health` and `/api/orders` recover
 - ✅ 5xx rate returns to baseline

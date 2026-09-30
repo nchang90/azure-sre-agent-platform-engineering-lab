@@ -27,6 +27,13 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var app = builder.Build();
 
+if (Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true" &&
+    Environment.GetEnvironmentVariable("CHAOS_MODE") == "crash")
+{
+    app.Logger.LogCritical("CHAOS: terminating orders-api process on startup (CHAOS_MODE=crash)");
+    Environment.FailFast("CHAOS: deliberate S2 App Service process crash");
+}
+
 app.UseForwardedHeaders();
 
 app.Use(async (context, next) =>

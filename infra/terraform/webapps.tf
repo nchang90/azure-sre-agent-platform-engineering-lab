@@ -44,7 +44,7 @@ resource "azurerm_linux_web_app" "orders_api" {
     WEBSITES_PORT                         = tostring(local.scenario_value == "s2" ? 8080 : var.webapp_port)
   }, local.scenario_value == "s2" ? {
     CHAOS_ENABLED = "false"
-    CHAOS_MODE    = "outage"
+    CHAOS_MODE    = "crash"
   } : {})
 }
 
