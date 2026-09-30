@@ -1,201 +1,166 @@
-# Lab: Recover an App Service outage with Azure SRE Agent (S2)
+# S2 — App Service Autonomous Remediation
 
-In this guided lab, you're the on-call platform engineer for `orders-api`. You'll
-deploy a healthy app to the **isolated S2 sandbox**, use GitHub Copilot CLI to
-enable a deliberate Chaos Monkey crash, and observe Azure Monitor and Azure
-SRE Agent investigate and recover the service.
+**Persona:** Platform Engineering / On-call
 
-> [!IMPORTANT]
-> This exercise intentionally crashes an App Service worker. Run it only in
-> `rg-sre-lab-sbox`, not on a production website. The deployed `orders-api`
-> root returns service metadata; this repository does not deploy a dashboard.
+**Runtime:** Azure App Service (`sbox`)
 
-## Learning objectives
+**Recipe:** `azmon-lawappinsights`
 
-After completing this lab, you can:
+---
 
-- Verify a healthy App Service and establish a request baseline.
-- Trigger and observe a controlled process failure using a Terraform toggle.
-- Correlate an Azure Monitor alert with App Service startup logs and app settings.
-- Verify autonomous recovery and reconcile the Terraform configuration.
+## Quick Start
 
-## Prerequisites
+### Prerequisites & Setup
 
-- An Azure subscription and access to deploy the S2 sandbox. Sign in with
-  `az login`, authenticate `gh`, and have GitHub Copilot CLI available.
-- The repository's Azure deployment secrets and Terraform backend configured
-  as described in the [repository setup](../../README.md#deploy).
-- `infra/terraform/environments/sbox.tfvars` configured for `scenario = "s2"`,
-  `access_level = "High"`, `action_mode = "Autonomous"`,
-  `enable_app_insights_connector = true`,
-  `enable_log_analytics_connector = true`, and
-  `enable_sev01_incident_filter = true`.
-- A separate terminal for observing the workflow and checking the endpoint.
+- Sign in to Azure CLI and GitHub CLI; have GitHub Copilot CLI available.
+- Configure the [deployment workflow](../../.github/workflows/deploy.yml) and its Azure credentials.
+- Use `infra/terraform/environments/sbox.tfvars`: `scenario = "s2"`,
+  `access_level = "High"`, `action_mode = "Autonomous"`, and the Application
+  Insights, Log Analytics, and Sev0/Sev1 incident options enabled.
 
-The [deploy workflow](../../.github/workflows/deploy.yml) defaults to
-`runtime=webapp` and `chaos=false`. It provisions the S2 App Service and
-registers the S2 response plan, agent guidance, and approval hooks. The
-`chaos=true` input is restricted to the `sbox` App Service deployment.
+> **Caution:** The chaos toggle intentionally crashes the `orders-api` worker.
+> Use only `rg-sre-lab-sbox`, never a production app. This lab does not deploy a
+> dashboard: the App Service root returns service metadata.
 
-## Exercise 1: Deploy the healthy service
+### Deploy & Observe
 
-1. Start the sandbox deployment. When `apply=true`, this workflow plans and
-   applies automatically; the plan is visible in its run logs.
-
-   ```bash
-   gh workflow run deploy.yml \
-     -f environment=sbox -f runtime=webapp \
-     -f chaos=false -f plan=true -f apply=true
-   gh run watch
-   ```
-
-1. Resolve the app name and URL. Keep these variables in the same shell for
-   the following exercises.
-
-   ```bash
-   RESOURCE_GROUP="rg-sre-lab-sbox"
-   BACKEND_WEBAPP_NAME="$(az webapp list \
-     --resource-group "$RESOURCE_GROUP" \
-     --query "[?starts_with(name, 'orders-api-')].name | [0]" \
-     --output tsv)"
-   APP_FQDN="$(az webapp show \
-     --resource-group "$RESOURCE_GROUP" --name "$BACKEND_WEBAPP_NAME" \
-     --query defaultHostName --output tsv)"
-   APP_URL="https://$APP_FQDN"
-   ```
-
-1. Confirm that the root, health endpoint, and an order request all succeed.
-
-   ```bash
-   curl --fail --silent --show-error "$APP_URL/"
-   curl --fail --silent --show-error "$APP_URL/health"
-   curl --fail --silent --show-error \
-     -X POST "$APP_URL/api/orders" \
-     -H "Content-Type: application/json" \
-     --data '{"customerId":"baseline-user","sku":"BASELINE","quantity":1}'
-   ```
-
-   **Expected result:** All three requests return HTTP 200. The root returns
-   JSON service metadata; `/health` reports `healthy`. The app setting
-   `CHAOS_ENABLED` is `false`, and `CHAOS_MODE` is `crash`.
-
-## Exercise 2: Observe the outage
-
-Use GitHub Copilot CLI to trigger the sandbox `deploy.yml` workflow with
-`environment=sbox`, `runtime=webapp`, and `chaos=true`. Inspect and approve
-the proposed command yourself; do not use unrestricted tool access or
-target another environment. The `enable_s2_chaos` Terraform toggle sets
-`CHAOS_ENABLED=true`, causing the worker to crash on startup.
-
-1. After the workflow applies, confirm the setting and service impact.
-
-   ```bash
-   az webapp config appsettings list \
-     --resource-group "$RESOURCE_GROUP" --name "$BACKEND_WEBAPP_NAME" \
-     --query "[?name=='CHAOS_ENABLED' || name=='CHAOS_MODE'].{name:name,value:value}" \
-     --output table
-   curl --silent --output /dev/null --max-time 10 \
-     --write-out "health HTTP %{http_code}\n" "$APP_URL/health"
-   ```
-
-   **Expected result:** `CHAOS_ENABLED=true`, `CHAOS_MODE=crash`, and `/health`
-   no longer returns HTTP 200. The worker cannot emit new Application Insights
-   request traces while down.
-
-1. Generate requests to exercise the App Service **platform** `Http5xx` metric.
-
-   ```bash
-   for request in {1..12}; do
-     curl --silent --output /dev/null --max-time 10 \
-       --write-out "request $request: HTTP %{http_code}\n" "$APP_URL/"
-   done
-   ```
-
-   **Expected result:** More than five platform 5xx responses in five minutes
-   can fire `Orders API App Service HTTP 5xx`. A `000` indicates no HTTP
-   response and doesn't count; check the metric before continuing.
-
-## Exercise 3: Observe the agent and verify recovery
-
-1. In Azure Monitor, confirm the **Orders API App Service HTTP 5xx** alert
-   targets the sandbox app. In Azure SRE Agent, observe the `triage-agent`
-   incident. The agent should correlate the crash with `CHAOS_ENABLED=true`
-   and restore **only** `CHAOS_ENABLED=false` on
-   `rg-sre-lab-sbox/orders-api-*`. Do not mark the incident resolved based on
-   an alert alone; confirm the agent's evidence and action.
-
-1. After the agent acts, check the live setting and service endpoints.
-
-   ```bash
-   az webapp config appsettings list \
-     --resource-group "$RESOURCE_GROUP" --name "$BACKEND_WEBAPP_NAME" \
-     --query "[?name=='CHAOS_ENABLED' || name=='CHAOS_MODE'].{name:name,value:value}" \
-     --output table
-   curl --fail --silent --show-error "$APP_URL/health"
-   curl --fail --silent --show-error "$APP_URL/"
-   curl --fail --silent --show-error \
-     -X POST "$APP_URL/api/orders" \
-     -H "Content-Type: application/json" \
-     --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
-   ```
-
-   **Expected result:** `CHAOS_ENABLED=false`, all three endpoints return
-   HTTP 200, and the platform 5xx rate returns to baseline. Record the
-   incident evidence and action before declaring the lab complete.
-
-## Exercise 4: Reconcile the configuration
-
-The agent's direct App Service fix restores traffic but doesn't change the
-Terraform state left by the `chaos=true` deployment. Reconcile it so another
-apply can't reintroduce the crash.
-
-1. Run a plan-only workflow with the default-off toggle. Review the Terraform
-   plan in the run logs before launching the apply workflow.
-
-   ```bash
-   gh workflow run deploy.yml \
-     -f environment=sbox -f runtime=webapp \
-     -f chaos=false -f plan=true -f apply=false
-   gh run watch
-   ```
-
-1. Apply the safe toggle. The workflow generates a new plan for this run, so
-   check that no unexpected changes occurred between runs.
-
-   ```bash
-   gh workflow run deploy.yml \
-     -f environment=sbox -f runtime=webapp \
-     -f chaos=false -f plan=true -f apply=true
-   gh run watch
-   ```
-
-1. Repeat the health and order checks from Exercise 3. The scheduled
-   deployment also uses `chaos=false`, but don't wait for it to clean up an
-   active lab outage.
-
-## Troubleshooting and safe cleanup
-
-| Observation | Check or action |
-|---|---|
-| The site still returns 200 | Confirm that the `chaos=true` workflow applied, the sandbox app has both chaos settings, and the worker recycled. |
-| Requests return `000` but no alert fires | Inspect the App Service `Http5xx` metric. The metric alert needs more than five platform 5xx responses in five minutes; connection failures alone don't meet that condition. |
-| Alert fires but no agent incident appears | Confirm the S2 response plan is enabled, the alert title includes `Orders API`, and the agent has access to the sandbox resource group. |
-| The agent doesn't restore service | After recording evidence, manually set only `CHAOS_ENABLED=false` on the sandbox app, then complete Exercise 4. |
-
-For manual recovery when automation does not act:
+Deploy the healthy App Service and register the S2 agent response plan:
 
 ```bash
-az webapp config appsettings set \
-  --resource-group "$RESOURCE_GROUP" --name "$BACKEND_WEBAPP_NAME" \
-  --settings CHAOS_ENABLED=false --output none
+gh workflow run deploy.yml \
+  -f environment=sbox -f runtime=webapp \
+  -f chaos=false -f plan=true -f apply=true
+gh run watch
+
+RESOURCE_GROUP="rg-sre-lab-sbox"
+BACKEND_WEBAPP_NAME="$(az webapp list --resource-group "$RESOURCE_GROUP" \
+  --query "[?starts_with(name, 'orders-api-')].name | [0]" --output tsv)"
+APP_FQDN="$(az webapp show --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_WEBAPP_NAME" --query defaultHostName --output tsv)"
+APP_URL="https://$APP_FQDN"
+curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error "$APP_URL/"
 ```
 
-Do not use `az webapp stop` as a substitute for the Chaos Monkey toggle.
-Stopping the app doesn't provide the configuration root cause this lab is
-designed to investigate. For a backend-only 500 variant, see the
-[orders architecture runbook](../../knowledge-base/runbooks/containers/orders-architecture.md);
-that variant uses the separate Application Insights request alert.
+**Expected:** `/health` and `/` return HTTP 200. Terraform defaults to
+`enable_s2_chaos=false` (`CHAOS_ENABLED=false` on the app).
 
-## Next step
+Use Copilot CLI to initiate the `deploy.yml` workflow with `environment=sbox`,
+`runtime=webapp`, and `chaos=true`. Inspect and approve the command yourself;
+do not give unrestricted tool access. After it applies, the App Service worker
+crashes on startup. Check the failed health request, then generate traffic:
 
-Continue to [S3: AKS incident root-cause investigation](../s3-incident-root-cause-investigation/README.md).
+```bash
+curl --silent --output /dev/null --max-time 10 \
+  --write-out "health HTTP %{http_code}\n" "$APP_URL/health"
+for request in {1..12}; do
+  curl --silent --output /dev/null --max-time 10 \
+    --write-out "request $request: HTTP %{http_code}\n" "$APP_URL/"
+done
+```
+
+**Observe:** More than five platform HTTP 5xx responses in five minutes can
+fire **Orders API App Service HTTP 5xx** in Azure Monitor. A `000` means no
+HTTP response; timeouts alone do not satisfy this alert. Check the metric and
+alert state before expecting an incident.
+
+---
+
+## Story
+
+A bad app setting crashes the `orders-api` App Service worker. Azure Monitor
+detects platform 5xx responses; Azure SRE Agent correlates the alert with the
+configuration change and startup failure, then reverses the setting on the
+isolated lab app. The operator verifies service recovery and restores Terraform
+to the safe default. A crashed worker cannot emit new Application Insights
+request traces, so the platform metric and startup logs provide the outage
+evidence.
+
+---
+
+## How It Works
+
+1. **Healthy service** → `CHAOS_ENABLED=false`; root and health requests pass.
+2. **Controlled failure** → `chaos=true` sets `CHAOS_ENABLED=true` with
+   `CHAOS_MODE=crash`; the worker exits on startup.
+3. **Alert** → App Service `Http5xx` metrics trigger the S2 Azure Monitor plan
+   when the threshold is reached.
+4. **Investigation** → `triage-agent` checks app settings, startup logs, and
+   the change timeline before identifying the cause.
+5. **Autonomous recovery** → The approval hooks allow only
+   `CHAOS_ENABLED=false` on the confirmed `rg-sre-lab-sbox/orders-api-*` app
+   without further approval. Other deployment changes and explicit restarts
+   remain gated.
+6. **Verification** → Confirm the setting is false, endpoints recover, and
+   5xx responses return to baseline.
+
+---
+
+## Architecture
+
+`Client → orders-api (App Service) → Azure Monitor platform metric → Azure SRE Agent → app-setting reversal`
+
+The S2 response plan handles **Orders API** alerts. Application Insights is
+useful while the app runs, but it cannot report new request traces after a
+startup crash. The architecture image below is conceptual; the deployed S2
+workload is `orders-api`, not a separate website UI.
+
+<img src="../../images/s2-autonomous-remediation.svg" alt="Conceptual S2 incident response flow" width="700" />
+
+---
+
+## Validation Checklist
+
+- [ ] Confirm `/health` and `/` return HTTP 200 before chaos.
+- [ ] Confirm `CHAOS_ENABLED=true`, `CHAOS_MODE=crash`, and health fails after
+  the sandbox workflow applies.
+- [ ] Confirm platform 5xx responses and the **Orders API App Service HTTP
+  5xx** alert; a timeout alone does not prove the alert fired.
+- [ ] Inspect the Azure SRE Agent incident for the root cause and the exact
+  setting reverted. An alert by itself does not prove remediation happened.
+- [ ] Confirm `CHAOS_ENABLED=false`, `/health`, `/`, and `/api/orders` recover,
+  and the 5xx rate returns to baseline.
+
+To verify the setting and service after the agent acts:
+
+```bash
+az webapp config appsettings list --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_WEBAPP_NAME" \
+  --query "[?name=='CHAOS_ENABLED' || name=='CHAOS_MODE'].{name:name,value:value}" \
+  --output table
+curl --fail --silent --show-error "$APP_URL/health"
+curl --fail --silent --show-error "$APP_URL/"
+curl --fail --silent --show-error -X POST "$APP_URL/api/orders" \
+  -H "Content-Type: application/json" \
+  --data '{"customerId":"verify-user","sku":"VERIFY","quantity":1}'
+```
+
+---
+
+## Cleanup
+
+If the agent does not recover the lab app, set **only** `CHAOS_ENABLED=false`
+on that app manually:
+
+```bash
+az webapp config appsettings set --resource-group "$RESOURCE_GROUP" \
+  --name "$BACKEND_WEBAPP_NAME" --settings CHAOS_ENABLED=false --output none
+```
+
+Then run `deploy.yml` with `environment=sbox`, `runtime=webapp`, and
+`chaos=false` to reconcile Terraform, even if the agent already restored the
+live setting. Review a plan-only run before applying. A later apply of the
+`chaos=true` configuration would crash the service again. Do not substitute
+`az webapp stop` for the chaos setting.
+
+---
+
+## Next: What Comes After S2
+
+- [S3 — AKS Root Cause Investigation](../s3-incident-root-cause-investigation/README.md):
+  investigate a Kubernetes routing failure with specialist agents.
+
+## Knowledge Base
+
+- [Orders API HTTP 500 playbook](../../knowledge-base/http-500-errors.md)
+- [Orders architecture](../../knowledge-base/orders-architecture.md)
