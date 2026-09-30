@@ -8,13 +8,15 @@ Follow the flow: **detect → investigate → correlate → diagnose → remedia
 `User → Web dashboard → Azure App Service orders-api → Foundry Agent / Azure SQL / external dependency → Application Insights (+ Log Analytics)`
 
 Expected symptom pattern (App Service conference path):
-- App Service still shows `Running`
-- CPU/memory remain normal
-- `/health` may still pass
-- frontend/dashboard still loads
-- `/api/orders` returns 500
-- exceptions and dependency failures rise
-- 5xx alert crosses threshold shortly after deployment
+- `CHAOS_MODE=crash` and `CHAOS_ENABLED=true` terminate the worker on startup
+- `/health`, the root and `/api/orders` become unavailable
+- the App Service platform `Http5xx` metric alert fires when enough requests receive 5xx
+- app-setting history and container crash logs identify the change
+
+The current `orders-api` root is service metadata, not a separate dashboard.
+The worker cannot emit new Application Insights request traces while crashed;
+use App Service platform metrics and startup logs. Other S2 variants can fail
+only `/api/orders` and leave the root and `/health` available.
 
 Container Apps variant usually shows the same `/api/orders` failure pattern, but correlation evidence comes from revision/deployment events and Container Apps runtime logs.
 
@@ -26,7 +28,7 @@ Container Apps variant usually shows the same `/api/orders` failure pattern, but
 ## 2) Investigate
 
 - Check endpoint health and blast radius:
-  - frontend page load succeeds while backend action fails
+  - root request and backend action statuses (both fail during a crash)
   - `GET /health`
   - `POST /api/orders`
 - Review telemetry in App Insights:
@@ -58,6 +60,14 @@ Prioritize these regression variants:
 2. Correct confirmed app settings / connection configuration drift.
 3. Restart the app only for transient runtime faults.
 4. Apply dependency timeout/scale mitigations only when backed by telemetry.
+
+For rg-sre-lab-sbox/orders-api-* only, if the App Service has
+`CHAOS_MODE=crash` and `CHAOS_ENABLED=true`, set **only**
+`CHAOS_ENABLED=false` on that App Service. The S2 approval hook permits this
+specific reversal without approval; other configuration writes and explicit
+restarts remain gated. The Terraform `enable_s2_chaos` toggle must then be
+reconciled to `false` so a later apply does not reintroduce the crash. Do not
+use this exception for a real production app.
 
 If action mode is **Review**, request approval before write actions.
 

@@ -39,10 +39,13 @@ resource "azurerm_linux_web_app" "orders_api" {
     }
   }
 
-  app_settings = {
+  app_settings = merge({
     APPLICATIONINSIGHTS_CONNECTION_STRING = local.effective_ai_conn_str
     WEBSITES_PORT                         = tostring(local.scenario_value == "s2" ? 8080 : var.webapp_port)
-  }
+  }, local.scenario_value == "s2" ? {
+    CHAOS_ENABLED = tostring(var.enable_s2_chaos)
+    CHAOS_MODE    = "crash"
+  } : {})
 }
 
 resource "azurerm_linux_web_app" "change_lookup" {
