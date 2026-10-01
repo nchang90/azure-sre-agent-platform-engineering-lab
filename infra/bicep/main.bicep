@@ -42,6 +42,9 @@ param targetResourceGroups array = []
 @description('Additional tags applied to every resource.')
 param tags object = {}
 
+@description('VNet-integrate the agent and deploy a private-endpoint-only Key Vault for it to reach. Adds ~$8/month (private endpoint + DNS zone).')
+param enableVnetIntegration bool = true
+
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var resourceGroupName = 'azure-cloud-commanders-${toLower(environmentName)}'
 
@@ -105,6 +108,29 @@ module frontDoor 'modules/frontdoor.bicep' = {
   }
 }
 
+module network 'modules/network.bicep' = if (enableVnetIntegration) {
+  name: 'network'
+  scope: rg
+  params: {
+    location: location
+    resourceToken: resourceToken
+    tags: defaultTags
+  }
+}
+
+module privateKeyVault 'modules/private-keyvault.bicep' = if (enableVnetIntegration) {
+  name: 'private-keyvault'
+  scope: rg
+  params: {
+    location: location
+    resourceToken: resourceToken
+    tags: defaultTags
+    vnetId: network!.outputs.vnetId
+    privateEndpointSubnetId: network!.outputs.privateEndpointSubnetId
+    agentPrincipalId: identity.outputs.principalId
+  }
+}
+
 module sreAgent 'modules/sre-agent.bicep' = {
   name: 'sre-agent'
   scope: rg
@@ -119,8 +145,12 @@ module sreAgent 'modules/sre-agent.bicep' = {
     targetResourceGroups: targetResourceGroups
     appInsightsAppId: monitoring.outputs.appInsightsAppId
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
+    subnetId: enableVnetIntegration ? network!.outputs.agentSubnetId : ''
     tags: defaultTags
   }
+  // Inject the agent only after the private DNS link exists, so the vault
+  // resolves privately from the first sandbox session.
+  dependsOn: [ privateKeyVault ]
 }
 
 // ── Outputs for Terraform / scripts ───────────────────────────────────────────
@@ -149,3 +179,7 @@ output FRONT_DOOR_HOSTNAME string = frontDoor.outputs.hostName
 
 output SRE_AGENT_ID string = sreAgent.outputs.id
 output SRE_AGENT_NAME string = sreAgent.outputs.name
+
+output SRE_AGENT_SUBNET_ID string = enableVnetIntegration ? network!.outputs.agentSubnetId : ''
+output SRE_PRIVATE_KEY_VAULT_NAME string = enableVnetIntegration ? privateKeyVault!.outputs.name : ''
+output SRE_PRIVATE_KEY_VAULT_URI string = enableVnetIntegration ? privateKeyVault!.outputs.uri : ''

@@ -16,6 +16,8 @@ everything else builds on and emits outputs the Terraform layer
 | Container Apps environment | `Microsoft.App/managedEnvironments` | `containerapps.bicep` | Wired to the Log Analytics workspace |
 | Base SRE Agent | `Microsoft.App/agents@2025-05-01-preview` | `sre-agent.bicep` | Mirrors Microsoft's official `agent-core.bicep` |
 | RBAC | `Microsoft.Authorization/roleAssignments` | `sre-agent.bicep` | Monitoring Reader + Log Analytics Reader on the RG, SRE Agent Administrator |
+| VNet (2 × /27) | `Microsoft.Network/virtualNetworks` | `network.bicep` | Agent subnet delegated to `Microsoft.App/environments` + private endpoint subnet. Skipped when `SRE_ENABLE_VNET=false` |
+| Private Key Vault | `Microsoft.KeyVault/vaults` + private endpoint + private DNS zone | `private-keyvault.bicep` | Public access disabled; agent identity gets Key Vault Secrets User. Skipped when `SRE_ENABLE_VNET=false` |
 
 ## Layout
 
@@ -27,7 +29,9 @@ infra/bicep/
     ├── identity.bicep        # user-assigned managed identity
     ├── loganalytics.bicep    # Log Analytics workspace + Application Insights
     ├── containerapps.bicep   # Container Apps managed environment
-    └── sre-agent.bicep       # base SRE Agent + its RBAC
+    ├── network.bicep         # VNet: delegated agent subnet + private endpoint subnet
+    ├── private-keyvault.bicep # private-only Key Vault + PE + private DNS zone
+    └── sre-agent.bicep       # base SRE Agent + its RBAC (+ VNet egress config)
 ```
 
 `main.bicep` creates the resource group and wires the modules together by passing
@@ -49,12 +53,13 @@ azd env set AZD_LOCATION eastus2            # required by subscription-scope dep
 azd env set AGENT_NAME sre-demo             # default: sre-agent
 azd env set AGENT_ACCESS_LEVEL Low          # Low | High
 azd env set AGENT_ACTION_MODE Review        # Review | Automatic
+azd env set SRE_ENABLE_VNET true            # false skips the VNet + private Key Vault (~$8/month)
 
 # 4. Provision (infra only — no services to deploy)
 azd provision
 ```
 
-`azd down` deletes the resource group.
+`azd down --purge` deletes the resource group and purges the soft-deleted Key Vault.
 
 ### Direct Bicep (without azd)
 
@@ -85,6 +90,8 @@ After `azd provision`, read them with `azd env get-values` (they are also writte
 | `SRE_APP_INSIGHTS_CONNECTION_STRING` / `_APP_ID` | Application Insights |
 | `SRE_CONTAINER_APPS_ENVIRONMENT_ID` / `_NAME` | Container Apps environment |
 | `SRE_AGENT_ID` / `SRE_AGENT_NAME` | Base SRE Agent |
+| `SRE_AGENT_SUBNET_ID` | Delegated agent subnet (empty when VNet is off) |
+| `SRE_PRIVATE_KEY_VAULT_NAME` / `_URI` | Private-endpoint-only Key Vault (empty when VNet is off) |
 
 Feed these into Terraform via `TF_VAR_*` environment variables or a generated
 `*.auto.tfvars` file so the logic/app layer attaches to the S1 foundation instead
