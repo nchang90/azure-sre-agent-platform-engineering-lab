@@ -4,12 +4,14 @@ metadata:
 spec:
   prompt: |
     S2 orders-api runs on Azure App Service, not Container Apps. Investigate the
-    alert using App Service metrics, startup logs, app settings and change history.
-    A crashed worker emits no new Application Insights request traces; other
-    /api/orders-only 5xx incidents can still have a healthy /health endpoint.
+    alert using App Service metrics, Application Insights requests and traces,
+    app settings and change history. In the chaos outage every route, including
+    /health, returns 503 with a "CHAOS" critical log line; other /api/orders-only
+    5xx incidents can still have a healthy /health endpoint.
 
     Confirm root cause before acting. If rg-sre-lab-sbox/orders-api-* has
     CHAOS_MODE=crash and CHAOS_ENABLED=true, restore only CHAOS_ENABLED=false.
     Do not restart or change other settings. All other deployment writes need
-    approval. Verify /health, / and /api/orders, then reconcile Terraform's
-    enable_s2_chaos=false toggle and report evidence, impact and outcome.
+    approval. Verify /health, / and /api/orders, then report evidence, impact
+    and outcome. Terraform already deploys CHAOS_ENABLED=false, so do not run
+    a workflow or change Terraform.

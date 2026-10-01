@@ -18,10 +18,6 @@ on:
           - webapp
           - containerapps
         default: webapp
-      chaos:
-        description: "Crash the S2 App Service orders-api worker (isolated lab only)"
-        type: boolean
-        default: false
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -44,7 +40,6 @@ jobs:
     env:
       ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
       RUNTIME: ${{ inputs.runtime || 'webapp' }}
-      CHAOS: ${{ inputs.chaos || 'false' }}
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -73,14 +68,6 @@ jobs:
       - name: Install Python dependencies
         run: pip install pyyaml
 
-      - name: Restrict Chaos Monkey to S2 sandbox App Service
-        if: env.CHAOS == 'true'
-        run: |
-          if [[ "$ENVIRONMENT" != "sbox" || "$RUNTIME" != "webapp" ]]; then
-            echo "Chaos Monkey is only supported for the S2 sandbox App Service." >&2
-            exit 1
-          fi
-
       - name: Terraform init
         run: terraform -chdir=infra/terraform init -backend-config=backend/${{ env.ENVIRONMENT }}.backend.tfvars
 
@@ -89,7 +76,7 @@ jobs:
 
       - name: Terraform plan
         if: github.event_name == 'schedule' || inputs.plan || inputs.apply
-        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars -var="runtime=${RUNTIME}" -var="enable_s2_chaos=${CHAOS}"
+        run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars -var="runtime=${RUNTIME}"
 
       - name: Deploy
         if: github.event_name == 'schedule' || inputs.apply

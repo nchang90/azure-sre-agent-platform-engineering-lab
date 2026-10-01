@@ -31,6 +31,7 @@ ALL_SKILL_NAMES=(
   containerapps-latency-diagnostics
   evidence-before-after
   incident-orchestrator-coordination
+  incident-root-cause-analysis
   investigate-azure-alerts
   servicenow-incident-update
   triage-app-errors
@@ -223,6 +224,7 @@ configure_catalog_scope() {
         azure-kubernetes
         evidence-before-after
         incident-orchestrator-coordination
+        incident-root-cause-analysis
         investigate-azure-alerts
         servicenow-incident-update
       )

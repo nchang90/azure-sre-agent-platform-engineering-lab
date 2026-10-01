@@ -98,12 +98,6 @@ variable "runtime" {
   }
 }
 
-variable "enable_s2_chaos" {
-  description = "Crash the S2 orders-api App Service on startup for the isolated conference demo. Leave false for normal operation."
-  type        = bool
-  default     = false
-}
-
 variable "webapp_image" {
   description = "Container image for S4 Linux Web Apps."
   type        = string

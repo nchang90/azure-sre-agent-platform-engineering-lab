@@ -87,6 +87,7 @@ SKILL_TOOLS = {
     "incident-orchestrator-coordination": [
         "SearchMemory",
     ],
+    "incident-root-cause-analysis": READ_ONLY_DIAGNOSTICS,
     "investigate-azure-alerts": [
         "SearchMemory",
         "RunAzCliReadCommands",
