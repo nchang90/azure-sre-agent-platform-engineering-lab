@@ -121,6 +121,23 @@ variable "acr_sku" {
   default     = "Basic"
 }
 
+variable "aks_sku_tier" {
+  description = "AKS control plane tier. Free has no uptime SLA; Standard adds the SLA for ~$73/month."
+  type        = string
+  default     = "Free"
+
+  validation {
+    condition     = contains(["Free", "Standard"], var.aks_sku_tier)
+    error_message = "aks_sku_tier must be Free or Standard."
+  }
+}
+
+variable "aks_os_disk_size_gb" {
+  description = "OS disk size for both AKS node pools. 64 GB bills as a P6 disk; the 128 GB default bills as P10 (~2x)."
+  type        = number
+  default     = 64
+}
+
 variable "aks_node_vm_size" {
   description = "VM size for the AKS system node pool."
   type        = string

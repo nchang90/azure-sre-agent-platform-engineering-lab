@@ -44,6 +44,24 @@ resource "azapi_resource" "sre_agent" {
         EnableDevOpsTools    = true
         EnablePythonTools    = true
       }
+      # VNet integration (free: no NICs are created in the subscription). Sandbox
+      # traffic to Azure goes through the subnet; package registries, GitHub and
+      # remote MCP stay on the managed path so no NAT gateway or firewall is needed.
+      vnetConfiguration = local.vnet_enabled ? {
+        subnetResourceId = local.effective_subnet_id
+      } : null
+      sandboxConfiguration = local.vnet_enabled ? {
+        egress = {
+          mode                            = "AzureVNet"
+          allowedHosts                    = []
+          allowedRegistries               = ["pypi", "npmjs"]
+          allowedCodeRepositories         = ["Github"]
+          allowHttpMcpServerNetworkAccess = true
+          vnetConfiguration = {
+            usePrivateDnsResolution = true
+          }
+        }
+      } : null
     }
   }
 

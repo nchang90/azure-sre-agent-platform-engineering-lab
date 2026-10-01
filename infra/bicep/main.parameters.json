@@ -19,6 +19,9 @@
     },
     "actionMode": {
       "value": "${AGENT_ACTION_MODE=Review}"
+    },
+    "enableVnetIntegration": {
+      "value": "${SRE_ENABLE_VNET=true}"
     }
   }
 }

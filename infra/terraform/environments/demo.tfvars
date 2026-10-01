@@ -1,14 +1,13 @@
-agent_name               = "sre-agent-platform"
-resource_group_name      = "rg-sre-lab-demo"
-location                 = "uksouth"
-target_resource_groups   = []
-scenario                 = "s3"
-access_level             = "High"
-action_mode              = "Review"
-upgrade_channel          = "Preview"
-monthly_agent_unit_limit = 10000
-default_model_provider   = "MicrosoftFoundry"
-default_model_name       = "Automatic"
+agent_name             = "sre-agent-platform"
+resource_group_name    = "rg-sre-lab-demo"
+location               = "uksouth"
+target_resource_groups = []
+scenario               = "s3"
+access_level           = "High"
+action_mode            = "Review"
+upgrade_channel        = "Preview"
+default_model_provider = "MicrosoftFoundry"
+default_model_name     = "Automatic"
 
 tags = {
   environment = "demo"
@@ -28,9 +27,11 @@ standard_user_principal_ids = [
   "3a168e0b-7a73-4dd0-a4f8-80045502775b"
 ]
 
-aks_min_count = 2
+# One system + one user node is enough for Dynatrace + a few pods; the
+# autoscaler adds a node per pool if they run out of room.
+aks_min_count = 1
 
-aks_max_count = 3
+aks_max_count = 2
 
 deploy_sre_agent = true
 

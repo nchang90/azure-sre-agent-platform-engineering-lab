@@ -42,6 +42,9 @@ param appInsightsConnectionString string
 @description('Tags applied to the agent.')
 param tags object = {}
 
+@description('Resource ID of a subnet delegated to Microsoft.App/environments. Empty = no VNet integration (Unrestricted egress).')
+param subnetId string = ''
+
 // ── Built-in role definition IDs ──────────────────────────────────────────────
 var monitoringReaderRoleId = '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
 var logAnalyticsReaderRoleId = '73c42c96-874c-492b-b04d-ab87d138a893'
@@ -50,6 +53,29 @@ var sreAgentAdminRoleId = 'e79298df-d852-4c6d-84f9-5d13249d1e55'
 
 var effectiveAdminPrincipalId = empty(principalId) ? deployer().objectId : principalId
 var effectiveTargetRgs = empty(targetResourceGroups) ? [ resourceGroup().name ] : targetResourceGroups
+var managedResourceIds = [for rg in effectiveTargetRgs: subscriptionResourceId('Microsoft.Resources/resourceGroups', rg)]
+
+// VNet integration. Agent/sandbox traffic to Azure resources goes through the
+// subnet so it can reach private endpoints. Package registries, GitHub and
+// remote MCP stay on the agent's managed path, so the VNet needs no NAT gateway
+// or firewall rules for them.
+var networkProperties = empty(subnetId) ? {} : {
+  vnetConfiguration: {
+    subnetResourceId: subnetId
+  }
+  sandboxConfiguration: {
+    egress: {
+      mode: 'AzureVNet'
+      vnetConfiguration: {
+        usePrivateDnsResolution: true
+      }
+      allowHttpMcpServerNetworkAccess: true
+      allowedRegistries: [ 'pypi', 'npmjs' ]
+      allowedCodeRepositories: [ 'Github' ]
+      allowedHosts: []
+    }
+  }
+}
 
 // ── RBAC for the agent identity's knowledge-graph reads ───────────────────────
 resource monitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -80,10 +106,10 @@ resource sreAgent 'Microsoft.App/agents@2025-05-01-preview' = {
     type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: { '${identityId}': {} }
   }
-  properties: {
+  properties: union(networkProperties, {
     knowledgeGraphConfiguration: {
       identity: identityId
-      managedResources: [for rg in effectiveTargetRgs: subscriptionResourceId('Microsoft.Resources/resourceGroups', rg)]
+      managedResources: managedResourceIds
     }
     actionConfiguration: {
       accessLevel: accessLevel
@@ -107,7 +133,7 @@ resource sreAgent 'Microsoft.App/agents@2025-05-01-preview' = {
       EnableHttpTriggers: true
       EnableV2AgentLoop: true
     }
-  }
+  })
   dependsOn: [ monitoringReader, logReader ]
 }
 

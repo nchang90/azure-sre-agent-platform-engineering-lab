@@ -1,14 +1,13 @@
-agent_name               = "sre-agent-dev"
-resource_group_name      = "rg-sre-lab-dev"
-location                 = "swedencentral"
-target_resource_groups   = ["rg-sre-lab-dev"]
-scenario                 = "s2"
-access_level             = "High"
-action_mode              = "Autonomous"
-upgrade_channel          = "Preview"
-monthly_agent_unit_limit = 10000
-default_model_provider   = "MicrosoftFoundry"
-default_model_name       = "Automatic"
+agent_name             = "sre-agent-dev"
+resource_group_name    = "rg-sre-lab-dev"
+location               = "swedencentral"
+target_resource_groups = ["rg-sre-lab-dev"]
+scenario               = "s2"
+access_level           = "High"
+action_mode            = "Autonomous"
+upgrade_channel        = "Preview"
+default_model_provider = "MicrosoftFoundry"
+default_model_name     = "Automatic"
 
 tags = {
   environment = "dev"
