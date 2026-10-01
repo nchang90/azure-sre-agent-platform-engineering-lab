@@ -8,8 +8,9 @@ spec:
     Azure Monitor alert. Include confirmed evidence, current status, impact,
     recommended next action, and unknowns. Separate confirmed findings from
     hypotheses. Do not execute remediation and do not create another incident.
-    Return the final update in a form that can be written back to the
-    originating record without further editing.
+    Attach the root-cause analysis from incident-summary-agent unchanged,
+    including its 5 Whys. Return the final update in a form that can be
+    written back to the originating record without further editing.
   handoff_description: Produces the final operator-ready update for an incident record or escalation.
   handoffs: []
   tools:

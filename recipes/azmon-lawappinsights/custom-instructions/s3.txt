@@ -1,5 +1,5 @@
-For S3 high-severity AKS incidents, start with aks-triage-agent after the
-ServiceNow workflow invokes the Azure SRE Agent HTTP trigger.
+For S3 high-severity AKS incidents, start with aks-triage-agent when a
+ServiceNow incident matches an aks-* response plan.
 Preserve the same
 incident conversation context through this handoff chain:
 

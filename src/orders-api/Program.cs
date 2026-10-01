@@ -27,11 +27,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var app = builder.Build();
 
-if (Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true" &&
-    Environment.GetEnvironmentVariable("CHAOS_MODE") == "crash")
+// S2 outage: the worker stays up so App Service routes traffic to it, but every
+// route fails with 503. Crashing on startup instead leaves callers hanging until
+// the container start times out, which shows up as timeouts rather than 5xx.
+var chaosOutage = Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true" &&
+    Environment.GetEnvironmentVariable("CHAOS_MODE") == "crash";
+
+if (chaosOutage)
 {
-    app.Logger.LogCritical("CHAOS: terminating orders-api process on startup (CHAOS_MODE=crash)");
-    Environment.FailFast("CHAOS: deliberate S2 App Service process crash");
+    app.Logger.LogCritical("CHAOS: orders-api is down (CHAOS_MODE=crash) — every request returns 503");
 }
 
 app.UseForwardedHeaders();
@@ -62,11 +66,41 @@ app.Use(async (context, next) =>
     }
 });
 
-if (Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true")
+if (chaosOutage)
+{
+    // Terminal: neither the website nor any endpoint runs, so /, /health, and /api/* all fail.
+    app.Use(async (HttpContext context, RequestDelegate _) =>
+    {
+        context.RequestServices
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger("OrdersApi.Chaos")
+            .LogCritical("CHAOS: orders-api unavailable (CHAOS_MODE=crash), rejecting {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+
+        if (context.Request.Headers.Accept.ToString().Contains("text/html"))
+        {
+            context.Response.ContentType = "text/html; charset=utf-8";
+            await context.Response.WriteAsync(
+                "<!doctype html><title>Service unavailable</title>" +
+                "<h1>503 Service Unavailable</h1><p>The Nordic Integration Summit site is down. Please try again later.</p>");
+            return;
+        }
+
+        await context.Response.WriteAsJsonAsync(new { error = "orders-api unavailable", chaos = true, mode = "crash" });
+    });
+}
+else if (Environment.GetEnvironmentVariable("CHAOS_ENABLED") == "true")
 {
     app.UseMiddleware<ChaosMiddleware>();
     app.Logger.LogWarning("CHAOS MONKEY ENABLED — faults will be injected into requests");
 }
+
+// The Nordic Integration Summit website (wwwroot) sits behind the chaos middleware above,
+// so it goes down together with the API.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
@@ -81,7 +115,7 @@ var healthUnhealthy = false;
 // In a real system this is set by the deploy pipeline; here it's runtime-settable for demos.
 var activeChangeRequest = Environment.GetEnvironmentVariable("ACTIVE_CR") ?? "";
 
-app.MapGet("/", () => Results.Ok(new
+app.MapGet("/api/info", () => Results.Ok(new
 {
     service = "orders-api",
     version = "1.0.0",

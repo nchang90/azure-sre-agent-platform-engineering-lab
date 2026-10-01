@@ -5,18 +5,20 @@ Follow the flow: **detect → investigate → correlate → diagnose → remedia
 
 ## Architecture and incident shape
 
-`User → Web dashboard → Azure App Service orders-api → Foundry Agent / Azure SQL / external dependency → Application Insights (+ Log Analytics)`
+`User → Nordic Integration Summit website (served by orders-api) → Azure App Service orders-api → Foundry Agent / Azure SQL / external dependency → Application Insights (+ Log Analytics)`
 
 Expected symptom pattern (App Service conference path):
-- `CHAOS_MODE=crash` and `CHAOS_ENABLED=true` terminate the worker on startup
-- `/health`, the root and `/api/orders` become unavailable
+- `CHAOS_MODE=crash` and `CHAOS_ENABLED=true` take the worker down: it still
+  starts, but every route returns HTTP 503
+- the website (`/`), `/api/info`, `/health` and `/api/orders` all return 503
 - the App Service platform `Http5xx` metric alert fires when enough requests receive 5xx
-- app-setting history and container crash logs identify the change
+- app-setting history and the worker's `CHAOS:` critical log lines identify the change
 
-The current `orders-api` root is service metadata, not a separate dashboard.
-The worker cannot emit new Application Insights request traces while crashed;
-use App Service platform metrics and startup logs. Other S2 variants can fail
-only `/api/orders` and leave the root and `/health` available.
+`orders-api` serves the Nordic Integration Summit website at `/` from the same App Service;
+service metadata is at `/api/info`.
+Application Insights records each 503 request and its `CHAOS` trace, so request
+telemetry, App Service platform metrics and app logs all show the outage. Other
+S2 variants can fail only `/api/orders` and leave the root and `/health` available.
 
 Container Apps variant usually shows the same `/api/orders` failure pattern, but correlation evidence comes from revision/deployment events and Container Apps runtime logs.
 
@@ -28,7 +30,7 @@ Container Apps variant usually shows the same `/api/orders` failure pattern, but
 ## 2) Investigate
 
 - Check endpoint health and blast radius:
-  - root request and backend action statuses (both fail during a crash)
+  - root request and backend action statuses (both return 503 during the chaos outage)
   - `GET /health`
   - `POST /api/orders`
 - Review telemetry in App Insights:
@@ -65,9 +67,9 @@ For rg-sre-lab-sbox/orders-api-* only, if the App Service has
 `CHAOS_MODE=crash` and `CHAOS_ENABLED=true`, set **only**
 `CHAOS_ENABLED=false` on that App Service. The S2 approval hook permits this
 specific reversal without approval; other configuration writes and explicit
-restarts remain gated. The Terraform `enable_s2_chaos` toggle must then be
-reconciled to `false` so a later apply does not reintroduce the crash. Do not
-use this exception for a real production app.
+restarts remain gated. Terraform always deploys `CHAOS_ENABLED=false`, so no
+Terraform or workflow change is needed afterwards. Do not use this exception
+for a real production app.
 
 If action mode is **Review**, request approval before write actions.
 
