@@ -11,16 +11,14 @@ param environmentName string
 param agentName string = 'sre-agent'
 
 @description('Azure region. Restricted to regions supported by the SRE Agent resource provider.')
-@allowed([
-  'swedencentral'
-  'uksouth'
-  'eastus2'
-  'australiaeast'
-])
-param location string = 'eastus2'
+
+param location string = deployment().location
 
 @description('Object ID of the deploying user/service principal. When set, it is granted SRE Agent Administrator on the agent. azd populates AZURE_PRINCIPAL_ID automatically.')
 param principalId string = ''
+
+@description('Object IDs of additional users/groups granted SRE Agent Administrator on the agent.')
+param adminPrincipalIds array = []
 
 @description('Agent access level. Low = read-only investigation, High = can take actions.')
 @allowed([
@@ -39,14 +37,19 @@ param actionMode string = 'Review'
 @description('Resource groups the agent is granted knowledge-graph access to. Defaults to the S1 resource group.')
 param targetResourceGroups array = []
 
+@description('Name of the resource group to create.')
+param resourceGroupName string = 'azure-cloud-commanders-${toLower(environmentName)}'
+
 @description('Additional tags applied to every resource.')
 param tags object = {}
 
-@description('VNet-integrate the agent and deploy a private-endpoint-only Key Vault for it to reach. Adds ~$8/month (private endpoint + DNS zone).')
+@description('VNet-integrate the agent and deploy a Key Vault that only the agent subnet can reach. Free (service endpoint, no private endpoint).')
 param enableVnetIntegration bool = true
 
+@description('Deploy Azure Front Door in front of the Container Apps environment. Only needed for S6; off by default for S1.')
+param deployFrontDoor bool = false
+
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
-var resourceGroupName = 'azure-cloud-commanders-${toLower(environmentName)}'
 
 var defaultTags = union(tags, {
   'azd-env-name': environmentName
@@ -92,7 +95,7 @@ module containerApps 'modules/containerapps.bicep' = {
   }
 }
 
-module frontDoor 'modules/frontdoor.bicep' = {
+module frontDoor 'modules/frontdoor.bicep' = if (deployFrontDoor) {
   name: 'frontdoor'
   scope: rg
   params: {
@@ -118,15 +121,14 @@ module network 'modules/network.bicep' = if (enableVnetIntegration) {
   }
 }
 
-module privateKeyVault 'modules/private-keyvault.bicep' = if (enableVnetIntegration) {
-  name: 'private-keyvault'
+module keyVault 'modules/keyvault.bicep' = if (enableVnetIntegration) {
+  name: 'keyvault'
   scope: rg
   params: {
     location: location
     resourceToken: resourceToken
     tags: defaultTags
-    vnetId: network!.outputs.vnetId
-    privateEndpointSubnetId: network!.outputs.privateEndpointSubnetId
+    agentSubnetId: network!.outputs.agentSubnetId
     agentPrincipalId: identity.outputs.principalId
   }
 }
@@ -140,6 +142,7 @@ module sreAgent 'modules/sre-agent.bicep' = {
     identityId: identity.outputs.id
     identityPrincipalId: identity.outputs.principalId
     principalId: principalId
+    adminPrincipalIds: adminPrincipalIds
     accessLevel: accessLevel
     actionMode: actionMode
     targetResourceGroups: targetResourceGroups
@@ -148,9 +151,6 @@ module sreAgent 'modules/sre-agent.bicep' = {
     subnetId: enableVnetIntegration ? network!.outputs.agentSubnetId : ''
     tags: defaultTags
   }
-  // Inject the agent only after the private DNS link exists, so the vault
-  // resolves privately from the first sandbox session.
-  dependsOn: [ privateKeyVault ]
 }
 
 // ── Outputs for Terraform / scripts ───────────────────────────────────────────
@@ -173,13 +173,13 @@ output SRE_APP_INSIGHTS_APP_ID string = monitoring.outputs.appInsightsAppId
 output SRE_CONTAINER_APPS_ENVIRONMENT_ID string = containerApps.outputs.id
 output SRE_CONTAINER_APPS_ENVIRONMENT_NAME string = containerApps.outputs.name
 
-output FRONT_DOOR_ID string = frontDoor.outputs.id
-output FRONT_DOOR_NAME string = frontDoor.outputs.name
-output FRONT_DOOR_HOSTNAME string = frontDoor.outputs.hostName
+output FRONT_DOOR_ID string = deployFrontDoor ? frontDoor!.outputs.id : ''
+output FRONT_DOOR_NAME string = deployFrontDoor ? frontDoor!.outputs.name : ''
+output FRONT_DOOR_HOSTNAME string = deployFrontDoor ? frontDoor!.outputs.hostName : ''
 
 output SRE_AGENT_ID string = sreAgent.outputs.id
 output SRE_AGENT_NAME string = sreAgent.outputs.name
 
 output SRE_AGENT_SUBNET_ID string = enableVnetIntegration ? network!.outputs.agentSubnetId : ''
-output SRE_PRIVATE_KEY_VAULT_NAME string = enableVnetIntegration ? privateKeyVault!.outputs.name : ''
-output SRE_PRIVATE_KEY_VAULT_URI string = enableVnetIntegration ? privateKeyVault!.outputs.uri : ''
+output SRE_KEY_VAULT_NAME string = enableVnetIntegration ? keyVault!.outputs.name : ''
+output SRE_KEY_VAULT_URI string = enableVnetIntegration ? keyVault!.outputs.uri : ''

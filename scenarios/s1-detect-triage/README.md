@@ -65,23 +65,22 @@ A platform engineer ships a change without guardrails—no peer review, no rollo
 
 ---
 
-## VNet Integration: Reach a Private Key Vault (~5 mins)
+## VNet Integration: Reach a Locked-Down Key Vault (~5 mins)
 
-S1 VNet-integrates the agent by default (`SRE_ENABLE_VNET=true`) and deploys a Key Vault with **public access disabled**, reachable only through a private endpoint. The agent can reach it only because its sandbox egresses through the VNet and resolves the vault through the linked `privatelink.vaultcore.azure.net` zone.
+S1 VNet-integrates the agent by default (`SRE_ENABLE_VNET=true`) and deploys a Key Vault whose firewall **denies every network except the agent subnet**. The subnet reaches the vault through a `Microsoft.KeyVault` service endpoint, so the agent can read it only because its sandbox egresses through that subnet.
 
 Ask the agent in chat:
 
 ```text
-Use Python to resolve <SRE_PRIVATE_KEY_VAULT_NAME>.vault.azure.net and tell me whether it
-is a private or public IP. Then read the orders-db-connection secret from that vault.
+Read the orders-db-connection secret from the <SRE_KEY_VAULT_NAME> Key Vault.
 ```
 
-- ✅ Resolves to `10.30.0.x` via the `privatelink` CNAME → private path works.
-- ❌ Resolves to a public IP → the DNS zone link or VNet injection is missing; the vault refuses the call.
+- ✅ The agent returns the secret → traffic came from the agent subnet.
+- ❌ `403 ForbiddenByFirewall` → VNet injection or the subnet rule is missing.
 
-Get the vault name with `azd env get-value SRE_PRIVATE_KEY_VAULT_NAME`. Package registries (PyPI, npm), GitHub and remote MCP stay on the agent's managed path, so the VNet needs no NAT gateway or firewall.
+Get the vault name with `azd env get-value SRE_KEY_VAULT_NAME`. Reading the secret from your own machine fails with the same 403, which shows the lock works. Package registries (PyPI, npm), GitHub and remote MCP stay on the agent's managed path, so the VNet needs no NAT gateway or firewall.
 
-**Cost:** the VNet and agent injection are free; the private endpoint (~$7.30/month) and DNS zone (~$0.50/month) are the only additions. Skip it with `azd env set SRE_ENABLE_VNET false`. Use `azd down --purge` so the soft-deleted vault doesn't block the next deploy.
+**Cost:** free. The VNet, agent injection and service endpoint cost nothing, and the vault bills per operation. Turn it off with `azd env set SRE_ENABLE_VNET false`. Use `azd down --purge` so the soft-deleted vault doesn't block the next deploy.
 
 ---
 
@@ -94,7 +93,7 @@ After the quick start:
 - ✅ Error rate shown in Log Analytics
 - ✅ Alert resolves when fix is applied
 - ✅ Incident record saved for pattern matching
-- ✅ Agent resolves the private Key Vault to a `10.30.0.x` address
+- ✅ Agent reads the subnet-locked Key Vault secret
 
 ---
 

@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.39.26.7824",
-      "templateHash": "11423101292509938003"
+      "version": "0.45.6.27763",
+      "templateHash": "4311740995902299179"
     }
   },
   "parameters": {
@@ -19,7 +19,7 @@
     },
     "agentName": {
       "type": "string",
-      "defaultValue": "sre-agent-demo",
+      "defaultValue": "sre-agent",
       "minLength": 2,
       "maxLength": 63,
       "metadata": {
@@ -28,13 +28,7 @@
     },
     "location": {
       "type": "string",
-      "defaultValue": "eastus2",
-      "allowedValues": [
-        "swedencentral",
-        "uksouth",
-        "eastus2",
-        "australiaeast"
-      ],
+      "defaultValue": "[deployment().location]",
       "metadata": {
         "description": "Azure region. Restricted to regions supported by the SRE Agent resource provider."
       }
@@ -44,6 +38,13 @@
       "defaultValue": "",
       "metadata": {
         "description": "Object ID of the deploying user/service principal. When set, it is granted SRE Agent Administrator on the agent. azd populates AZURE_PRINCIPAL_ID automatically."
+      }
+    },
+    "adminPrincipalIds": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Object IDs of additional users/groups granted SRE Agent Administrator on the agent."
       }
     },
     "accessLevel": {
@@ -75,24 +76,44 @@
         "description": "Resource groups the agent is granted knowledge-graph access to. Defaults to the S1 resource group."
       }
     },
+    "resourceGroupName": {
+      "type": "string",
+      "defaultValue": "nordicintegration2026",
+      "metadata": {
+        "description": "Name of the resource group to create."
+      }
+    },
     "tags": {
       "type": "object",
       "defaultValue": {},
       "metadata": {
         "description": "Additional tags applied to every resource."
       }
+    },
+    "enableVnetIntegration": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "VNet-integrate the agent and deploy a Key Vault that only the agent subnet can reach. Free (service endpoint, no private endpoint)."
+      }
+    },
+    "deployFrontDoor": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Deploy Azure Front Door in front of the Container Apps environment. Only needed for S6; off by default for S1."
+      }
     }
   },
   "variables": {
     "resourceToken": "[toLower(uniqueString(subscription().id, parameters('environmentName'), parameters('location')))]",
-    "resourceGroupName": "[format('rg-{0}', parameters('environmentName'))]",
     "defaultTags": "[union(parameters('tags'), createObject('azd-env-name', parameters('environmentName'), 'workload', 'sre-agent', 'layer', 's1-base-infra'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Resources/resourceGroups",
       "apiVersion": "2024-03-01",
-      "name": "[variables('resourceGroupName')]",
+      "name": "[parameters('resourceGroupName')]",
       "location": "[parameters('location')]",
       "tags": "[variables('defaultTags')]"
     },
@@ -100,7 +121,7 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "identity",
-      "resourceGroup": "[variables('resourceGroupName')]",
+      "resourceGroup": "[parameters('resourceGroupName')]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -123,8 +144,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.39.26.7824",
-              "templateHash": "4772266435898406891"
+              "version": "0.45.6.27763",
+              "templateHash": "15253782814922739091"
             }
           },
           "parameters": {
@@ -181,14 +202,14 @@
         }
       },
       "dependsOn": [
-        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
       ]
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "loganalytics",
-      "resourceGroup": "[variables('resourceGroupName')]",
+      "resourceGroup": "[parameters('resourceGroupName')]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -211,8 +232,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.39.26.7824",
-              "templateHash": "9463844175254232456"
+              "version": "0.45.6.27763",
+              "templateHash": "296754150438580063"
             }
           },
           "parameters": {
@@ -292,14 +313,14 @@
         }
       },
       "dependsOn": [
-        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
       ]
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "containerapps",
-      "resourceGroup": "[variables('resourceGroupName')]",
+      "resourceGroup": "[parameters('resourceGroupName')]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -316,7 +337,7 @@
             "value": "[variables('defaultTags')]"
           },
           "logAnalyticsWorkspaceName": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.workspaceName.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.workspaceName.value]"
           }
         },
         "template": {
@@ -325,8 +346,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.39.26.7824",
-              "templateHash": "278122379854890613"
+              "version": "0.45.6.27763",
+              "templateHash": "12427797936646389619"
             }
           },
           "parameters": {
@@ -387,15 +408,602 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics')]",
-        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployFrontDoor')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "frontdoor",
+      "resourceGroup": "[parameters('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "global"
+          },
+          "resourceToken": {
+            "value": "[variables('resourceToken')]"
+          },
+          "containerAppsEnvironmentName": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'containerapps'), '2025-04-01').outputs.name.value]"
+          },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "tags": {
+            "value": "[variables('defaultTags')]"
+          },
+          "skuName": {
+            "value": "Standard_AzureFrontDoor"
+          },
+          "healthProbePath": {
+            "value": "/health"
+          },
+          "healthProbeProtocol": {
+            "value": "Https"
+          },
+          "sessionAffinityEnabled": {
+            "value": false
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.45.6.27763",
+              "templateHash": "17635474786157079370"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "global",
+              "metadata": {
+                "description": "Location for the Front Door resource."
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource token for naming."
+              }
+            },
+            "containerAppsEnvironmentName": {
+              "type": "string",
+              "metadata": {
+                "description": "Container Apps Environment Name."
+              }
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace ID for diagnostic settings."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags applied to all resources."
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard_AzureFrontDoor",
+              "metadata": {
+                "description": "SKU for Front Door. Standard or Premium."
+              }
+            },
+            "healthProbePath": {
+              "type": "string",
+              "defaultValue": "/health",
+              "metadata": {
+                "description": "Health probe path."
+              }
+            },
+            "healthProbeProtocol": {
+              "type": "string",
+              "defaultValue": "Http",
+              "metadata": {
+                "description": "Health probe protocol."
+              }
+            },
+            "sessionAffinityEnabled": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Session affinity enabled."
+              }
+            }
+          },
+          "variables": {
+            "frontDoorName": "[format('fd-{0}', parameters('resourceToken'))]",
+            "frontendEndpointName": "[format('fep-{0}', parameters('resourceToken'))]",
+            "originGroupName": "[format('og-{0}', parameters('resourceToken'))]",
+            "originName": "[format('origin-{0}', parameters('resourceToken'))]",
+            "routingRuleName": "rr-default",
+            "containerAppsEnvFqdn": "[format('{0}.eastus2.azurecontainerapps.io', parameters('containerAppsEnvironmentName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Cdn/profiles",
+              "apiVersion": "2024-02-01",
+              "name": "[variables('frontDoorName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('skuName')]"
+              },
+              "properties": {
+                "originResponseTimeoutSeconds": 30
+              }
+            },
+            {
+              "type": "Microsoft.Cdn/profiles/afdEndpoints",
+              "apiVersion": "2024-02-01",
+              "name": "[format('{0}/{1}', variables('frontDoorName'), variables('frontendEndpointName'))]",
+              "properties": {
+                "enabledState": "Enabled"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Cdn/profiles/originGroups",
+              "apiVersion": "2024-02-01",
+              "name": "[format('{0}/{1}', variables('frontDoorName'), variables('originGroupName'))]",
+              "properties": {
+                "loadBalancingSettings": {
+                  "additionalLatencyInMilliseconds": 50,
+                  "sampleSize": 4,
+                  "successfulSamplesRequired": 3
+                },
+                "healthProbeSettings": {
+                  "probePath": "[parameters('healthProbePath')]",
+                  "probeProtocol": "[parameters('healthProbeProtocol')]",
+                  "probeIntervalInSeconds": 100
+                },
+                "sessionAffinityState": "[if(parameters('sessionAffinityEnabled'), 'Enabled', 'Disabled')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Cdn/profiles/origins",
+              "apiVersion": "2024-02-01",
+              "name": "[format('{0}/{1}', variables('frontDoorName'), variables('originName'))]",
+              "properties": {
+                "hostName": "[variables('containerAppsEnvFqdn')]",
+                "httpPort": 80,
+                "httpsPort": 443,
+                "originHostHeader": "[variables('containerAppsEnvFqdn')]",
+                "priority": 1,
+                "weight": 1000,
+                "enabledState": "Enabled",
+                "sharedPrivateLinkResource": null
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]",
+                "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), variables('originGroupName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Cdn/profiles/routes",
+              "apiVersion": "2024-02-01",
+              "name": "[format('{0}/{1}', variables('frontDoorName'), variables('routingRuleName'))]",
+              "properties": {
+                "supportedProtocols": [
+                  "Http",
+                  "Https"
+                ],
+                "patternsToMatch": [
+                  "/*"
+                ],
+                "originGroup": {
+                  "id": "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), variables('originGroupName'))]"
+                },
+                "forwardingProtocol": "HttpsOnly",
+                "linkToDefaultDomain": "Enabled",
+                "httpsRedirect": "Enabled",
+                "enabledState": "Enabled",
+                "compressionSettings": {
+                  "isCompressionEnabled": true,
+                  "contentTypesToCompress": [
+                    "application/json",
+                    "application/xml",
+                    "text/html",
+                    "text/plain",
+                    "text/xml",
+                    "text/css",
+                    "application/javascript"
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]",
+                "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', variables('frontDoorName'), variables('frontendEndpointName'))]",
+                "[resourceId('Microsoft.Cdn/profiles/origins', variables('frontDoorName'), variables('originName'))]",
+                "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), variables('originGroupName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]",
+              "name": "frontdoor-diagnostics",
+              "properties": {
+                "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
+                "logAnalyticsDestinationType": "Dedicated",
+                "logs": [
+                  {
+                    "category": "FrontdoorAccessLog",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "enabled": false,
+                      "days": 0
+                    }
+                  },
+                  {
+                    "category": "FrontdoorHealthProbeLog",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "enabled": false,
+                      "days": 0
+                    }
+                  },
+                  {
+                    "category": "FrontdoorWebApplicationFirewallLog",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "enabled": false,
+                      "days": 0
+                    }
+                  }
+                ],
+                "metrics": [
+                  {
+                    "category": "AllMetrics",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "enabled": false,
+                      "days": 0
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[variables('frontDoorName')]"
+            },
+            "hostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Cdn/profiles/afdEndpoints', variables('frontDoorName'), variables('frontendEndpointName')), '2024-02-01').hostName]"
+            },
+            "frontendEndpointId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', variables('frontDoorName'), variables('frontendEndpointName'))]"
+            },
+            "originGroupId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), variables('originGroupName'))]"
+            },
+            "originId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Cdn/profiles/origins', variables('frontDoorName'), variables('originName'))]"
+            },
+            "skuName": {
+              "type": "string",
+              "value": "[parameters('skuName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'containerapps')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableVnetIntegration')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "network",
+      "resourceGroup": "[parameters('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[variables('resourceToken')]"
+          },
+          "tags": {
+            "value": "[variables('defaultTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.45.6.27763",
+              "templateHash": "74993052766947918"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region. Must match the agent region."
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Stable token used to make resource names unique within the subscription."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags applied to the VNet."
+              }
+            },
+            "addressSpace": {
+              "type": "string",
+              "defaultValue": "10.30.0.0/27",
+              "metadata": {
+                "description": "VNet address space."
+              }
+            },
+            "agentSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.30.0.0/27",
+              "metadata": {
+                "description": "Agent subnet range (/27 or larger)."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-05-01",
+              "name": "[format('vnet-sre-agent-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('addressSpace')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "snet-sre-agent",
+                    "properties": {
+                      "addressPrefix": "[parameters('agentSubnetPrefix')]",
+                      "defaultOutboundAccess": true,
+                      "serviceEndpoints": [
+                        {
+                          "service": "Microsoft.KeyVault"
+                        }
+                      ],
+                      "delegations": [
+                        {
+                          "name": "Microsoft.App.environments",
+                          "properties": {
+                            "serviceName": "Microsoft.App/environments"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-sre-agent-{0}', parameters('resourceToken')))]"
+            },
+            "vnetName": {
+              "type": "string",
+              "value": "[format('vnet-sre-agent-{0}', parameters('resourceToken'))]"
+            },
+            "agentSubnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', format('vnet-sre-agent-{0}', parameters('resourceToken'))), '2024-05-01').subnets[0].id]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableVnetIntegration')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "keyvault",
+      "resourceGroup": "[parameters('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[variables('resourceToken')]"
+          },
+          "tags": {
+            "value": "[variables('defaultTags')]"
+          },
+          "agentSubnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'network'), '2025-04-01').outputs.agentSubnetId.value]"
+          },
+          "agentPrincipalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.principalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.45.6.27763",
+              "templateHash": "10834015685575765651"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the vault."
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Stable token used to make resource names unique within the subscription."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags applied to all resources."
+              }
+            },
+            "agentSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the agent subnet allowed through the vault firewall."
+              }
+            },
+            "agentPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID of the agent identity. Granted Key Vault Secrets User."
+              }
+            }
+          },
+          "variables": {
+            "secretsUserRoleId": "4633458b-17de-408a-b874-0445c86b69e6"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[format('kv-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "enableRbacAuthorization": true,
+                "softDeleteRetentionInDays": 7,
+                "publicNetworkAccess": "Enabled",
+                "networkAcls": {
+                  "defaultAction": "Deny",
+                  "bypass": "None",
+                  "virtualNetworkRules": [
+                    {
+                      "id": "[parameters('agentSubnetId')]"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', format('kv-{0}', parameters('resourceToken')), 'orders-db-connection')]",
+              "properties": {
+                "value": "Server=orders-db.internal;Database=orders;Authentication=ManagedIdentity",
+                "contentType": "text/plain"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}', parameters('resourceToken')))]",
+              "name": "[guid(resourceId('Microsoft.KeyVault/vaults', format('kv-{0}', parameters('resourceToken'))), parameters('agentPrincipalId'), variables('secretsUserRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('secretsUserRoleId'))]",
+                "principalId": "[parameters('agentPrincipalId')]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}', parameters('resourceToken')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.KeyVault/vaults', format('kv-{0}', parameters('resourceToken')))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[format('kv-{0}', parameters('resourceToken'))]"
+            },
+            "uri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', format('kv-{0}', parameters('resourceToken'))), '2023-07-01').vaultUri]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'network')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
       ]
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "sre-agent",
-      "resourceGroup": "[variables('resourceGroupName')]",
+      "resourceGroup": "[parameters('resourceGroupName')]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -409,13 +1017,16 @@
             "value": "[parameters('agentName')]"
           },
           "identityId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.id.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.id.value]"
           },
           "identityPrincipalId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.principalId.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.principalId.value]"
           },
           "principalId": {
             "value": "[parameters('principalId')]"
+          },
+          "adminPrincipalIds": {
+            "value": "[parameters('adminPrincipalIds')]"
           },
           "accessLevel": {
             "value": "[parameters('accessLevel')]"
@@ -427,11 +1038,12 @@
             "value": "[parameters('targetResourceGroups')]"
           },
           "appInsightsAppId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsAppId.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsAppId.value]"
           },
           "appInsightsConnectionString": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsConnectionString.value]"
           },
+          "subnetId": "[if(parameters('enableVnetIntegration'), createObject('value', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'network'), '2025-04-01').outputs.agentSubnetId.value), createObject('value', ''))]",
           "tags": {
             "value": "[variables('defaultTags')]"
           }
@@ -442,8 +1054,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.39.26.7824",
-              "templateHash": "17865842597986987231"
+              "version": "0.45.6.27763",
+              "templateHash": "14219451578086370539"
             }
           },
           "parameters": {
@@ -476,6 +1088,13 @@
               "defaultValue": "",
               "metadata": {
                 "description": "Object ID of the deploying principal. Empty falls back to deployer(). Granted SRE Agent Administrator."
+              }
+            },
+            "adminPrincipalIds": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Object IDs of additional users/groups granted SRE Agent Administrator."
               }
             },
             "accessLevel": {
@@ -523,14 +1142,29 @@
               "metadata": {
                 "description": "Tags applied to the agent."
               }
+            },
+            "subnetId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Resource ID of a subnet delegated to Microsoft.App/environments. Empty = no VNet integration (Unrestricted egress)."
+              }
             }
           },
           "variables": {
+            "copy": [
+              {
+                "name": "managedResourceIds",
+                "count": "[length(variables('effectiveTargetRgs'))]",
+                "input": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('effectiveTargetRgs')[copyIndex('managedResourceIds')])]"
+              }
+            ],
             "monitoringReaderRoleId": "43d0d8ad-25c7-4714-9337-8ba259a9fe05",
             "logAnalyticsReaderRoleId": "73c42c96-874c-492b-b04d-ab87d138a893",
             "sreAgentAdminRoleId": "e79298df-d852-4c6d-84f9-5d13249d1e55",
             "effectiveAdminPrincipalId": "[if(empty(parameters('principalId')), deployer().objectId, parameters('principalId'))]",
-            "effectiveTargetRgs": "[if(empty(parameters('targetResourceGroups')), createArray(resourceGroup().name), parameters('targetResourceGroups'))]"
+            "effectiveTargetRgs": "[if(empty(parameters('targetResourceGroups')), createArray(resourceGroup().name), parameters('targetResourceGroups'))]",
+            "networkProperties": "[if(empty(parameters('subnetId')), createObject(), createObject('vnetConfiguration', createObject('subnetResourceId', parameters('subnetId')), 'sandboxConfiguration', createObject('egress', createObject('mode', 'AzureVNet', 'vnetConfiguration', createObject('usePrivateDnsResolution', true()), 'allowHttpMcpServerNetworkAccess', true(), 'allowedRegistries', createArray('pypi', 'npmjs'), 'allowedCodeRepositories', createArray('Github'), 'allowedHosts', createArray()))))]"
           },
           "resources": [
             {
@@ -565,40 +1199,7 @@
                   "[format('{0}', parameters('identityId'))]": {}
                 }
               },
-              "properties": {
-                "knowledgeGraphConfiguration": {
-                  "copy": [
-                    {
-                      "name": "managedResources",
-                      "count": "[length(variables('effectiveTargetRgs'))]",
-                      "input": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('effectiveTargetRgs')[copyIndex('managedResources')])]"
-                    }
-                  ],
-                  "identity": "[parameters('identityId')]"
-                },
-                "actionConfiguration": {
-                  "accessLevel": "[parameters('accessLevel')]",
-                  "identity": "[parameters('identityId')]",
-                  "mode": "[parameters('actionMode')]"
-                },
-                "logConfiguration": {
-                  "applicationInsightsConfiguration": {
-                    "appId": "[parameters('appInsightsAppId')]",
-                    "connectionString": "[parameters('appInsightsConnectionString')]"
-                  }
-                },
-                "upgradeChannel": "Preview",
-                "monthlyAgentUnitLimit": 10000,
-                "defaultModel": {
-                  "provider": "Anthropic",
-                  "name": "Automatic"
-                },
-                "experimentalSettings": {
-                  "EnableWorkspaceTools": true,
-                  "EnableHttpTriggers": true,
-                  "EnableV2AgentLoop": true
-                }
-              },
+              "properties": "[union(variables('networkProperties'), createObject('knowledgeGraphConfiguration', createObject('identity', parameters('identityId'), 'managedResources', variables('managedResourceIds')), 'actionConfiguration', createObject('accessLevel', parameters('accessLevel'), 'identity', parameters('identityId'), 'mode', parameters('actionMode')), 'logConfiguration', createObject('applicationInsightsConfiguration', createObject('appId', parameters('appInsightsAppId'), 'connectionString', parameters('appInsightsConnectionString'))), 'upgradeChannel', 'Preview', 'monthlyAgentUnitLimit', 10000, 'defaultModel', createObject('provider', 'Anthropic', 'name', 'Automatic'), 'experimentalSettings', createObject('EnableWorkspaceTools', true(), 'EnableHttpTriggers', true(), 'EnableV2AgentLoop', true())))]",
               "dependsOn": [
                 "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, parameters('identityId'), variables('logAnalyticsReaderRoleId')))]",
                 "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, parameters('identityId'), variables('monitoringReaderRoleId')))]"
@@ -607,7 +1208,7 @@
             {
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
-              "scope": "[format('Microsoft.App/agents/{0}', parameters('agentName'))]",
+              "scope": "[resourceId('Microsoft.App/agents', parameters('agentName'))]",
               "name": "[guid(resourceId('Microsoft.App/agents', parameters('agentName')), variables('effectiveAdminPrincipalId'), variables('sreAgentAdminRoleId'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('sreAgentAdminRoleId'))]",
@@ -618,9 +1219,26 @@
               ]
             },
             {
+              "copy": {
+                "name": "extraAdmins",
+                "count": "[length(filter(parameters('adminPrincipalIds'), lambda('id', not(equals(lambdaVariables('id'), variables('effectiveAdminPrincipalId'))))))]"
+              },
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
-              "scope": "[format('Microsoft.App/agents/{0}', parameters('agentName'))]",
+              "scope": "[resourceId('Microsoft.App/agents', parameters('agentName'))]",
+              "name": "[guid(resourceId('Microsoft.App/agents', parameters('agentName')), filter(parameters('adminPrincipalIds'), lambda('id', not(equals(lambdaVariables('id'), variables('effectiveAdminPrincipalId')))))[copyIndex()], variables('sreAgentAdminRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('sreAgentAdminRoleId'))]",
+                "principalId": "[filter(parameters('adminPrincipalIds'), lambda('id', not(equals(lambdaVariables('id'), variables('effectiveAdminPrincipalId')))))[copyIndex()]]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.App/agents', parameters('agentName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.App/agents', parameters('agentName'))]",
               "name": "[guid(resourceId('Microsoft.App/agents', parameters('agentName')), parameters('identityId'), variables('sreAgentAdminRoleId'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('sreAgentAdminRoleId'))]",
@@ -645,9 +1263,10 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity')]",
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics')]",
-        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'network')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
       ]
     }
   ],
@@ -658,7 +1277,7 @@
     },
     "AZURE_RESOURCE_GROUP": {
       "type": "string",
-      "value": "[variables('resourceGroupName')]"
+      "value": "[parameters('resourceGroupName')]"
     },
     "AZURE_SUBSCRIPTION_ID": {
       "type": "string",
@@ -670,47 +1289,71 @@
     },
     "SRE_MANAGED_IDENTITY_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.id.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.id.value]"
     },
     "SRE_MANAGED_IDENTITY_PRINCIPAL_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.principalId.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.principalId.value]"
     },
     "SRE_MANAGED_IDENTITY_CLIENT_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.clientId.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'identity'), '2025-04-01').outputs.clientId.value]"
     },
     "SRE_LOG_ANALYTICS_WORKSPACE_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.workspaceId.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.workspaceId.value]"
     },
     "SRE_LOG_ANALYTICS_CUSTOMER_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.customerId.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.customerId.value]"
     },
     "SRE_APP_INSIGHTS_CONNECTION_STRING": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsConnectionString.value]"
     },
     "SRE_APP_INSIGHTS_APP_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsAppId.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'loganalytics'), '2025-04-01').outputs.appInsightsAppId.value]"
     },
     "SRE_CONTAINER_APPS_ENVIRONMENT_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'containerapps'), '2025-04-01').outputs.id.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'containerapps'), '2025-04-01').outputs.id.value]"
     },
     "SRE_CONTAINER_APPS_ENVIRONMENT_NAME": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'containerapps'), '2025-04-01').outputs.name.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'containerapps'), '2025-04-01').outputs.name.value]"
+    },
+    "FRONT_DOOR_ID": {
+      "type": "string",
+      "value": "[if(parameters('deployFrontDoor'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'frontdoor'), '2025-04-01').outputs.id.value, '')]"
+    },
+    "FRONT_DOOR_NAME": {
+      "type": "string",
+      "value": "[if(parameters('deployFrontDoor'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'frontdoor'), '2025-04-01').outputs.name.value, '')]"
+    },
+    "FRONT_DOOR_HOSTNAME": {
+      "type": "string",
+      "value": "[if(parameters('deployFrontDoor'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'frontdoor'), '2025-04-01').outputs.hostName.value, '')]"
     },
     "SRE_AGENT_ID": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'sre-agent'), '2025-04-01').outputs.id.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'sre-agent'), '2025-04-01').outputs.id.value]"
     },
     "SRE_AGENT_NAME": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'sre-agent'), '2025-04-01').outputs.name.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'sre-agent'), '2025-04-01').outputs.name.value]"
+    },
+    "SRE_AGENT_SUBNET_ID": {
+      "type": "string",
+      "value": "[if(parameters('enableVnetIntegration'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'network'), '2025-04-01').outputs.agentSubnetId.value, '')]"
+    },
+    "SRE_KEY_VAULT_NAME": {
+      "type": "string",
+      "value": "[if(parameters('enableVnetIntegration'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'keyvault'), '2025-04-01').outputs.name.value, '')]"
+    },
+    "SRE_KEY_VAULT_URI": {
+      "type": "string",
+      "value": "[if(parameters('enableVnetIntegration'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Resources/deployments', 'keyvault'), '2025-04-01').outputs.uri.value, '')]"
     }
   }
 }
