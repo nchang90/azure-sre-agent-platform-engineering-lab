@@ -33,6 +33,11 @@ resource "azurerm_resource_group" "agent" {
   name     = var.resource_group_name
   location = var.location
   tags     = var.tags
+
+  lifecycle {
+    # Changing an existing resource group's location forces replacement.
+    ignore_changes = [location]
+  }
 }
 
 resource "azurerm_user_assigned_identity" "agent" {
