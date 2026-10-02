@@ -22,6 +22,9 @@ param identityPrincipalId string
 @description('Object ID of the deploying principal. Empty falls back to deployer(). Granted SRE Agent Administrator.')
 param principalId string = ''
 
+@description('Object IDs of additional users/groups granted SRE Agent Administrator.')
+param adminPrincipalIds array = []
+
 @description('Agent access level (Low | High).')
 @allowed([ 'Low', 'High' ])
 param accessLevel string
@@ -146,6 +149,17 @@ resource deployerAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalId: effectiveAdminPrincipalId
   }
 }
+
+// Grant additional users/groups SRE Agent Administrator on the agent. The
+// deployer is skipped so the same assignment is not declared twice.
+resource extraAdmins 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for id in filter(adminPrincipalIds, id => id != effectiveAdminPrincipalId): {
+  name: guid(sreAgent.id, id, sreAgentAdminRoleId)
+  scope: sreAgent
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', sreAgentAdminRoleId)
+    principalId: id
+  }
+}]
 
 // Grant the agent's UAMI SRE Agent Administrator (needed for HTTP-trigger callbacks).
 resource uamiAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

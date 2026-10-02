@@ -8,8 +8,16 @@
     "environmentName": {
       "value": "${AZURE_ENV_NAME}"
     },
+    "resourceGroupName": {
+      "value": "azure-cloud-commanders-${AZURE_ENV_NAME}"
+    },
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
+    },
+    "adminPrincipalIds": {
+      "value": [
+        "3a168e0b-7a73-4dd0-a4f8-80045502775b"
+      ]
     },
     "agentName": {
       "value": "${AGENT_NAME=sre-agent}"
@@ -22,6 +30,9 @@
     },
     "enableVnetIntegration": {
       "value": "${SRE_ENABLE_VNET=true}"
+    },
+    "deployFrontDoor": {
+      "value": "${SRE_DEPLOY_FRONT_DOOR=false}"
     }
   }
 }
