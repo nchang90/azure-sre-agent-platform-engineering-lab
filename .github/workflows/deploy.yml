@@ -74,10 +74,6 @@ jobs:
       - name: Terraform validate
         run: terraform -chdir=infra/terraform validate
 
-      - name: Import existing Terraform resources
-        if: github.event_name == 'schedule' || inputs.apply
-        run: bash scripts/import-existing-terraform-resources.sh "${ENVIRONMENT}" "${RUNTIME}"
-
       - name: Terraform plan
         if: github.event_name == 'schedule' || inputs.plan || inputs.apply
         run: terraform -chdir=infra/terraform plan -out=tfplan -var-file=environments/${{ env.ENVIRONMENT }}.tfvars -var="runtime=${RUNTIME}"
