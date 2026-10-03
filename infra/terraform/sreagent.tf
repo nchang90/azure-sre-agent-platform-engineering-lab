@@ -10,7 +10,7 @@ resource "azapi_resource" "sre_agent" {
   response_export_values = ["properties.agentEndpoint"]
 
   identity {
-    type         = "SystemAssigned, UserAssigned"
+    type         = "UserAssigned"
     identity_ids = [local.effective_identity_id]
   }
 
