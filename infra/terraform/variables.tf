@@ -231,13 +231,18 @@ variable "existing_subnet_id" {
 variable "vnet_address_space" {
   description = "Address space for the agent virtual network."
   type        = string
-  default     = "10.70.0.0/16"
+  default     = "10.70.0.0/24"
 }
 
 variable "agent_subnet_prefix" {
-  description = "Subnet range used by the agent."
+  description = "Subnet range used by the agent. Must be /27 or larger, dedicated, and delegated to Microsoft.App/environments."
   type        = string
-  default     = "10.70.0.0/24"
+  default     = "10.70.0.0/27"
+
+  validation {
+    condition     = tonumber(split("/", var.agent_subnet_prefix)[1]) <= 27
+    error_message = "agent_subnet_prefix must be /27 or larger (e.g. 10.70.0.0/27)."
+  }
 }
 
 variable "enable_app_insights_connector" {
@@ -416,4 +421,10 @@ variable "service_now_password" {
   type        = string
   sensitive   = true
   default     = ""
+}
+
+variable "pe_subnet_prefix" {
+  description = "Subnet range for private endpoints (upstream pe-subnet)."
+  type        = string
+  default     = "10.70.0.32/27"
 }

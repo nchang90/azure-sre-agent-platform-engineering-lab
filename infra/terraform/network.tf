@@ -1,3 +1,5 @@
+# Mirrors microsoft/sre-agent examples/vnet-integrated-keyvault:
+# VNet with a delegated /27 agent subnet and a /27 private-endpoint subnet, no NSG.
 locals {
   vnet_enabled        = var.enable_vnet || var.existing_subnet_id != ""
   create_vnet         = var.enable_vnet && var.existing_subnet_id == ""
@@ -13,122 +15,26 @@ resource "azurerm_virtual_network" "agent" {
   tags                = var.tags
 }
 
-resource "azurerm_network_security_group" "agent" {
-  count               = local.create_vnet ? 1 : 0
-  name                = "nsg-sre-agent-${local.suffix}"
-  resource_group_name = azurerm_resource_group.agent.name
-  location            = var.location
-  tags                = var.tags
-
-  # ── Outbound: Azure service tags ──
-  # Each rule is pinned at a low priority number so they remain effective
-  # even if a broad deny-internet rule is added later.
-
-  security_rule {
-    name                       = "AllowAzureActiveDirectory"
-    priority                   = 100
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureActiveDirectory"
-  }
-
-  security_rule {
-    name                       = "AllowAzureResourceManager"
-    priority                   = 110
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureResourceManager"
-  }
-
-  security_rule {
-    name                       = "AllowAzureMonitor"
-    priority                   = 120
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureMonitor"
-  }
-
-  security_rule {
-    name                       = "AllowStorage"
-    priority                   = 130
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "Storage"
-  }
-
-  security_rule {
-    name                       = "AllowAzureContainerRegistry"
-    priority                   = 140
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureContainerRegistry"
-  }
-
-  security_rule {
-    name                       = "AllowAzureKeyVault"
-    priority                   = 150
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureKeyVault"
-  }
-
-  # Catch-all for any other Azure service (Container Apps control plane,
-  # Event Grid, Service Bus, etc.) not covered by a dedicated service tag above.
-  security_rule {
-    name                       = "AllowAzureCloud"
-    priority                   = 160
-    direction                  = "Outbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "VirtualNetwork"
-    destination_address_prefix = "AzureCloud"
-  }
-}
-
-resource "azurerm_subnet_network_security_group_association" "agent" {
-  count                     = local.create_vnet ? 1 : 0
-  subnet_id                 = azurerm_subnet.agent[0].id
-  network_security_group_id = azurerm_network_security_group.agent[0].id
-}
-
 resource "azurerm_subnet" "agent" {
   count                = local.create_vnet ? 1 : 0
-  name                 = "snet-sre-agent"
+  name                 = "agent-subnet"
   resource_group_name  = azurerm_resource_group.agent.name
   virtual_network_name = azurerm_virtual_network.agent[0].name
   address_prefixes     = [var.agent_subnet_prefix]
 
   delegation {
-    name = "Microsoft.App.environments"
+    name = "app-env-delegation"
     service_delegation {
       name    = "Microsoft.App/environments"
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
+}
+
+resource "azurerm_subnet" "pe" {
+  count                = local.create_vnet ? 1 : 0
+  name                 = "pe-subnet"
+  resource_group_name  = azurerm_resource_group.agent.name
+  virtual_network_name = azurerm_virtual_network.agent[0].name
+  address_prefixes     = [var.pe_subnet_prefix]
 }
