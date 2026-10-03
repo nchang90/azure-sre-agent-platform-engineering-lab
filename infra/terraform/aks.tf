@@ -86,6 +86,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
 # of workspace ingestion and nothing reads them.
 locals {
   container_insights_streams = [
+    "Microsoft-ContainerLogV2",
     "Microsoft-KubePodInventory",
     "Microsoft-KubeNodeInventory",
     "Microsoft-KubeEvents",
