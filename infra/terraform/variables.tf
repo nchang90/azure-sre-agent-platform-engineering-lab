@@ -105,9 +105,9 @@ variable "webapp_image" {
 }
 
 variable "webapp_port" {
-  description = "Container port exposed by the S4 Linux Web App image."
+  description = "Container port exposed by the Linux Web App images."
   type        = number
-  default     = 80
+  default     = 8080
 
   validation {
     condition     = var.webapp_port >= 1 && var.webapp_port <= 65535
