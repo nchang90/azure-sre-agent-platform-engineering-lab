@@ -51,6 +51,9 @@ started this investigation — and S3 keeps remediation and closure manual.
    `work_notes_warning` is present the history could not be read: say so in your
    report rather than assuming the record is empty.
 
+The ServiceNow integration account needs read access to `sys_user_group` and
+permission to update `incident.assignment_group` as well as the note fields.
+
 ## Steps
 
 1. **Post the work note and assign the incident** with `UpdateServiceNowIncident`:
