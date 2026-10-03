@@ -389,7 +389,7 @@ variable "email_receiver_address" {
 }
 
 variable "enable_service_now_connector" {
-  description = "Configure ServiceNow as the incident platform during recipe extras."
+  description = "Configure ServiceNow as the agent's incident management platform."
   type        = bool
   default     = false
 }
@@ -408,5 +408,12 @@ variable "service_now_instance" {
 variable "service_now_username" {
   description = "ServiceNow user for incident polling. Required when enable_service_now_connector=true."
   type        = string
+  default     = ""
+}
+
+variable "service_now_password" {
+  description = "ServiceNow password for incident management. Required when enable_service_now_connector=true."
+  type        = string
+  sensitive   = true
   default     = ""
 }
