@@ -15,6 +15,10 @@ In this lab you reproduce that outage, raise a Priority 1 ServiceNow incident,
 and watch Azure SRE Agent find the root cause and write it back to the
 incident. The agent investigates only; you stay in charge of the fix.
 
+> [!NOTE]
+> This is a synthetic training scenario; the `checkout-api` workload and AKS
+> setup are created specifically for this lab.
+
 ```text
 ServiceNow incident → ServiceNow connector → Azure SRE Agent
   → aks-triage-agent → incident-summary-agent → incident-comms-agent
@@ -275,64 +279,6 @@ and left the fix to you. You followed and questioned the investigation from
 Copilot CLI through the Azure MCP server.
 
 ---
-
-## Reference
-
-### How the incident reaches the agent
-
-With `enable_service_now_connector = true`, the agent's incident platform is
-ServiceNow, so only ServiceNow incidents start an investigation. The Azure
-Monitor alerts in `infra/terraform/alerts.tf` notify people by email and do not
-call the agent. There is no HTTP trigger in this lab.
-
-### Response plans
-
-| Plan | Matches |
-|---|---|
-| `aks-incidents` | Priority 1–3, title contains `checkout-api` |
-| `aks-crashloop-incidents` | Priority 1–2, title contains `AKS - CrashLoop/OOM detected` |
-| `aks-node-pressure-incidents` | Priority 1–2, title contains `AKS node CPU pressure` |
-| `aks-hpa-incidents` | Priority 1–2, title contains `AKS HPA` |
-
-The checked-in plans filter on priority and title only. To also filter on
-assignment group, configuration item or category, use the portal's advanced
-filters: see
-[incident-filters/README.md](../../recipes/azmon-lawappinsights/incident-platforms/servicenow/incident-filters/README.md#advanced-filters-are-a-portal-feature).
-
-### ServiceNow write-back
-
-The `servicenow-incident-update` skill owns all ServiceNow writes through two
-narrow tools:
-
-- `UpdateServiceNowIncident` writes work notes (and comments only when asked).
-  It never touches state, assignment or close fields.
-- `UploadServiceNowAttachment` attaches the RCA.
-
-`scripts/apply-extras.sh` writes `SERVICENOW_URL`, `SERVICENOW_USER` and
-`SERVICENOW_PASS` into the tools when it registers them. If they aren't set,
-as in the GitHub workflow, the tools and the skill are skipped, and the agent
-drafts the update for a person to post instead.
-
-### Three-agent handoff chain
-
-The recipe adapts the roles from
-[`leestott/On-Call-Copilot-Multi-Agent`](https://github.com/leestott/On-Call-Copilot-Multi-Agent),
-which runs four roles concurrently. S3 merges its summary and communication
-roles into a sequential, three-agent Azure SRE Agent chain:
-`aks-triage-agent → incident-summary-agent → incident-comms-agent`.
-
-### Files
-
-| What | Where |
-|---|---|
-| Environment settings | `infra/terraform/environments/demo.tfvars` |
-| Healthy workload | `infra/k8s/checkout-api.yaml` |
-| Selector-drift manifest | `infra/k8s/checkout-api-service-no-endpoints.yaml` |
-| Alert rules | `infra/terraform/alerts.tf` |
-| Agent recipe and ServiceNow tools | `recipes/alert-response-incident-operations/` |
-| Response plans | `recipes/azmon-lawappinsights/incident-platforms/servicenow/incident-filters/` |
-| Skills | `.github/skills/incident-root-cause-analysis/`, `.github/skills/servicenow-incident-update/`, `.github/skills/evidence-before-after/` |
-| AKS runbooks | `knowledge-base/aks-*.md` |
 
 ## Next steps
 

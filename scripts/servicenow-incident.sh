@@ -56,9 +56,7 @@ case "$SCENARIO" in
     CATEGORY="software"
     ;;
   s3)
-    # aks-incidents.yaml matches titleContains "checkout-api"; this is also the
-    # display name of the Azure Monitor alert in infra/terraform/alerts.tf, so a
-    # hand-created incident and an alert-driven one look the same to the agent.
+    # aks-incidents.yaml matches priority 1-2 incidents with "checkout-api" in the title.
     DEFAULT_SHORT="AKS checkout-api service has no endpoints"
     DEFAULT_DESCRIPTION="Checkout availability has dropped below 99% and customer checkout requests are timing out. The checkout-api pods are still Running and Ready and node CPU and memory look normal. A new checkout-api deployment rolled out shortly before the alert."
     IMPACT="1"

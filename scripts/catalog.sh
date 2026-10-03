@@ -201,9 +201,6 @@ configure_catalog_scope() {
       if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
         RESPONSE_PLAN_NAMES=(
           aks-incidents
-          aks-crashloop-incidents
-          aks-node-pressure-incidents
-          aks-hpa-incidents
         )
       else
         RESPONSE_PLAN_NAMES=(
@@ -294,6 +291,6 @@ configure_catalog_scope() {
   log "Common prompts: ${COMMON_PROMPT_NAMES[*]}"
   log "Hooks: ${HOOK_NAMES[*]}"
 
-  [[ ${#RESPONSE_PLAN_NAMES[@]} -eq 1 || ( "$RUNTIME_STACK" == "aks" && "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" && ${#RESPONSE_PLAN_NAMES[@]} -eq 4 ) ]] \
+  [[ ${#RESPONSE_PLAN_NAMES[@]} -eq 1 ]] \
     || die "Unexpected response plans for runtime '$RUNTIME_STACK': ${RESPONSE_PLAN_NAMES[*]:-none}"
 }

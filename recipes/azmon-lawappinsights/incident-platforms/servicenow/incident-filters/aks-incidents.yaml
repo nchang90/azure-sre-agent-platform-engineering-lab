@@ -1,16 +1,12 @@
 metadata:
   name: aks-incidents
 spec:
-  name: S3 Checkout API Incident Response
+  name: S3 High-Priority Checkout API Incident Response
   incidentPlatform: ServiceNow
   isEnabled: true
   priorities:
   - "1"
   - "2"
-  - "3"
-  # Matches both paths into this scenario: the Azure Monitor alert display name
-  # ("AKS checkout-api service has no endpoints") and the incident
-  # scripts/servicenow-incident.sh opens.
   titleContains: checkout-api
   handlingAgent: aks-triage-agent
   agentMode: autonomous
