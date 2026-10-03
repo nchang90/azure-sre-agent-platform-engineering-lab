@@ -98,14 +98,24 @@ output "container_app_environment_id" {
   value       = local.apps_enabled ? azurerm_container_app_environment.cae[0].id : ""
 }
 
+output "orders_api_name" {
+  description = "Name of the orders-api Container App."
+  value       = local.apps_enabled ? azurerm_container_app.orders_api[0].name : ""
+}
+
+output "orders_api_url" {
+  description = "Public URL of orders-api."
+  value       = local.apps_enabled ? "https://${azurerm_container_app.orders_api[0].latest_revision_fqdn}" : ""
+}
+
 output "conference_web_name" {
   description = "Name of the conference-web Linux Web App."
-  value       = local.webapps_enabled ? azurerm_linux_web_app.conference_web[0].name : (local.apps_enabled ? azurerm_container_app.conference_web[0].name : "")
+  value       = local.webapps_enabled ? azurerm_linux_web_app.conference_web[0].name : ""
 }
 
 output "conference_web_url" {
   description = "Public URL of the conference-web Linux Web App."
-  value       = local.apps_enabled ? "https://${azurerm_container_app.conference_web[0].latest_revision_fqdn}" : (local.webapps_enabled ? "https://${azurerm_linux_web_app.conference_web[0].default_hostname}" : "")
+  value       = local.webapps_enabled ? "https://${azurerm_linux_web_app.conference_web[0].default_hostname}" : ""
 }
 
 output "change_lookup_name" {
