@@ -78,17 +78,6 @@ resource "azapi_resource" "sre_agent" {
     }
   }
 
-  lifecycle {
-    precondition {
-      condition = !var.enable_service_now_connector || (
-        var.service_now_instance != "" &&
-        var.service_now_username != "" &&
-        nonsensitive(var.service_now_password != "")
-      )
-      error_message = "ServiceNow incident management requires service_now_instance, service_now_username, and service_now_password."
-    }
-  }
-
   # self_smi_reader / self_smi_log_reader are intentionally NOT listed here:
   # they target the agent's own system-assigned identity, so they must be
   # created after this resource. Listing them would form a dependency cycle.
