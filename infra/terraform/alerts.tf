@@ -139,12 +139,12 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
   }
 }
 
-resource "azurerm_monitor_metric_alert" "orders_api_webapp_5xx" {
+resource "azurerm_monitor_metric_alert" "conference_web_5xx" {
   count               = local.scenario_value == "s2" && local.webapps_enabled ? 1 : 0
-  name                = "Orders API App Service HTTP 5xx"
+  name                = "Conference Web App Service HTTP 5xx"
   resource_group_name = azurerm_resource_group.agent.name
-  scopes              = [azurerm_linux_web_app.orders_api[0].id]
-  description         = "Orders API App Service: more than five platform HTTP 5xx responses in five minutes, including when the worker is unavailable."
+  scopes              = [azurerm_linux_web_app.conference_web[0].id]
+  description         = "Conference Web App Service: more than five platform HTTP 5xx responses in five minutes, including when the worker is unavailable."
   severity            = 1
   frequency           = "PT1M"
   window_size         = "PT5M"
