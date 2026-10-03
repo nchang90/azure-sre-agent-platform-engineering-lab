@@ -141,7 +141,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orders_api_5xx" {
 
 resource "azurerm_monitor_metric_alert" "conference_web_5xx" {
   count               = local.scenario_value == "s2" && local.webapps_enabled ? 1 : 0
-  name                = "Conference Web App Service HTTP 5xx"
+  name                = "Orders API (conference-web) App Service HTTP 5xx"
   resource_group_name = azurerm_resource_group.agent.name
   scopes              = [azurerm_linux_web_app.conference_web[0].id]
   description         = "Conference Web App Service: more than five platform HTTP 5xx responses in five minutes, including when the worker is unavailable."
@@ -156,6 +156,59 @@ resource "azurerm_monitor_metric_alert" "conference_web_5xx" {
     aggregation      = "Total"
     operator         = "GreaterThan"
     threshold        = 5
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.sre_lab[0].id
+  }
+}
+
+# Activity-log alerts are always Sev4, so a stopped site (e.g. Chaos Studio stop fault)
+# needs an availability probe to raise a Sev1 incident matched by s2-orders-api-runtime.
+resource "azurerm_application_insights_standard_web_test" "conference_web_health" {
+  count                   = local.scenario_value == "s2" && local.webapps_enabled ? 1 : 0
+  name                    = "webtest-orders-api-health"
+  resource_group_name     = azurerm_resource_group.agent.name
+  location                = var.location
+  application_insights_id = local.effective_ai_id
+  geo_locations           = ["emea-se-sto-edge", "emea-nl-ams-azr", "emea-gb-db3-azr"]
+  frequency               = 300
+  timeout                 = 30
+  enabled                 = true
+  retry_enabled           = false
+  tags = merge(var.tags, {
+    "hidden-link:${local.effective_ai_id}" = "Resource"
+  })
+
+  request {
+    url = "https://${azurerm_linux_web_app.conference_web[0].default_hostname}/health"
+  }
+
+  validation_rules {
+    expected_status_code        = 200
+    ssl_check_enabled           = true
+    ssl_cert_remaining_lifetime = 7
+  }
+}
+
+resource "azurerm_monitor_metric_alert" "conference_web_down" {
+  count               = local.scenario_value == "s2" && local.webapps_enabled ? 1 : 0
+  name                = "Orders API App Service down"
+  resource_group_name = azurerm_resource_group.agent.name
+  scopes = [
+    azurerm_application_insights_standard_web_test.conference_web_health[0].id,
+    local.effective_ai_id,
+  ]
+  description = "Orders API (conference-web App Service) /health availability test failing from 2+ locations, e.g. site stopped or crashed."
+  severity    = 1
+  frequency   = "PT1M"
+  window_size = "PT5M"
+  tags        = var.tags
+
+  application_insights_web_test_location_availability_criteria {
+    web_test_id           = azurerm_application_insights_standard_web_test.conference_web_health[0].id
+    component_id          = local.effective_ai_id
+    failed_location_count = 2
   }
 
   action {
