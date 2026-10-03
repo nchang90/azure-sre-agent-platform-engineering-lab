@@ -28,6 +28,7 @@ enable_sev01_incident_filter   = true
 ```bash
 gh workflow run deploy.yml \
   -f environment=dev \
+  -f runtime=webapp \
   -f plan=true \
   -f apply=true
 

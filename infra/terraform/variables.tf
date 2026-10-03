@@ -83,18 +83,18 @@ variable "tags" {
 }
 
 variable "scenario" {
-  description = "Scenario selector for lab behavior and runtime mapping (s1-s5)."
+  description = "Scenario selector for lab behavior (s1-s5)."
   type        = string
 }
 
 variable "runtime" {
-  description = "Optional S2 application runtime override. Leave empty to use the App Service default."
+  description = "Application runtime. Leave empty to use Container Apps (or no application for S5)."
   type        = string
   default     = ""
 
   validation {
-    condition     = var.runtime == "" || contains(["containerapps", "webapp"], var.runtime)
-    error_message = "runtime must be empty, containerapps, or webapp."
+    condition     = var.runtime == "" || contains(["containerapps", "webapp", "aks"], var.runtime)
+    error_message = "runtime must be empty, containerapps, webapp, or aks."
   }
 }
 

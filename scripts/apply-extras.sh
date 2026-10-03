@@ -48,10 +48,10 @@ ENVIRONMENT selects matching Terraform files:
 
 The selected tfvars file scopes the catalog:
   all environments   -> all skills and scenario-scoped knowledge-base docs
-  each scenario      -> exactly one scenario-scoped incident response plan
+  runtime/scenario   -> scoped incident response plans
   scenario = s1..s6        -> primary scenario selector
-  S2 runtime         -> deployed Terraform runtime_stack (webapp or containerapps)
-  fixed runtimes     -> s1=containerapps, s3=aks, s4=webapp, s5=none
+  application runtime -> deployed Terraform runtime_stack (containerapps, webapp, aks)
+  default runtimes    -> containerapps, except s5=none (monitoring-only)
 
 Examples:
   bash scripts/apply-extras.sh sbox
@@ -102,13 +102,12 @@ resolve_runtime_stack() {
     return
   fi
 
-  if [[ "$scenario" == "s2" ]]; then
-    runtime="$(terraform -chdir=infra/terraform output -raw runtime_stack 2>/dev/null | tr -d '\r' || true)"
-    if [[ "$runtime" == "webapp" || "$runtime" == "containerapps" ]]; then
-      printf '%s\n' "$runtime"
-      return
-    fi
+  runtime="$(terraform -chdir=infra/terraform output -raw runtime_stack 2>/dev/null | tr -d '\r' || true)"
+  if [[ "$runtime" == "webapp" || "$runtime" == "containerapps" || "$runtime" == "aks" || "$runtime" == "none" ]]; then
+    printf '%s\n' "$runtime"
+    return
   fi
+  runtime=""
 
   runtime="${runtime:-$(scenario_runtime "$scenario")}" \
     || die "Unsupported scenario '$scenario' in $TFVARS_FILE. Expected one of: $ALL_SCENARIOS"

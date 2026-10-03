@@ -5,7 +5,7 @@ metadata:
 spec:
   prompt: |
     For S4 alert response and incident operations, start with alert-investigator when an
-    Azure Monitor availability or 5xx alert fires for orders-api on App Service. Preserve
+    Azure Monitor availability or 5xx alert fires for orders-api on the deployed runtime. Preserve
     the same incident conversation context through this handoff chain:
 
     alert-investigator -> incident-summary-agent -> incident-comms-agent

@@ -12,12 +12,13 @@ on:
           - dev
         default: sbox
       runtime:
-        description: "S2 application runtime"
+        description: "Application runtime"
         type: choice
         options:
-          - webapp
           - containerapps
-        default: webapp
+          - webapp
+          - aks
+        default: containerapps
       plan:
         description: "Run Terraform plan"
         type: boolean
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ inputs.environment || 'sbox' }}
-      RUNTIME: ${{ inputs.runtime || 'webapp' }}
+      RUNTIME: ${{ inputs.runtime || 'containerapps' }}
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}

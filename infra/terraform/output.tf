@@ -89,7 +89,7 @@ output "acr_login_server" {
 }
 
 output "runtime_stack" {
-  description = "Runtime selected by the scenario."
+  description = "Selected application runtime."
   value       = local.apps_enabled ? "containerapps" : (local.aks_enabled ? "aks" : (local.webapps_enabled ? "webapp" : "none"))
 }
 

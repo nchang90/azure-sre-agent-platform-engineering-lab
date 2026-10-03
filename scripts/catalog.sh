@@ -37,8 +37,8 @@ ALL_SKILL_NAMES=(
   triage-app-errors
 )
 
-# The single source of truth for which scenarios exist and what runtime each
-# targets. apply-extras.sh resolves the runtime from here, so adding a scenario
+# The single source of truth for which scenarios exist and their default runtime.
+# apply-extras.sh falls back to this mapping, so adding a scenario
 # is one line rather than edits across three files. Deliberately a case rather
 # than an associative array: those need bash 4, and this has to run on macOS too.
 ALL_SCENARIOS="s1 s2 s3 s4 s5 s6"
@@ -46,9 +46,9 @@ ALL_SCENARIOS="s1 s2 s3 s4 s5 s6"
 scenario_runtime() {
   case "$1" in
     s1)    echo containerapps ;;
-    s2)    echo webapp ;;
-    s3)    echo aks ;;
-    s4)    echo webapp ;;
+    s2)    echo containerapps ;;
+    s3)    echo containerapps ;;
+    s4)    echo containerapps ;;
     s5)    echo none ;;
     s6)    echo containerapps ;;
     *)     return 1 ;;
@@ -167,8 +167,8 @@ configure_catalog_scope() {
       log "Skipping runtime subagents for runtime_stack=none."
       ;;
     webapp)
-      if [[ "$SCENARIO" == "s2" ]]; then
-        log "Including App Service incident catalog for S2."
+      if [[ "$SCENARIO" == "s2" || "$SCENARIO" == "s3" ]]; then
+        log "Including App Service incident catalog for $SCENARIO."
         SUBAGENT_NAMES+=(
           triage-agent
         )
@@ -190,9 +190,9 @@ configure_catalog_scope() {
       ;;
   esac
 
-  case "$SCENARIO" in
-    s3)
-      log "Including S3 AKS incident catalog from scenario=s3."
+  case "$SCENARIO:$RUNTIME_STACK" in
+    *:aks)
+      log "Including S3 AKS incident catalog from runtime_stack=aks."
       SUBAGENT_NAMES=(
         aks-triage-agent
         incident-summary-agent
@@ -238,8 +238,8 @@ configure_catalog_scope() {
         s3-aks-incident
       )
       ;;
-    s2)
-      log "Including S2 autonomous remediation knowledge base from scenario=s2."
+    s2:containerapps|s2:webapp|s3:containerapps|s3:webapp)
+      log "Including application remediation knowledge base for $SCENARIO."
       RESPONSE_PLAN_NAMES=(
         s2-orders-api-runtime
       )
@@ -267,7 +267,7 @@ configure_catalog_scope() {
         s2-require-approval-for-deployment-changes
       )
       ;;
-    s4)
+    s4:*)
       log "Including S4 alert response incident-operations catalog from scenario=s4."
       # S4 reuses the alert-response-incident-operations handoff chain, swapping
       # the AKS triage head for alert-investigator (already in the base set).
@@ -280,13 +280,13 @@ configure_catalog_scope() {
         s4-alert-response
       )
       ;;
-    s5)
+    s5:*)
       log "Including S5 PIM elevation audit catalog from scenario=s5."
       SUBAGENT_NAMES+=(
         pim-elevation
       )
       ;;
-    "")
+    :*)
       log "No scenario-specific extras requested."
       ;;
   esac
@@ -294,6 +294,6 @@ configure_catalog_scope() {
   log "Common prompts: ${COMMON_PROMPT_NAMES[*]}"
   log "Hooks: ${HOOK_NAMES[*]}"
 
-  [[ ${#RESPONSE_PLAN_NAMES[@]} -eq 1 ]] \
-    || die "Scenario '${SCENARIO:-unscoped}' must select exactly one response plan; selected: ${RESPONSE_PLAN_NAMES[*]:-none}"
+  [[ ${#RESPONSE_PLAN_NAMES[@]} -eq 1 || ( "$RUNTIME_STACK" == "aks" && "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" && ${#RESPONSE_PLAN_NAMES[@]} -eq 4 ) ]] \
+    || die "Unexpected response plans for runtime '$RUNTIME_STACK': ${RESPONSE_PLAN_NAMES[*]:-none}"
 }
