@@ -57,7 +57,7 @@ By the end of this lab, you can:
 1. Run the deployment workflow for the `demo` environment:
 
    ```bash
-   gh workflow run deploy.yml -f environment=demo -f plan=true -f apply=true
+   gh workflow run deploy.yml -f environment=demo -f runtime=aks -f plan=true -f apply=true
    gh run watch
    ```
 

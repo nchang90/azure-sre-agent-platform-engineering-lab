@@ -21,8 +21,10 @@ Steps and tfvars guidance: [scenarios/README.md](scenarios/README.md).
 
 `azd up` (see [azure.yaml](azure.yaml)), or run the workflows:
 
-- [`deploy.yml`](.github/workflows/deploy.yml) — daily schedule + manual. Inputs: `environment` (`demo`/`sbox`/`dev`), S2 `runtime` (`webapp` default or `containerapps`), `plan`, `apply`.
+- [`deploy.yml`](.github/workflows/deploy.yml) — daily schedule + manual. Inputs: `environment` (`demo`/`sbox`/`dev`), `runtime` (`containerapps` default, `webapp`, or `aks`), `plan`, `apply`. Scheduled runs use Container Apps. Runtime selection takes precedence over the environment's scenario; Web App and AKS are opt-in.
 - [`destroy.yml`](.github/workflows/destroy.yml) — daily schedule + manual.
+
+For direct Terraform deployments, select `-var="runtime=webapp"` for the App Service scenarios or `-var="runtime=aks"` for the AKS scenario. Without a runtime selection, Terraform defaults to Container Apps (S5 remains monitoring-only).
 
 State lives in the `tfstate` container of the `terraformstatesboxprd` storage account (`terraform-tfstate` resource group), one key per environment — see [`infra/terraform/backend/`](infra/terraform/backend/).
 
