@@ -67,7 +67,7 @@ deploy_aks_workload() {
 }
 
 build_and_update_images() {
-  local acr_name login_server orders_api change_lookup runtime_stack agent_id resource_group
+  local acr_name login_server orders_api change_lookup conference_web runtime_stack agent_id resource_group
   acr_name="$(read_tf acr_name)"
 
   if [[ -z "$acr_name" ]]; then
@@ -78,6 +78,7 @@ build_and_update_images() {
   login_server="$(read_tf acr_login_server)"
   orders_api="$(read_tf orders_api_name)"
   change_lookup="$(read_tf change_lookup_name)"
+  conference_web="$(read_tf conference_web_name)"
   runtime_stack="$(read_tf runtime_stack)"
   agent_id="$(read_tf agent_id)"
   resource_group="$(cut -d/ -f5 <<<"$agent_id")"
@@ -95,7 +96,7 @@ build_and_update_images() {
       ok "Container Apps updated."
       ;;
     webapp)
-      az webapp restart --resource-group "$resource_group" --name "$orders_api"
+      az webapp restart --resource-group "$resource_group" --name "$conference_web"
       if [[ -n "$change_lookup" ]]; then
         az acr build --registry "$acr_name" --image change-lookup:latest src/change-lookup/
         az webapp restart --resource-group "$resource_group" --name "$change_lookup"
