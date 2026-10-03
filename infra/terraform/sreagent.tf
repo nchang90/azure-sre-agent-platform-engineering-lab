@@ -46,7 +46,7 @@ resource "azapi_resource" "sre_agent" {
           username = var.service_now_username
           password = var.service_now_password
         })
-      } : {
+        } : {
         type           = "AzMonitor"
         connectionName = "azmonitor"
       }
