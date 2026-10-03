@@ -29,10 +29,9 @@ Use these as primary references before relying on other external sources:
 - An operator explicitly asks to post an update or attach a report to an
   incident.
 
-Do not use to open an incident, change its state, reassign it, or resolve or
-close it. The incident already exists — the operator created it, and matching it
-is what started this investigation — and S3 keeps remediation and closure
-manual.
+Do not use to open an incident, change its state, or resolve or close it. The
+incident already exists — the operator created it, and matching it is what
+started this investigation — and S3 keeps remediation and closure manual.
 
 ## Before writing anything
 
@@ -52,13 +51,19 @@ manual.
    `work_notes_warning` is present the history could not be read: say so in your
    report rather than assuming the record is empty.
 
+The ServiceNow integration account needs read access to `sys_user_group` and
+permission to update `incident.assignment_group` as well as the note fields.
+
 ## Steps
 
-1. **Post the work note** with `UpdateServiceNowIncident`:
+1. **Post the work note and assign the incident** with `UpdateServiceNowIncident`:
    - `sys_id`: the value returned by `LookupServiceNowIncident`, which skips a
      second number lookup. Fall back to `incident_number` only if the lookup was
      unavailable.
    - `work_note`: the update, in the format below.
+   - The tool assigns the incident to the active ServiceNow group named
+     `Incident management`. If the group is missing or ambiguous, the tool
+     refuses the update rather than posting a note without the assignment.
    - Leave `additional_comments` empty unless the operator explicitly asked for
      a customer-visible comment — work notes are internal, comments are not.
    - Surface the incident as a markdown hyperlink `[<number>](<link>)` using the
@@ -96,10 +101,10 @@ No remediation has been performed by the agent.
 
 ## Safety rules
 
-- **Notes only.** `LookupServiceNowIncident` is read-only.
-  `UpdateServiceNowIncident` writes `work_notes` and, when explicitly asked,
-  `comments`. Neither touches state, assignment or close fields. Do not attempt
-  to work around that.
+- **No state or closure changes.** `LookupServiceNowIncident` is read-only.
+  `UpdateServiceNowIncident` writes `work_notes`, assigns the incident to
+  `Incident management`, and writes `comments` only when explicitly asked. It
+  never touches state or close fields.
 - **Never claim remediation.** S3 keeps remediation manual. The work note must
   state that no remediation was performed, and must never describe a
   recommendation as if it had been applied.
@@ -120,5 +125,6 @@ The record was read before it was written, no duplicate update was posted, and
 the work note names a specific root cause with its confidence, states what
 stayed healthy, names the correlated change or says none was found, recommends a
 next step marked as requiring approval, states that no remediation was
-performed, and links the attached evidence. The incident is surfaced as
+performed, and links the attached evidence. The incident is assigned to
+`Incident management` and is surfaced as
 `[<number>](<link>)`.

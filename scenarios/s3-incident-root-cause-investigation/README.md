@@ -230,8 +230,9 @@ tools, so it skips them. Register them from your machine:
    **5 Whys** that ends at the missing guardrail: nothing checks that a
    Service selector matches its pods.
 
-3. Confirm the incident state is unchanged. The agent can add notes but can't
-   resolve or reassign an incident.
+3. Confirm the incident is assigned to the **Incident management** group and its
+   state is unchanged. The agent can add notes and assign the group, but can't
+   resolve or close the incident.
 
 ---
 
