@@ -7,11 +7,12 @@ spec:
   connector: ''
   toolMode: Auto
   description: |-
-    Post an investigation update to an EXISTING ServiceNow incident as a work note. Takes the
-    incident number (e.g. INC0010001) and resolves its sys_id, or accepts a sys_id directly.
+    Post an investigation update to an EXISTING ServiceNow incident as a work note and assign
+    it to the Incident management group. Takes the incident number (e.g. INC0010001) and resolves
+    its sys_id, or accepts a sys_id directly.
     Returns the incident number, sys_id, and a clickable portal `link` — always surface the
     incident as `[<number>](<link>)`, never the bare number. This tool never creates an incident,
-    never changes incident state, and never closes or resolves a record: it only appends notes.
+    changes incident state, or closes or resolves a record.
   functionCode: |-
     import requests
 
@@ -51,9 +52,30 @@ spec:
                     return {"success": False, "error": f"No ServiceNow incident found with number {incident_number}."}
                 target_sys_id = matches[0].get("sys_id", "")
 
-            # Only note fields are ever written. State, assignment and close fields are
-            # deliberately omitted so an agent update can never resolve an incident.
-            payload = {"work_notes": work_note}
+            group_lookup = requests.get(
+                f"{SERVICENOW_URL}/api/now/table/sys_user_group",
+                auth=auth,
+                headers=headers,
+                params={
+                    "sysparm_query": "name=Incident management^active=true",
+                    "sysparm_fields": "sys_id,name",
+                    "sysparm_limit": 2,
+                },
+                timeout=20
+            )
+            group_lookup.raise_for_status()
+            groups = group_lookup.json().get("result", [])
+            if not groups:
+                return {"success": False, "error": "Active ServiceNow assignment group 'Incident management' was not found."}
+            if len(groups) > 1:
+                return {"success": False, "error": "Multiple active ServiceNow assignment groups named 'Incident management' were found; refusing to assign ambiguously."}
+            group_sys_id = groups[0].get("sys_id", "")
+            if not group_sys_id:
+                return {"success": False, "error": "ServiceNow assignment group 'Incident management' has no sys_id."}
+
+            # State and close fields are deliberately omitted so an agent update
+            # cannot resolve or close an incident.
+            payload = {"work_notes": work_note, "assignment_group": group_sys_id}
             if additional_comments.strip():
                 payload["comments"] = additional_comments
 
@@ -74,7 +96,8 @@ spec:
                 "sys_id": target_sys_id,
                 "state": result.get("state", ""),
                 "link": link,
-                "message": f"Work note added to incident {number}. Clickable link: {link}"
+                "assignment_group": "Incident management",
+                "message": f"Work note added and incident {number} assigned to Incident management. Clickable link: {link}"
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
