@@ -3,6 +3,7 @@ resource_group_name    = "rg-sre-lab-dev"
 location               = "swedencentral"
 target_resource_groups = ["rg-sre-lab-dev"]
 scenario               = "s2"
+runtime                = "webapp"
 access_level           = "High"
 action_mode            = "Autonomous"
 upgrade_channel        = "Preview"
