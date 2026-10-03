@@ -97,10 +97,6 @@ build_and_update_images() {
       ;;
     webapp)
       az webapp restart --resource-group "$resource_group" --name "$conference_web"
-      if [[ -n "$change_lookup" ]]; then
-        az acr build --registry "$acr_name" --image change-lookup:latest src/change-lookup/
-        az webapp restart --resource-group "$resource_group" --name "$change_lookup"
-      fi
       ok "App Service apps restarted."
       ;;
     *)
