@@ -103,9 +103,9 @@ output "conference_web_name" {
   value       = local.webapps_enabled ? azurerm_linux_web_app.conference_web[0].name : (local.apps_enabled ? azurerm_container_app.conference_web[0].name : "")
 }
 
-output "orders_api_url" {
-  description = "Public URL of orders-api."
-  value       = local.apps_enabled ? "https://${azurerm_container_app.orders_api[0].latest_revision_fqdn}" : (local.webapps_enabled ? "https://${azurerm_linux_web_app.orders_api[0].default_hostname}" : "")
+output "conference_web_url" {
+  description = "Public URL of the conference-web Linux Web App."
+  value       = local.apps_enabled ? "https://${azurerm_container_app.conference_web[0].latest_revision_fqdn}" : (local.webapps_enabled ? "https://${azurerm_linux_web_app.conference_web[0].default_hostname}" : "")
 }
 
 output "change_lookup_name" {
