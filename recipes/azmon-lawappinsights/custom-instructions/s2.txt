@@ -5,7 +5,7 @@ For S2 AI web app production incidents, treat `/api/orders` 5xx spikes as the pr
 - investigate-azure-alerts
 - triage-app-errors
 
-Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies (including Foundry/backend calls), the selected deployment runtime, deployment history, and change-lookup context. Investigate only resources matching that runtime.
+Search memory and knowledge sources before proposing remediation. Correlate Azure Monitor alerts with Application Insights requests, exceptions, dependencies (including Foundry/backend calls), the selected deployment runtime, deployment history, and configuration changes. Investigate only resources matching that runtime.
 
 For S2 incidents, detect and report these high-level issue categories:
 - HTTP 5xx spikes

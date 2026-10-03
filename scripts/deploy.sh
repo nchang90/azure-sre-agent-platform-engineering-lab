@@ -84,10 +84,10 @@ build_and_update_images() {
 
   log "Building images in ACR: $acr_name"
   az acr build --registry "$acr_name" --image orders-api:latest src/orders-api/
-  az acr build --registry "$acr_name" --image change-lookup:latest src/change-lookup/
 
   case "$runtime_stack" in
     containerapps)
+      az acr build --registry "$acr_name" --image change-lookup:latest src/change-lookup/
       az containerapp update --name "$orders_api" --resource-group "$resource_group" \
         --image "$login_server/orders-api:latest" --output none
       az containerapp update --name "$change_lookup" --resource-group "$resource_group" \
@@ -96,7 +96,10 @@ build_and_update_images() {
       ;;
     webapp)
       az webapp restart --resource-group "$resource_group" --name "$orders_api"
-      az webapp restart --resource-group "$resource_group" --name "$change_lookup"
+      if [[ -n "$change_lookup" ]]; then
+        az acr build --registry "$acr_name" --image change-lookup:latest src/change-lookup/
+        az webapp restart --resource-group "$resource_group" --name "$change_lookup"
+      fi
       ok "App Service apps restarted."
       ;;
     *)
