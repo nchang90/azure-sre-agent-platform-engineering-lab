@@ -350,7 +350,7 @@ register_response_plan_file() {
   jq -nc --arg name "$plan_id" --argjson props "$props" \
     '{name:$name, type:"IncidentFilter", tags:[], properties:$props}' >"$body"
 
-  for attempt in {1..8}; do
+  for attempt in 1 2 3 4; do
     code="$(put_json_file "/api/v2/extendedAgent/incidentFilters/${plan_id}" "$body")"
     if is_success_http "$code"; then
       ok "  Response plan -> ${handling_agent} (${plan_id})"
@@ -358,13 +358,14 @@ register_response_plan_file() {
     fi
 
     summary="$(response_summary)"
-    if [[ "$attempt" -lt 8 && "$code" == "400" && -n "$expected_platform" && "$summary" == *"Incident platform '${expected_platform}' does not match configured incident management type"* ]]; then
+    if [[ "$attempt" -lt 4 && "$code" == "400" && -n "$expected_platform" && "$summary" == *"Incident platform '${expected_platform}' does not match configured incident management type"* ]]; then
       local actual_type
       actual_type="$(current_incident_platform_type)"
       if [[ -n "$actual_type" && "$actual_type" != "None" && "$actual_type" != "$expected_platform" ]]; then
         die "Response plan '${plan_id}' expects incident platform '${expected_platform}', but the agent is configured for '${actual_type}'."
       fi
-      warn "  Response plan '${plan_id}' is waiting for incident platform '${expected_platform}' to finish initializing; retrying."
+      warn "  Response plan '${plan_id}' is waiting for incident platform '${expected_platform}' to finish initializing."
+      wait_for_incident_platform "$expected_platform" 4 15 || true
       sleep 15
       continue
     fi
@@ -388,45 +389,16 @@ register_response_plan_file() {
   done
 }
 
-configure_incident_platform() {
-  local patch_file="$TMP_DIR/incident-platform.json"
+verify_incident_platform() {
   local platform_type="AzMonitor"
-  local connection_name="azmonitor"
 
   if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
     platform_type="ServiceNow"
-    connection_name="servicenow"
-
-    [[ -n "$SERVICE_NOW_INSTANCE" ]] || die "service_now_instance is required when enable_service_now_connector=true"
-    [[ -n "$SERVICE_NOW_USERNAME" ]] || die "service_now_username is required when enable_service_now_connector=true"
-    [[ -n "$SERVICE_NOW_PASSWORD" ]] || die "TF_VAR_service_now_password, SERVICENOW_PASSWORD or SERVICENOW_PASS is required when enable_service_now_connector=true"
   fi
 
-  log "Configuring incident platform: $platform_type"
-  if [[ "$ENABLE_SERVICE_NOW_CONNECTOR" == "true" ]]; then
-    jq -n \
-      --arg type "$platform_type" \
-      --arg connectionName "$connection_name" \
-      --arg connectionUrl "$SERVICE_NOW_INSTANCE" \
-      --arg endpoint "$SERVICE_NOW_INSTANCE" \
-      --arg username "$SERVICE_NOW_USERNAME" \
-      --arg password "$SERVICE_NOW_PASSWORD" \
-      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName, connectionUrl:$connectionUrl, connectionKey:({endpoint:$endpoint, username:$username, password:$password} | tojson)}}}' >"$patch_file"
-  else
-    jq -n --arg type "$platform_type" --arg connectionName "$connection_name" \
-      '{properties:{incidentManagementConfiguration:{type:$type, connectionName:$connectionName}}}' >"$patch_file"
-  fi
-
-  if az rest --method PATCH \
-    --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
-    --headers "Content-Type=application/json" \
-    --body @"$patch_file" \
-    --output none 2>/dev/null; then
-    ok "  Incident platform: $platform_type"
-    wait_for_incident_platform "$platform_type" 8 15 || warn "  Incident platform has not reported ready yet; response plan registration will retry if needed."
-  else
-    warn "  Could not configure incident platform: $platform_type"
-  fi
+  log "Verifying Terraform-configured incident platform: $platform_type"
+  wait_for_incident_platform "$platform_type" 8 15 \
+    || die "Terraform-created agent did not expose expected incident platform '$platform_type'."
 }
 
 upload_knowledge_base() {
@@ -613,7 +585,7 @@ main() {
   cleanup_out_of_scope "Skill" "/api/v2/extendedAgent/skills" ALL_SKILL_NAMES SKILL_NAMES
   register_subagents
   cleanup_out_of_scope "Subagent" "/api/v2/extendedAgent/agents" ALL_SUBAGENT_NAMES SUBAGENT_NAMES
-  configure_incident_platform
+  verify_incident_platform
   create_response_plans
   cleanup_unselected_response_plans
   ok "Recipe extras applied"

@@ -37,6 +37,19 @@ resource "azapi_resource" "sre_agent" {
         provider = var.default_model_provider
         name     = var.default_model_name
       }
+      incidentManagementConfiguration = var.enable_service_now_connector ? {
+        type           = "ServiceNow"
+        connectionName = "servicenow"
+        connectionUrl  = var.service_now_instance
+        connectionKey = jsonencode({
+          endpoint = var.service_now_instance
+          username = var.service_now_username
+          password = var.service_now_password
+        })
+      } : {
+        type           = "AzMonitor"
+        connectionName = "azmonitor"
+      }
       experimentalSettings = {
         EnableWorkspaceTools = true
         EnableHttpTriggers   = true
@@ -62,6 +75,17 @@ resource "azapi_resource" "sre_agent" {
           }
         }
       } : null
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition = !var.enable_service_now_connector || (
+        var.service_now_instance != "" &&
+        var.service_now_username != "" &&
+        nonsensitive(var.service_now_password != "")
+      )
+      error_message = "ServiceNow incident management requires service_now_instance, service_now_username, and service_now_password."
     }
   }
 
