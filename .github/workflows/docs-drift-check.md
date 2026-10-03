@@ -17,6 +17,13 @@ permissions:
   contents: read
   copilot-requests: write
 
+# Allow transient inference throttling to clear between the three retries.
+engine:
+  id: copilot
+  harness:
+    initial-delay-ms: 60000
+    max-delay-ms: 180000
+
 # Backstop only. The real protection is the anti-retry rule in "Write the
 # corrections" below: a deterministic create_pull_request failure must not be
 # retried, or the run burns its budget looping on the same error.
