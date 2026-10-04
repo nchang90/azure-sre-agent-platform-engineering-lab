@@ -1,5 +1,5 @@
 agent_name             = "sre-agent-demo-01"
-resource_group_name    = "rg-sre-lab-demo-agent"
+resource_group_name    = "rg-sre-lab-summit-demo"
 location               = "swedencentral"
 target_resource_groups = []
 scenario               = "s3"
