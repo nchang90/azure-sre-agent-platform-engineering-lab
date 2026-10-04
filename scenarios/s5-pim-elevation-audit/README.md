@@ -32,12 +32,12 @@ nano recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml
 # Replace: REPLACE_WITH_WORKSPACE_ID with your workspace ID
 
 # Register the agent
-az resource create --resource-type Microsoft.App/agents@2025-05-01-preview \
+az resource create --resource-type Microsoft.App/agents@2026-01-01 \
   --name pim-elevation-agent \
   --properties @recipes/azmon-lawappinsights/agents/pim-elevation-agent.yaml
 
 # ✅ Check: Verify agent registered
-az resource list --resource-type Microsoft.App/agents@2025-05-01-preview
+az resource list --resource-type Microsoft.App/agents@2026-01-01
 ```
 
 **Step 2: Perform a test PIM elevation** (1 min)
@@ -67,7 +67,7 @@ az resource list --resource-type Microsoft.AAD/tenants --query "[].id" | xargs -
 ```bash
 # Run the PIM elevation agent manually (or wait for daily schedule)
 az resource invoke-action --resource-group <rg> \
-  --resource-type Microsoft.App/agents@2025-05-01-preview \
+  --resource-type Microsoft.App/agents@2026-01-01 \
   --name pim-elevation-agent \
   --action trigger
 

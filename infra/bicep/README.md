@@ -14,7 +14,7 @@ everything else builds on and emits outputs the Terraform layer
 | Log Analytics workspace | `Microsoft.OperationalInsights/workspaces` | `loganalytics.bicep` | PerGB2018, 30-day retention |
 | Application Insights | `Microsoft.Insights/components` | `loganalytics.bicep` | Workspace-based; the agent's log config points here |
 | Container Apps environment | `Microsoft.App/managedEnvironments` | `containerapps.bicep` | Wired to the Log Analytics workspace |
-| Base SRE Agent | `Microsoft.App/agents@2025-05-01-preview` | `sre-agent.bicep` | Mirrors Microsoft's official `agent-core.bicep` |
+| Base SRE Agent | `Microsoft.App/agents@2026-01-01` | `sre-agent.bicep` | Mirrors Microsoft's official `agent-core.bicep` |
 | RBAC | `Microsoft.Authorization/roleAssignments` | `sre-agent.bicep` | Monitoring Reader + Log Analytics Reader on the RG, SRE Agent Administrator |
 | VNet (1 × /27) | `Microsoft.Network/virtualNetworks` | `network.bicep` | Agent subnet delegated to `Microsoft.App/environments`, with a `Microsoft.KeyVault` service endpoint. Skipped when `SRE_ENABLE_VNET=false` |
 | Key Vault | `Microsoft.KeyVault/vaults` | `keyvault.bicep` | Firewall denies all but the agent subnet; agent identity gets Key Vault Secrets User. Skipped when `SRE_ENABLE_VNET=false` |

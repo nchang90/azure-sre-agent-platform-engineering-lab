@@ -101,7 +101,7 @@ resource logReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 
 // ── Base SRE Agent ────────────────────────────────────────────────────────────
 #disable-next-line BCP081
-resource sreAgent 'Microsoft.App/agents@2025-05-01-preview' = {
+resource sreAgent 'Microsoft.App/agents@2026-01-01' = {
   name: agentName
   location: location
   tags: tags
