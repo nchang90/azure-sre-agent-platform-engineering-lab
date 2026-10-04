@@ -1,7 +1,7 @@
 resource "azapi_resource" "sre_agent" {
   count                     = var.deploy_sre_agent ? 1 : 0
   schema_validation_enabled = false
-  type                      = "Microsoft.App/agents@2025-05-01-preview"
+  type                      = "Microsoft.App/agents@2026-01-01"
   name                      = var.agent_name
   location                  = var.location
   parent_id                 = azurerm_resource_group.agent.id
