@@ -35,23 +35,6 @@ resource "azurerm_role_assignment" "aks_action_contributor" {
   principal_type       = "ServicePrincipal"
 }
 
-resource "azurerm_role_assignment" "self_smi_reader" {
-  count                = var.deploy_sre_agent ? 1 : 0
-  scope                = azurerm_resource_group.agent.id
-  role_definition_name = "Reader"
-  principal_id         = azapi_resource.sre_agent[0].identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-}
-
-resource "azurerm_role_assignment" "self_smi_log_reader" {
-  count                = var.deploy_sre_agent ? 1 : 0
-  scope                = azurerm_resource_group.agent.id
-  role_definition_name = "Log Analytics Reader"
-  principal_id         = azapi_resource.sre_agent[0].identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-}
-
-
 resource "azurerm_role_assignment" "deployer_admin" {
   count              = var.deploy_sre_agent ? 1 : 0
   scope              = azapi_resource.sre_agent[0].id
