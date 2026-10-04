@@ -208,7 +208,7 @@ auth() {
 
 current_incident_platform_type() {
   { az rest --method GET \
-      --url "https://management.azure.com${AGENT_ID}?api-version=2025-05-01-preview" \
+      --url "https://management.azure.com${AGENT_ID}?api-version=2026-01-01" \
       --query "properties.incidentManagementConfiguration.type" \
       -o tsv 2>/dev/null || true; } | tr -d '\r'
 }
