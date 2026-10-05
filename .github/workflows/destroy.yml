@@ -69,4 +69,29 @@ jobs:
         run: terraform -chdir=infra/terraform init -backend-config=backend/${{ matrix.environment }}.backend.tfvars
 
       - name: Terraform destroy
-        run: terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file=environments/${{ matrix.environment }}.tfvars
+        shell: bash
+        env:
+          TFVARS_FILE: environments/${{ matrix.environment }}.tfvars
+        run: |
+          destroy_log=$(mktemp)
+          trap 'rm -f "$destroy_log"' EXIT
+
+          if terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file="$TFVARS_FILE" 2>&1 | tee "$destroy_log"; then
+            exit 0
+          fi
+
+          if ! grep -q 'Cannot delete data connector .* because agent is in Failed state' "$destroy_log"; then
+            exit 1
+          fi
+
+          # Azure blocks connector deletion for Failed agents; delete the parent first.
+          agent_id=$(terraform -chdir=infra/terraform show -json | jq -er '
+            .values.root_module.resources[]?
+            | select(.address == "azapi_resource.sre_agent[0]")
+            | .values.id // empty
+          ')
+          az resource delete --ids "$agent_id" --api-version 2025-05-01-preview
+          az resource wait --ids "$agent_id" --api-version 2025-05-01-preview --deleted --interval 10 --timeout 1800
+
+          # Keep state intact so Terraform reconciles the deleted agent and connectors.
+          terraform -chdir=infra/terraform destroy -auto-approve -refresh=false -var-file="$TFVARS_FILE"
