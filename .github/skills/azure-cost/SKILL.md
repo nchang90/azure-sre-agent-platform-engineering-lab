@@ -7,6 +7,19 @@ description: Estimate Azure pricing and analyze Azure spend using cost breakdown
 
 Use this skill when users ask for Azure pricing estimates, billing breakdowns, spend forecasting, or cost optimization.
 
+## Azure SRE lab context
+
+- Terraform's `monthly_agent_unit_limit` configures the SRE Agent's monthly
+  agent-unit limit; its default is `10000`. It is not an Azure spending budget.
+- The repository does not provision an Azure subscription or resource-group
+  budget. Use authorized Cost Management data for actual Azure spend and
+  forecasts, and state the scope (for example, the deployed `rg-sre-lab-*`
+  resource group).
+- Agent-unit consumption is a separate measure and requires an authorized usage
+  source. A configured limit does not provide consumption data.
+- Keep report or recommendation work read-only. Do not create budgets, stop
+  resources, or change the lab deployment unless specifically asked.
+
 ## When to use
 
 - Estimate Azure pricing for a proposed architecture
