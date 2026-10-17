@@ -8,7 +8,7 @@ scenario and runtime instead of expecting every panel or connector to exist.
 
 | Scenario | Runtime and workload | Dashboard focus |
 |---|---|---|
-| S1 | `orders-api`, deployed from the S1 setup | HTTP 5xx detection and incident evidence |
+| S1 | Container Apps `orders-api` | HTTP 5xx detection and incident evidence |
 | S2 | `orders-api` on Container Apps or the `conference-web` App Service, depending on the selected runtime | Requests, 5xx, P99 latency, and `/health` availability |
 | S3 | AKS `checkout-api` | Pod readiness/restarts, Service endpoints, and routing evidence |
 | S4 | `orders-api` on App Service | Alert routing, telemetry, and escalation evidence |
@@ -52,10 +52,12 @@ configured alert thresholds and web-test availability without treating a
 missing test result as success.
 
 For S3 AKS, show checkout-api pod readiness and restart counts from
-KubePodInventory, KubeEvents readiness probe failures, and whether the
-checkout-api Service exists in KubeServices. Keep pod health distinct from
-Service endpoint health: healthy pods can still have zero Service endpoints.
-Use namespace, pod/service name, cluster, and TimeGenerated for drill-down.
+KubePodInventory, KubeEvents readiness probe failures, and the checkout-api
+Service selector from KubeServices. Compare the selector labels with ready pod
+labels from KubePodInventory to identify zero matching endpoints. Keep pod
+health distinct from Service endpoint health: healthy pods can still have zero
+Service endpoints. Use namespace, pod/service name, cluster, and TimeGenerated
+for drill-down.
 
 For S5, report PIM activation and correlated Azure Activity evidence only when
 the required Entra and Activity data sources are connected. For S6, show
@@ -68,9 +70,10 @@ root cause, or remediation without supporting records. Use connector queries
 on refresh only. Do not use write tools or model-generated incident facts.
 ```
 
-The report may omit panels for unselected scenarios. The configured alert
-definitions are in `infra/terraform/alerts.tf`; scenario setup and runtime
-guidance are in `scenarios/README.md`.
+The report may omit panels for unselected scenarios. See
+[`infra/terraform/alerts.tf`](../infra/terraform/alerts.tf) for configured alert
+signals and [`scenarios/README.md`](../scenarios/README.md) for scenario setup
+and runtime guidance.
 
 ## Report validation
 
@@ -99,10 +102,11 @@ The repository does not create an Azure subscription or resource-group budget.
 
 Azure spend reporting needs separately authorized Cost Management data. Scope
 the report to the deployed environment's resource group, such as
-`rg-sre-lab-sbox`, `rg-sre-lab-dev`, or `rg-sre-lab-summit-demo`, and state the
-actual scope used. Do not assume a sample resource group name is the deployed
-scope. Agent-unit consumption also needs an authorized source; Terraform's
-configured limit alone does not provide consumption.
+`rg-sre-lab-sbox`, `rg-sre-lab-dev`, `rg-sre-lab-sandbox`, or
+`rg-sre-lab-summit-demo`, and state the actual scope used. Do not assume a
+sample resource group name is the deployed scope. Agent-unit consumption also
+needs an authorized source; Terraform's configured limit alone does not provide
+consumption.
 
 Use this prompt to create a read-only Live Report called "Azure SRE Lab Cost
 Guardrail":
@@ -133,5 +137,6 @@ or perform other write actions.
 
 These thresholds are report indicators, not enforcement. Configure Azure
 budgets and notifications separately in Cost Management if the environment
-needs Azure spend alerts. Use `.github/skills/azure-cost/SKILL.md` for the
-cost-estimation workflow and its guardrails.
+needs Azure spend alerts. Use
+[`azure-cost`](../.github/skills/azure-cost/SKILL.md) for the cost-estimation
+workflow and its guardrails.
