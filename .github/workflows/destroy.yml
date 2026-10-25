@@ -72,6 +72,7 @@ jobs:
         env:
           TF_ENVIRONMENT: ${{ matrix.environment }}
         run: |
+          set -o pipefail
           output="$(mktemp)"
           trap 'rm -f "$output"' EXIT
 
