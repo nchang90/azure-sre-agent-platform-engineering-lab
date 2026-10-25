@@ -14,6 +14,20 @@ TF_OUT=""
 
 read_tf() { jq -r ".${1}.value // empty" <<<"$TF_OUT"; }
 
+replace_deleting_agent() (
+  local variables_file
+  variables_file="$(mktemp --suffix=.tfvars.json)"
+  trap 'rm -f "$variables_file"' EXIT
+
+  # Saved plans include sensitive inputs; keep them private and remove on exit.
+  terraform -chdir=infra/terraform show -json "$PLAN_FILE" |
+    jq -e '.variables | map_values(.value)' > "$variables_file"
+  terraform -chdir=infra/terraform plan -input=false \
+    -var-file="$variables_file" \
+    -replace='azapi_resource.sre_agent[0]' -out="$PLAN_FILE"
+  terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE"
+)
+
 terraform_apply() {
   local output exit_code
 
@@ -25,7 +39,10 @@ terraform_apply() {
 
   [[ $exit_code -eq 0 ]] && return 0
 
-  if grep -qi "workspace could not be found" <<<"$output"; then
+  if grep -q "AgentDeletionRequested" <<<"$output"; then
+    log "SRE Agent deletion was already requested; retrying deletion before recreating it..."
+    replace_deleting_agent
+  elif grep -qi "workspace could not be found" <<<"$output"; then
     log "Terraform apply hit a transient workspace lookup issue; retrying once..."
     sleep 10
     terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE"
