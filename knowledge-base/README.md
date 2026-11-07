@@ -24,6 +24,7 @@ See [runbooks/](runbooks/) for actionable runbooks organized by service area:
 - [On-Call Handoff](on-call-handoff.md) - Shift change checklist and knowledge transfer
 - [Incident Report Template](incident-report.md) - Post-incident review structure
 - [GitHub Issue Triage](github-issue-triage.md) - Classification and routing
+- [Reliability Dashboards and Cost Guardrails](reliability-dashboards-and-cost-guardrails.md) - Read-only report prompts and validation checks
 
 ## 🔗 How to Use
 
