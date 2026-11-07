@@ -24,6 +24,8 @@ Steps and tfvars guidance: [scenarios/README.md](scenarios/README.md).
 - [`deploy.yml`](.github/workflows/deploy.yml) — daily schedule + manual. Inputs: `environment` (`demo`/`sbox`/`dev`), `runtime` (`containerapps` default, `webapp`, or `aks`), `plan`, `apply`. Scheduled runs use Container Apps. Runtime selection takes precedence over the environment's scenario; Web App and AKS are opt-in.
 - [`destroy.yml`](.github/workflows/destroy.yml) — daily schedule + manual.
 
+If a destroy fails during SRE Agent deletion, inspect the Azure operation status and wait until it is terminal (`Succeeded`, `Failed`, or `Canceled`) and no longer running. Then open the failed run in **Actions** and select **Re-run failed jobs**. This reuses the original environment and its Terraform state; for a new manual run, choose the same environment and confirm the destroy input. The workflow does not automatically retry.
+
 For direct Terraform deployments, select `-var="runtime=webapp"` for the App Service scenarios or `-var="runtime=aks"` for the AKS scenario. Without a runtime selection, Terraform defaults to Container Apps (S5 remains monitoring-only).
 
 State lives in the `tfstate` container of the `terraformstatesboxprd` storage account (`terraform-tfstate` resource group), one key per environment — see [`infra/terraform/backend/`](infra/terraform/backend/).
