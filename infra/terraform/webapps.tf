@@ -8,7 +8,7 @@ resource "azurerm_service_plan" "webapps" {
   resource_group_name = azurerm_resource_group.agent.name
   location            = var.location
   os_type             = "Linux"
-  sku_name            = "B1"
+  sku_name            = var.webapp_sku_name
   tags                = var.tags
 }
 

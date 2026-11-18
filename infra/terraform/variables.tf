@@ -115,6 +115,12 @@ variable "webapp_port" {
   }
 }
 
+variable "webapp_sku_name" {
+  description = "SKU for the Linux App Service plan."
+  type        = string
+  default     = "B1"
+}
+
 variable "acr_sku" {
   description = "SKU for the Azure Container Registry."
   type        = string

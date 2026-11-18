@@ -4,6 +4,7 @@ location               = "swedencentral"
 target_resource_groups = ["rg-sre-lab-dev"]
 scenario               = "s2"
 runtime                = "webapp"
+webapp_sku_name        = "S1"
 access_level           = "High"
 action_mode            = "Autonomous"
 upgrade_channel        = "Preview"
