@@ -68,6 +68,10 @@ By the end of this lab, you can:
    The workflow creates AKS, the Azure SRE Agent and its three subagents, the
    ServiceNow response plans, and deploys the healthy `checkout-api`.
 
+   The demo user pool uses Regular VMs in Sweden Central to avoid reliance on
+   Spot capacity. If switching from an existing Spot pool, run a plan-only
+   deployment first (`-f apply=false`) and review the user-pool replacement.
+
 ### Task 2: Enable the ServiceNow write-back
 
 The workflow doesn't pass ServiceNow credentials to the agent's write-back
