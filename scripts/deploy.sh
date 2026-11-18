@@ -10,46 +10,29 @@ cd "$SCRIPT_DIR/.."
 
 ENVIRONMENT="${1:?Usage: bash scripts/deploy.sh ENVIRONMENT [PLAN_FILE]}"
 PLAN_FILE="${2:-tfplan}"
-RETRY_APP_SERVICE_CAPACITY="${3:-}"
 TF_OUT=""
 
 read_tf() { jq -r ".${1}.value // empty" <<<"$TF_OUT"; }
 
-terraform_apply() (
-  local output exit_code retry_dir="" capacity_retries=0 workspace_retries=0
-  trap '[[ -z "$retry_dir" ]] || rm -rf "$retry_dir"' EXIT
+terraform_apply() {
+  local output exit_code
 
-  while :; do
-    if output="$(terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE" 2>&1)"; then
-      echo "$output"
-      return 0
-    else
-      exit_code=$?
-    fi
-    echo "$output"
+  set +e
+  output="$(terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE" 2>&1)"
+  exit_code=$?
+  set -e
+  echo "$output"
 
-    if grep -qi "workspace could not be found" <<<"$output" && [[ $workspace_retries -eq 0 ]]; then
-      workspace_retries=1
-      log "Terraform apply hit a transient workspace lookup issue; retrying once..."
-      sleep 10
-    elif [[ "$RETRY_APP_SERVICE_CAPACITY" == "--retry-app-service-capacity" && $capacity_retries -lt 3 ]] &&
-      grep -q 'azurerm_service_plan\.webapps' <<<"$output" &&
-      grep -Eq '"ExtendedCode"[[:space:]]*:[[:space:]]*"03029"' <<<"$output"; then
-      if [[ -z "$retry_dir" ]]; then
-        retry_dir="$(mktemp -d)"
-        terraform -chdir=infra/terraform show -json "$PLAN_FILE" |
-          jq -e 'if (.variables | type) == "object" then .variables | map_values(.value) else error("plan variables unavailable") end' >"$retry_dir/inputs.tfvars.json"
-      fi
-      capacity_retries=$((capacity_retries + 1))
-      log "App Service capacity is unavailable; re-planning before retry $capacity_retries of 3..."
-      sleep $((60 * (2 ** (capacity_retries - 1))))
-      terraform -chdir=infra/terraform plan -out="$retry_dir/tfplan" -var-file="$retry_dir/inputs.tfvars.json"
-      PLAN_FILE="$retry_dir/tfplan"
-    else
-      return "$exit_code"
-    fi
-  done
-)
+  [[ $exit_code -eq 0 ]] && return 0
+
+  if grep -qi "workspace could not be found" <<<"$output"; then
+    log "Terraform apply hit a transient workspace lookup issue; retrying once..."
+    sleep 10
+    terraform -chdir=infra/terraform apply -auto-approve "$PLAN_FILE"
+  else
+    return "$exit_code"
+  fi
+}
 
 dump_aks_diagnostics() {
   kubectl get pods --namespace default -l app=checkout-api -o wide

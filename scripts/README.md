@@ -11,9 +11,6 @@ Automation and deployment utilities.
 
 The deployment script is driven by [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
 and reads resource details from `terraform output`.
-For the workflow's full Terraform plan, it retries App Service capacity error
-`03029` up to three times, re-planning with the saved input values after each
-failed apply. Capacity shortages can persist beyond the retry window.
 
 ## Usage
 
