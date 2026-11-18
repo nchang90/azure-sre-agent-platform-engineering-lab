@@ -1,7 +1,7 @@
 agent_name             = "sre-agent-dev"
-resource_group_name    = "rg-sre-lab-dev"
+resource_group_name    = "rg-sre-lab-dev-spaincentral"
 location               = "spaincentral"
-target_resource_groups = ["rg-sre-lab-dev"]
+target_resource_groups = ["rg-sre-lab-dev-spaincentral"]
 scenario               = "s2"
 runtime                = "webapp"
 webapp_sku_name        = "B1"

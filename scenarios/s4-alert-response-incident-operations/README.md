@@ -34,7 +34,7 @@ gh workflow run deploy.yml \
 
 gh run watch
 
-RESOURCE_GROUP="rg-sre-lab-dev"
+RESOURCE_GROUP="rg-sre-lab-dev-spaincentral"
 APP_NAME="$(az webapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?starts_with(name, 'orders-api-')].name | [0]" \
