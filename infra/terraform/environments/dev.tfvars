@@ -1,6 +1,6 @@
 agent_name             = "sre-agent-dev"
 resource_group_name    = "rg-sre-lab-dev"
-location               = "swedencentral"
+location               = "spaincentral"
 target_resource_groups = ["rg-sre-lab-dev"]
 scenario               = "s2"
 runtime                = "webapp"
