@@ -81,4 +81,4 @@ jobs:
 
       - name: Deploy
         if: github.event_name == 'schedule' || inputs.apply
-        run: bash scripts/deploy.sh "${ENVIRONMENT}" tfplan
+        run: bash scripts/deploy.sh "${ENVIRONMENT}" tfplan --retry-app-service-capacity
