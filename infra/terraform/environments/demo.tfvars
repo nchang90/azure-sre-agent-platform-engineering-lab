@@ -27,11 +27,11 @@ standard_user_principal_ids = [
   "3a168e0b-7a73-4dd0-a4f8-80045502775b"
 ]
 
-# One system + one user node is enough for Dynatrace + a few pods; the
-# autoscaler adds a node per pool if they run out of room.
-aks_min_count = 1
-
-aks_max_count = 2
+# Keep the system pool on regular VMs; only the demo user pool uses Spot.
+aks_min_count         = 1
+aks_max_count         = 2
+aks_user_node_vm_size = "Standard_D2as_v5"
+aks_user_spot_enabled = true
 
 deploy_sre_agent = true
 

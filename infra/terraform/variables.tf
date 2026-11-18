@@ -168,6 +168,12 @@ variable "aks_user_node_vm_size" {
   default     = "Standard_B2s"
 }
 
+variable "aks_user_spot_enabled" {
+  description = "Use Spot VMs in the AKS user node pool. Toggling this replaces the pool."
+  type        = bool
+  default     = false
+}
+
 variable "aks_user_min_count" {
   description = "Minimum node count for the AKS user node pool autoscaler."
   type        = number

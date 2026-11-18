@@ -78,6 +78,11 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   min_count             = var.aks_user_min_count
   max_count             = var.aks_user_max_count
   vnet_subnet_id        = azurerm_subnet.aks[0].id
+  priority              = var.aks_user_spot_enabled ? "Spot" : "Regular"
+  eviction_policy       = var.aks_user_spot_enabled ? "Delete" : null
+  spot_max_price        = var.aks_user_spot_enabled ? -1 : null
+  node_labels           = var.aks_user_spot_enabled ? { "kubernetes.azure.com/scalesetpriority" = "spot" } : null
+  node_taints           = var.aks_user_spot_enabled ? ["kubernetes.azure.com/scalesetpriority=spot:NoSchedule"] : null
   tags                  = var.tags
 }
 
