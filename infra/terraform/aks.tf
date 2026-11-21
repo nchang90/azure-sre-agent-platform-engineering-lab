@@ -108,6 +108,8 @@ resource "azurerm_monitor_data_collection_rule" "container_insights" {
   kind                = "Linux"
   tags                = var.tags
 
+  depends_on = [time_sleep.wait_for_log_analytics]
+
   destinations {
     log_analytics {
       name                  = "ciworkspace"
@@ -134,6 +136,15 @@ resource "azurerm_monitor_data_collection_rule" "container_insights" {
         }
       })
     }
+  }
+}
+
+resource "time_sleep" "wait_for_log_analytics" {
+  count           = local.aks_enabled ? 1 : 0
+  create_duration = "60s"
+
+  triggers = {
+    workspace_id = azurerm_log_analytics_workspace.law.id
   }
 }
 
