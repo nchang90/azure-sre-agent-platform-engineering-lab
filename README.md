@@ -26,6 +26,8 @@ Steps and tfvars guidance: [scenarios/README.md](scenarios/README.md).
 
 For direct Terraform deployments, select `-var="runtime=webapp"` for the App Service scenarios or `-var="runtime=aks"` for the AKS scenario. Without a runtime selection, Terraform defaults to Container Apps (S5 remains monitoring-only).
 
+The dev deployment now uses `rg-sre-lab-dev-spaincentral`. Review the Terraform plan before applying: migrating from `rg-sre-lab-dev` replaces the old group and its resources, including any unmanaged resources still in the group.
+
 State lives in the `tfstate` container of the `terraformstatesboxprd` storage account (`terraform-tfstate` resource group), one key per environment — see [`infra/terraform/backend/`](infra/terraform/backend/).
 
 Workflows authenticate with workload identity federation, no client secrets: the `uami-github` identity is pinned to `refs/heads/main`, and `ARM_USE_OIDC=true` plus `ARM_CLIENT_ID`/`ARM_TENANT_ID`/`ARM_SUBSCRIPTION_ID` covers both the providers and the state backend. To add a branch, add another federated credential rather than loosening the subject.
